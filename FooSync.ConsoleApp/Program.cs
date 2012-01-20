@@ -111,7 +111,7 @@ namespace FooSync.ConsoleApp
             }
         }
 
-        FooSync Foo { private get; private set; }
+        private FooSync Foo { get; set; }
 
         enum ChangeStatus
         {

@@ -92,7 +92,7 @@ namespace FooSync
 
         static MD5 Hasher = MD5.Create();
 
-        FooSync Foo { private get; private set; }
+        private FooSync Foo { get; set; }
 
         private FileInfo _info;
         private string _hash;

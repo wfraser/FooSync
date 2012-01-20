@@ -11,7 +11,7 @@ namespace FooSync
 
         public Dictionary<string, FooFileInfo> Files;
 
-        FooSync Foo { private get; private set; }
+        private FooSync Foo { get; set; }
 
         internal FooTree(FooSync foo, string path, IEnumerable<string> exceptions)
         {
