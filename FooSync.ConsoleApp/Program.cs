@@ -26,10 +26,22 @@ namespace FooSync.ConsoleApp
         {
             //WRFDEV TEST CODE STARTS HERE
 
+            Console.WriteLine(string.Format("Platform: {0}", System.Environment.OSVersion.Platform));
+            if (Type.GetType("Mono.Runtime") != null)
+            {
+                Console.WriteLine("Using the Mono runtime.");
+            }
+            
             string filename = @"C:\Users\wfraser\FooSync_Repository.xml";
 
             string repoConfigError;
             RepositoryConfig config = RepositoryConfigLoader.GetRepositoryConfig(filename, out repoConfigError);
+
+            if (config == null)
+            {
+                Console.WriteLine("There's a problem with your config file: " + repoConfigError);
+                return;
+            }
             
             System.IO.Directory.SetCurrentDirectory(@"W:\");
             Inspect(config.Directories[0]);
