@@ -53,17 +53,17 @@ namespace FooSync
         public static bool ValidateAgainstSchema(string xmlFileName, string schemaFileName, out string failureMessage)
         {
             bool valid = true;
-            var settings = new XmlReaderSettings();
+            failureMessage = string.Empty;
 
+            var settings = new XmlReaderSettings();
             settings.Schemas.Add(null, schemaFileName);
             settings.ValidationType = ValidationType.Schema;
 
-            XmlReader reader = XmlReader.Create(xmlFileName, settings);
-
-            failureMessage = string.Empty;
+            XmlReader reader = null;
 
             try
             {
+                reader = XmlReader.Create(xmlFileName, settings);
                 var document = new XmlDocument();
                 document.Load(reader);
                 document.Validate(null);
@@ -78,9 +78,17 @@ namespace FooSync
                 failureMessage = string.Format("XML Schema Validation Exception (at {1}:{2}): {0}", ex.Message, ex.LineNumber, ex.LinePosition);
                 valid = false;
             }
+            catch (Exception ex)
+            {
+                failureMessage = string.Format("{0}: {1}", ex.GetType().Name, ex.Message);
+                valid = false;
+            }
             finally
             {
-                reader.Close();
+                if (reader != null)
+                {
+                    reader.Close();
+                }
             }
 
             failureMessage = Regex.Replace(failureMessage, " in namespace '[^']+'", "");
