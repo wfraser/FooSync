@@ -40,6 +40,14 @@ namespace FooSync
             var repo = (RepositoryConfig)serializer.Deserialize(reader);
             reader.Close();
 
+            if (System.IO.Path.DirectorySeparatorChar != '/')
+            {
+                foreach (var directory in repo.Directories)
+                {
+                    directory.Path = directory.Path.Replace('/', System.IO.Path.DirectorySeparatorChar);
+                }
+            }
+
             return repo;
         }
 

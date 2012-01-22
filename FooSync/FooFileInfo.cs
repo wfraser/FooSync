@@ -14,7 +14,7 @@ namespace FooSync
             
             this.Foo = foo;
             this.Path = path;
-            this.Identical = false;
+            this.Status = ChangeStatus.Undetermined;
         }
 
         public int CompareTo(FooFileInfo other)
@@ -36,7 +36,7 @@ namespace FooSync
             }
         }
 
-        public bool Identical { get; set; }
+        public ChangeStatus Status { get; set; }
 
         public string Path { get; private set; }
 
@@ -75,6 +75,16 @@ namespace FooSync
             {
                 return Info.Length;
             }
+        }
+
+        public enum ChangeStatus
+        {
+            Undetermined = -2,
+            Newer = -1,
+            Identical = 0,
+            Older = 1,
+            RepoMissing = 2,
+            SourceMissing = 3
         }
 
         private FileInfo Info

@@ -24,103 +24,67 @@ namespace FooSync.ConsoleApp
 
         void Run(string[] args)
         {
-            //WRFDEV TEST CODE STARTS HERE
-
-            Console.WriteLine(string.Format("Platform: {0}", System.Environment.OSVersion.Platform));
+            Console.WriteLine(string.Format("{0} / {1}",
+                System.Environment.OSVersion.Platform,
+                System.Environment.OSVersion.VersionString));
             if (Type.GetType("Mono.Runtime") != null)
             {
                 Console.WriteLine("Using the Mono runtime.");
             }
-            
-            string filename = @"C:\Users\wfraser\FooSync_Repository.xml";
 
             string repoConfigError;
-            RepositoryConfig config = RepositoryConfigLoader.GetRepositoryConfig(filename, out repoConfigError);
+            RepositoryConfig config = RepositoryConfigLoader.GetRepositoryConfig(FooSync.ConfigFileName, out repoConfigError);
 
             if (config == null)
             {
                 Console.WriteLine("There's a problem with your config file: " + repoConfigError);
                 return;
             }
-            
-            System.IO.Directory.SetCurrentDirectory(@"W:\");
-            Inspect(config.Directories[0]);
 
-            //WRFDEV TEST CODE ENDS HERE
+            foreach (var dir in config.Directories)
+            {
+                var exceptions = FooSync.PrepareExceptions(dir);
+
+                FooTree repo = GetFooTree(dir.Path, exceptions, "repository");
+                if (repo == null)
+                    return;
+
+                FooTree source = GetFooTree(dir.Source.Path, exceptions, "source");
+                if (source == null)
+                    return;
+
+                var changedFiles = Foo.Inspect(repo, source);
+
+                foreach (var file in changedFiles)
+                {
+                    Console.WriteLine(string.Format("{0}: {1}", file.Value.Status, file.Key));
+                }
+            }
         }
 
-        void Inspect(RepositoryDirectory dir)
+        private FooTree GetFooTree(string path, List<string> exceptions, string type)
         {
-            var exceptions = FooSync.PrepareExceptions(dir);
-
-            FooTree repo, source;
+            FooTree ret = null;
             try
             {
-                repo = Foo.Tree(dir.Path, exceptions);
+                ret = Foo.Tree(path, exceptions);
             }
             catch (DirectoryNotFoundException)
             {
-                Console.WriteLine(string.Format("Repository directory {0} not found.", dir.Path));
-                return;
+                Console.WriteLine(string.Format("{0} directory {1} not found.",
+                    type,
+                    path));
             }
-
-            try
+            catch (Exception ex)
             {
-                source = Foo.Tree(dir.Source.Path, exceptions);
-            }
-            catch (DirectoryNotFoundException)
-            {
-                Console.WriteLine(string.Format("Source directory {0} not found.", dir.Source.Path));
-                return;
-            }
-
-            var changedFiles = new Dictionary<string, ChangeStatus>();
-
-            foreach (var file in repo.Files)
-            {
-                ChangeStatus status = ChangeStatus.Identical;
-
-                if (source.Files.ContainsKey(file.Key))
-                {
-                    int comp = file.Value.CompareTo(source.Files[file.Key]);
-                    if (comp == 0)
-                    {
-                        file.Value.Identical = true;
-                        source.Files[file.Key].Identical = true;
-                        continue;
-                    }
-                    else
-                    {
-                        status = (ChangeStatus)comp;
-                    }
-                }
-                else
-                {
-                    status = ChangeStatus.SourceMissing;
-                }
-
-                if (status != ChangeStatus.Identical)
-                {
-                    changedFiles[file.Key] = status;
-                }
+                Console.WriteLine(string.Format("{0} reading {1} directory {2}: {3}",
+                    ex.GetType().Name,
+                    type,
+                    path,
+                    ex.Message));
             }
 
-            foreach (var file in source.Files)
-            {
-                if (file.Value.Identical)
-                {
-                    continue;
-                }
-
-                Debug.Assert(!repo.Files.ContainsKey(file.Key), "a file slipped through the filter!");
-
-                changedFiles[file.Key] = ChangeStatus.RepoMissing;
-            }
-
-            foreach (var file in changedFiles)
-            {
-                Console.WriteLine(string.Format("{0}: {1}", file.Value, file.Key));
-            }
+            return ret;
         }
 
         private FooSync Foo { get; set; }

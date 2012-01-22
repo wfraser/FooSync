@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace FooSync
 {
     public class FooSync
     {
+        public const string ConfigFileName = "FooSync_Repository.xml";
+
         public FooSync()
         {
             this.Options = new Options();
@@ -61,6 +64,48 @@ namespace FooSync
             }
 
             return exceptions;
+        }
+
+        public IDictionary<string, FooFileInfo> Inspect(FooTree repo, FooTree source)
+        {
+            var changedFiles = new Dictionary<string, FooFileInfo>();
+            var repoMissingFiles = new Dictionary<string, FooFileInfo>(source.Files);
+
+            foreach (var file in repo.Files)
+            {
+                file.Value.Status = FooFileInfo.ChangeStatus.Identical;
+
+                if (source.Files.ContainsKey(file.Key))
+                {
+                    int comp = file.Value.CompareTo(source.Files[file.Key]);
+                    if (comp == 0)
+                    {
+                        repoMissingFiles.Remove(file.Key);
+                        continue;
+                    }
+                    else
+                    {
+                        file.Value.Status = (FooFileInfo.ChangeStatus)comp;
+                    }
+                }
+                else
+                {
+                    file.Value.Status = FooFileInfo.ChangeStatus.SourceMissing;
+                }
+
+                if (file.Value.Status != FooFileInfo.ChangeStatus.Identical)
+                {
+                    changedFiles[file.Key] = file.Value;
+                }
+            }
+
+            foreach (var file in repoMissingFiles)
+            {
+                changedFiles[file.Key] = file.Value;
+                changedFiles[file.Key].Status = FooFileInfo.ChangeStatus.RepoMissing;
+            }
+
+            return changedFiles;
         }
 
         public Options Options { get; private set; }
