@@ -24,9 +24,10 @@ namespace FooSync.ConsoleApp
 
         void Run(string[] args)
         {
-            Console.WriteLine(string.Format("{0} / {1}",
-                System.Environment.OSVersion.Platform,
-                System.Environment.OSVersion.VersionString));
+            Console.WriteLine("{0} / {1} / {2}",
+                Environment.MachineName,
+                Environment.OSVersion.Platform,
+                Environment.OSVersion.VersionString);
             if (Type.GetType("Mono.Runtime") != null)
             {
                 Console.WriteLine("Using the Mono runtime.");
@@ -37,12 +38,21 @@ namespace FooSync.ConsoleApp
 
             if (config == null)
             {
-                Console.WriteLine("There's a problem with your config file: " + repoConfigError);
+                Console.WriteLine("There's a problem with your config file: {0}", repoConfigError);
                 return;
             }
 
             foreach (var dir in config.Directories)
             {
+                if (dir.Source == null)
+                {
+                    Console.WriteLine("There's no entry matching your machine name ({0}) in the "
+                        + "repository configuration file for the directory \"{1}\". Skipping.",
+                        Environment.MachineName.ToLower(),
+                        dir.Path);
+                    continue;
+                }
+
                 var exceptions = FooSync.PrepareExceptions(dir);
 
                 FooTree repo = GetFooTree(dir.Path, exceptions, "repository");
@@ -55,10 +65,65 @@ namespace FooSync.ConsoleApp
 
                 var changedFiles = Foo.Inspect(repo, source);
 
+                Console.WriteLine("File changes:");
                 foreach (var file in changedFiles)
                 {
-                    Console.WriteLine(string.Format("{0}: {1}", file.Value.Status, file.Key));
+                    string descr = "ERROR";
+                    switch (file.Value.Status)
+                    {
+                        case FooFileInfo.ChangeStatus.Identical:
+                        case FooFileInfo.ChangeStatus.Undetermined:
+                            Debug.Assert(false, "Bogus file change state");
+                            break;
+
+                        case FooFileInfo.ChangeStatus.Newer:
+                            descr = "Newer than the repository";
+                            break;
+
+                        case FooFileInfo.ChangeStatus.Older:
+                            descr = "Older than the repository";
+                            break;
+
+                        case FooFileInfo.ChangeStatus.RepoMissing:
+                            descr = "Not in the repository";
+                            break;
+
+                        case FooFileInfo.ChangeStatus.SourceMissing:
+                            descr = "Not in our directory";
+                            break;
+                    }
+
+                    Console.WriteLine("\t{0}: {1}", descr, file.Key);
                 }
+                
+                RepositoryState state;
+                try
+                {
+                    state = new RepositoryState(FooSync.RepoStateFileName);
+                }
+                catch (FileNotFoundException)
+                {
+                    state = new RepositoryState();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Unexpected {0} trying to read repository state: {1}",
+                        ex.GetType().Name,
+                        ex.Message);
+                    return;
+                }
+
+                if (state.Repository == null)
+                {
+                    state.AddSource(source, RepositoryState.RepoSourceName);
+                }
+
+                if (!state.Sources.ContainsKey(Environment.MachineName.ToLower()))
+                {
+                    state.AddSource(repo, Environment.MachineName.ToLower());
+                }
+
+                state.Write(FooSync.RepoStateFileName);
             }
         }
 
@@ -71,17 +136,17 @@ namespace FooSync.ConsoleApp
             }
             catch (DirectoryNotFoundException)
             {
-                Console.WriteLine(string.Format("{0} directory {1} not found.",
+                Console.WriteLine("{0} directory {1} not found.",
                     type,
-                    path));
+                    path);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(string.Format("{0} reading {1} directory {2}: {3}",
+                Console.WriteLine("{0} reading {1} directory {2}: {3}",
                     ex.GetType().Name,
                     type,
                     path,
-                    ex.Message));
+                    ex.Message);
             }
 
             return ret;

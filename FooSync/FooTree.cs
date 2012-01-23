@@ -32,6 +32,13 @@ namespace FooSync
             {
                 System.Diagnostics.Debug.Assert(file.StartsWith(basePath), "file is supposed to start with basePath");
 
+                string trimmedName = file.Substring(basePath.Length + 1);
+
+                if (trimmedName == FooSync.ConfigFileName || trimmedName == FooSync.RepoStateFileName)
+                {
+                    continue;
+                }
+
                 bool failsRegex = false;
                 foreach (string ex in exceptions)
                 {
@@ -44,7 +51,7 @@ namespace FooSync
 
                 if (!failsRegex)
                 {
-                    Files[file.Substring(basePath.Length + 1)] = Foo.FileInfo(file);
+                    Files[trimmedName] = Foo.FileInfo(file);
                 }
             }
 

@@ -7,7 +7,8 @@ namespace FooSync
 {
     public class FooSync
     {
-        public const string ConfigFileName = "FooSync_Repository.xml";
+        public const string ConfigFileName = ".FooSync_Repository.xml";
+        public const string RepoStateFileName = ".FooSync_RepoState.dat";
 
         public FooSync()
         {

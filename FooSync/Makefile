@@ -12,7 +12,8 @@ SOURCES=\
     FooTree.cs \
     Options.cs \
     RepositoryConfig.cs \
-    RepositoryConfigLoader.cs
+    RepositoryConfigLoader.cs \
+    RepositoryState.cs
 
 REFERENCES=
 
