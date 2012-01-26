@@ -70,7 +70,8 @@ namespace FooSync
         public DateTime MTime
         {
             get
-            {                
+            {
+                Info.Refresh();
                 return Info.LastWriteTimeUtc;
             }
         }
@@ -79,6 +80,7 @@ namespace FooSync
         {
             get
             {
+                Info.Refresh();
                 return Info.Length;
             }
         }

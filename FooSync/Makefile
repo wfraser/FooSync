@@ -14,7 +14,8 @@ SOURCES=\
     Options.cs \
     RepositoryConfig.cs \
     RepositoryConfigLoader.cs \
-    RepositoryState.cs
+    RepositoryState.cs \
+    Properties/AssemblyInfo.cs
 
 REFERENCES=
 

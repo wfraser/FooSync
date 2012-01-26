@@ -24,6 +24,10 @@ namespace FooSync.ConsoleApp
 
         void Run(string[] args)
         {
+            Console.WriteLine("FooSync.ConsoleApp v{0} / FooSync v{1}",
+                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
+                System.Reflection.Assembly.GetAssembly(Foo.GetType()).GetName().Version);
+
             Console.WriteLine("{0} / {1} / {2}",
                 Environment.MachineName,
                 Environment.OSVersion.Platform,
@@ -32,6 +36,7 @@ namespace FooSync.ConsoleApp
             {
                 Console.WriteLine("Using the Mono runtime.");
             }
+            Console.WriteLine();
 
             //
             // Load the repository config
@@ -76,6 +81,12 @@ namespace FooSync.ConsoleApp
                 //
 
                 var changedFiles = Foo.Inspect(repo, source);
+
+                if (changedFiles.Count == 0)
+                {
+                    Console.WriteLine("No changes; nothing to do.");
+                    return;
+                }
 
                 Console.WriteLine("File changes:");
                 foreach (var file in changedFiles)
@@ -294,6 +305,53 @@ namespace FooSync.ConsoleApp
                 //
                 // Perform the operations
                 //
+
+                if (copyOperations.Count == 0)
+                {
+                    Console.WriteLine("Nothing to do.");
+                    return;
+                }
+
+                var srcFiles = new List<string>();
+                var dstFiles = new List<string>();
+
+                foreach (var c in copyOperations)
+                {
+                    string srcFile, dstFile;
+                    if (c.Value == CopyOperation.UseRepo)
+                    {
+                        srcFile = Path.GetFullPath(Path.Combine(repo.Path, c.Key));
+                        dstFile = Path.GetFullPath(Path.Combine(source.Path, c.Key));
+                    }
+                    else
+                    {
+                        dstFile = Path.GetFullPath(Path.Combine(repo.Path, c.Key));
+                        srcFile = Path.GetFullPath(Path.Combine(source.Path, c.Key));
+                    }
+
+                    srcFiles.Add(srcFile);
+                    dstFiles.Add(dstFile);
+                }
+
+                Console.Write("Copying files...");
+                CopyEngine.Copy(srcFiles, dstFiles);
+                Console.WriteLine(" done.");
+
+                //TODO: check whether the file copy succeeded and all files were copied
+
+                //
+                // Update the repository state
+                //
+
+                foreach (var c in copyOperations)
+                {
+                    if (c.Value == CopyOperation.UseSource)
+                    {
+                        state.Origin[c.Key] = state.Source.Name;
+                    }
+                }
+
+                state.Write(FooSync.RepoStateFileName);
             }
         }
 
