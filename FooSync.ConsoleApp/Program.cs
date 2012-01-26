@@ -17,7 +17,9 @@ namespace FooSync.ConsoleApp
             
             Console.WriteLine("FooSync.ConsoleApp v{0} / FooSync v{1}",
                 System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
-                System.Reflection.Assembly.GetAssembly(Type.GetType("FooSync.FooSync, FooSync")).GetName().Version);
+                (Type.GetType("FooSync.FooSync FooSync") == null)
+                    ? "(unable to load FooSync.dll)" 
+                    : System.Reflection.Assembly.GetAssembly(Type.GetType("FooSync.FooSync, FooSync")).GetName().Version.ToString());
 
             Console.WriteLine("{0} / {1} / {2}",
                 Environment.MachineName,
@@ -37,7 +39,7 @@ namespace FooSync.ConsoleApp
             }
 
             var program = new Program(fooOptions);
-            program.Run(args);
+            program.Run(programArgs);
         }
 
         Program(Options fooOptions)
@@ -45,7 +47,7 @@ namespace FooSync.ConsoleApp
             this.Foo = new FooSync(fooOptions);
         }
 
-        void Run(string[] args)
+        void Run(ProgramArguments args)
         {
             //
             // Load the repository config
