@@ -7,6 +7,7 @@ MCS=dmcs
 SDK=4
 
 SOURCES=\
+    CopyEngine.cs \
     FooFileInfo.cs \
     FooSync.cs \
     FooTree.cs \
