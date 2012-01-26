@@ -12,21 +12,12 @@ namespace FooSync.ConsoleApp
         [STAThread]
         static void Main(string[] args)
         {
+            var programArgs = new ProgramArguments(args);
             var fooOptions = new Options();
-            var program = new Program(fooOptions);
-            program.Run(args);
-        }
-
-        Program(Options fooOptions)
-        {
-            this.Foo = new FooSync(fooOptions);
-        }
-
-        void Run(string[] args)
-        {
+            
             Console.WriteLine("FooSync.ConsoleApp v{0} / FooSync v{1}",
                 System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
-                System.Reflection.Assembly.GetAssembly(Foo.GetType()).GetName().Version);
+                System.Reflection.Assembly.GetAssembly(Type.GetType("FooSync.FooSync, FooSync")).GetName().Version);
 
             Console.WriteLine("{0} / {1} / {2}",
                 Environment.MachineName,
@@ -38,6 +29,24 @@ namespace FooSync.ConsoleApp
             }
             Console.WriteLine();
 
+            if (programArgs.Flags.Contains("help"))
+            {
+                Console.WriteLine("usage: {0} [options]", System.Reflection.Assembly.GetExecutingAssembly().GetName().Name);
+                Console.WriteLine("Loads its configuration from {0} in the current directory", FooSync.ConfigFileName);
+                return;
+            }
+
+            var program = new Program(fooOptions);
+            program.Run(args);
+        }
+
+        Program(Options fooOptions)
+        {
+            this.Foo = new FooSync(fooOptions);
+        }
+
+        void Run(string[] args)
+        {
             //
             // Load the repository config
             //

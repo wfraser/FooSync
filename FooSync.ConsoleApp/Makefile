@@ -8,6 +8,7 @@ SDK=4
 
 SOURCES=\
     Program.cs \
+    ProgramArguments.cs \
     Properties/AssemblyInfo.cs
 
 REFERENCES=\
