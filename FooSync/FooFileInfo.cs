@@ -6,6 +6,8 @@ namespace FooSync
 {
     public class FooFileInfo : IComparable<FooFileInfo>
     {
+        static MD5 Hasher = MD5.Create();
+
         internal FooFileInfo(FooSync foo, string path)
         {
             System.Diagnostics.Debug.Assert(
@@ -14,8 +16,12 @@ namespace FooSync
             
             this.Foo = foo;
             this.Path = path;
-            this.Status = ChangeStatus.Undetermined;
+            this.ChangeStatus = ChangeStatus.Undetermined;
+            this.ConflictStatus = ConflictStatus.Undetermined;
+            this.Source = "";
         }
+
+        #region public methods 
 
         public int CompareTo(FooFileInfo other)
         {
@@ -36,9 +42,9 @@ namespace FooSync
             }
         }
 
-        public ChangeStatus Status { get; set; }
+        #endregion
 
-        public string Path { get; private set; }
+        #region public properties
 
         public string Hash
         {
@@ -77,15 +83,22 @@ namespace FooSync
             }
         }
 
-        public enum ChangeStatus
+        public string FullPath
         {
-            Undetermined = -2,
-            Newer = -1,
-            Identical = 0,
-            Older = 1,
-            RepoMissing = 2,
-            SourceMissing = 3
+            get
+            {
+                return Info.FullName;
+            }
         }
+
+        public ChangeStatus   ChangeStatus   { get; set; }
+        public ConflictStatus ConflictStatus { get; set; }
+        public string         Source         { get; set; }
+        public string         Path           { get; private set; }
+
+        #endregion
+
+        #region private properties
 
         private FileInfo Info
         {
@@ -100,11 +113,15 @@ namespace FooSync
             }
         }
 
-        static MD5 Hasher = MD5.Create();
-
         private FooSync Foo { get; set; }
+
+        #endregion
+
+        #region private members
 
         private FileInfo _info;
         private string _hash;
+
+        #endregion
     }
 }
