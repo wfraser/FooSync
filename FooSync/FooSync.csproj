@@ -45,6 +45,7 @@
     <Compile Include="FooFileInfo.cs" />
     <Compile Include="FooSync.cs" />
     <Compile Include="FooTree.cs" />
+    <Compile Include="NativeMethods.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RepositoryConfig.cs" />

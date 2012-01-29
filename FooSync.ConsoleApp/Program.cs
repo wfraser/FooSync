@@ -82,13 +82,13 @@ namespace FooSync.ConsoleApp
                 Console.Write("Enumerating files: repository...");
                 FooTree repo = GetFooTree(dir.Path, exceptions, "repository");
                 if (repo == null)
-                    return;
+                    continue;
 
                 Console.Write(" done. Source...");
                 
                 FooTree source = GetFooTree(dir.Source.Path, exceptions, "source");
                 if (source == null)
-                    return;
+                    continue;
 
                 Console.Write(" done.\n");
 
@@ -101,7 +101,7 @@ namespace FooSync.ConsoleApp
                 RepositoryState state;
                 try
                 {
-                    state = new RepositoryState(FooSync.RepoStateFileName);
+                    state = new RepositoryState(Path.Combine(dir.Path, FooSync.RepoStateFileName));
                 }
                 catch (FileNotFoundException)
                 {
@@ -130,7 +130,7 @@ namespace FooSync.ConsoleApp
 
                 if (stateChanged)
                 {
-                    state.Write(FooSync.RepoStateFileName);
+                    state.Write(Path.Combine(dir.Path, FooSync.RepoStateFileName));
                 }
                 Console.Write(" done.\n");
 
@@ -144,8 +144,8 @@ namespace FooSync.ConsoleApp
 
                 if (changedFiles.Count == 0)
                 {
-                    Console.WriteLine("No changes; nothing to do.");
-                    return;
+                    Console.WriteLine("No changes; nothing to do.\n");
+                    continue;
                 }
 
                 Console.WriteLine("File changes:");
@@ -361,6 +361,19 @@ namespace FooSync.ConsoleApp
                     {
                         try
                         {
+                            /* TODO: allow changing ranges
+                            int n_start, n_end;
+                            if (changeNum.Contains("-"))
+                            {
+                                n_start = int.Parse(changeNum.Substring(0, changeNum.IndexOf('-')).Trim()) - 1;
+                                n_end = int.Parse(changeNum.Substring(changeNum.IndexOf('-') + 1).Trim()) - 1;
+                            }
+                            else
+                            {
+                                n_start = n_end = int.Parse(changeNum);
+                            }
+                            */
+
                             n = int.Parse(changeNum) - 1;
                             if (n < 0 || n >= fileOperations.Count)
                                 throw new FormatException("out of range");
@@ -424,8 +437,8 @@ namespace FooSync.ConsoleApp
 
                 if (fileOperations.Count == 0)
                 {
-                    Console.WriteLine("Nothing to do.");
-                    return;
+                    Console.WriteLine("Nothing to do.\n");
+                    continue;
                 }
 
                 var srcFiles = new List<string>();
@@ -461,16 +474,31 @@ namespace FooSync.ConsoleApp
 
                 if (srcFiles.Count > 0)
                 {
-                    Console.Write("Copying files...");
-                    CopyEngine.Copy(srcFiles, dstFiles);
-                    Console.WriteLine(" done.");
+                    Console.WriteLine("Copying files...");
+                    int width = 0;
+                    CopyEngine.Copy(srcFiles, dstFiles, delegate(int completed, int total, string file) {
+                        string line = string.Format("{0}/{1} {2}", completed, total, file);
+                        Console.Write("\r{0,"+width+"}\r", string.Empty);
+                        Console.Write(line);
+                        width = line.Length;
+                    });
+                    Console.Write("\r{0," + width + "}\r", string.Empty);
+                    Console.WriteLine("Done.");
                 }
 
                 if (delFiles.Count > 0)
                 {
-                    Console.Write("Deleting files...");
-                    CopyEngine.Delete(delFiles);
-                    Console.WriteLine(" done.");
+                    Console.WriteLine("Deleting files...");
+                    int width = 0;
+                    CopyEngine.Copy(srcFiles, dstFiles, delegate(int completed, int total, string file)
+                    {
+                        string line = string.Format("{0}/{1} {2}", completed, total, file);
+                        Console.Write("\r{0," + width + "}\r", string.Empty);
+                        Console.Write(line);
+                        width = line.Length;
+                    });
+                    Console.Write("\r{0," + width + "}\r", string.Empty);
+                    Console.WriteLine("Done.");
                 }
 
                 //TODO: check whether the file copy succeeded and all files were copied

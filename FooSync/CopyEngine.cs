@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace FooSync
@@ -10,95 +10,67 @@ namespace FooSync
     /// </summary>
     public static class CopyEngine
     {
-        public static void Copy(ICollection<string> copyFrom, ICollection<string> copyTo)
+        public delegate void Progress(int completed, int total, string file);
+
+        public static void Copy(ICollection<string> copyFrom, ICollection<string> copyTo, Progress callback)
         {
-            Copy(copyFrom, copyTo, IntPtr.Zero);
+            Copy(copyFrom, copyTo, IntPtr.Zero, callback);
         }
 
-        [SuppressMessage("Microsoft.Usage", "CA2201")]
-        public static void Copy(ICollection<string> copyFrom, ICollection<string> copyTo, IntPtr hwnd)
+        public static void Copy(ICollection<string> copyFrom, ICollection<string> copyTo, IntPtr hwnd, Progress callback)
         {
             if (copyFrom == null)
                 throw new ArgumentNullException("copyFrom");
-
             if (copyTo == null)
                 throw new ArgumentNullException("copyTo");
-
             if (copyFrom.Count != copyTo.Count)
                 throw new ArgumentException("Unequal count of source and destination files.");
-
             if (copyFrom.Count == 0)
                 return;
 
             if (Type.GetType("Mono.Runtime") != null)
             {
-                //
-                // TODO
-                //
-                throw new NotImplementedException();
-            }
+                int i = 0;
+                IEnumerator<string> enumFrom = copyFrom.GetEnumerator();
+                IEnumerator<string> enumTo = copyTo.GetEnumerator();
 
-            var fromStr = string.Empty;
-            var toStr = string.Empty;
-
-            foreach (var f in copyFrom)
-            {
-                System.Diagnostics.Debug.Assert(System.IO.File.Exists(f), string.Format("Trying to copy nonexistant file {0}", f));
-                fromStr += f + '\0';
-            }
-            fromStr += '\0';
-
-            foreach (var f in copyTo)
-            {
-                toStr += f + '\0';
-            }
-            toStr += '\0';
-
-            var fromPtr = Marshal.StringToHGlobalUni(fromStr);
-            var toPtr = Marshal.StringToHGlobalUni(toStr);
-
-            var op = new SHFILEOPSTRUCT();
-
-            op.hwnd = hwnd;
-            op.wFunc = FILEOP_FUNC.FO_COPY;
-            op.pFrom = fromPtr;
-            op.pTo = toPtr;
-            op.fFlags = FILEOP_FLAGS.FOF_ALLOWUNDO
-                            | FILEOP_FLAGS.FOF_FILESONLY
-                            | FILEOP_FLAGS.FOF_MULTIDESTFILES
-                            | FILEOP_FLAGS.FOF_NOCONFIRMMKDIR
-                            | FILEOP_FLAGS.FOF_NOCONFIRMATION
-                            | FILEOP_FLAGS.FOF_NORECURSION;
-            op.fAnyOperationsAborted = false;
-            op.hNameMappings = IntPtr.Zero;
-            op.lpszProgressTitle = "FooSync File Copy";
-
-            int result = SHFileOperation(ref op);
-
-            if (0 != result)
-            {
-                if ((result >= 0x70 && result <= 0x88) || result == 0xB7 || result == 0x402 || result == 0x10000 || result == 0x10074)
+                while (enumFrom.MoveNext() && enumTo.MoveNext())
                 {
-                    // too lazy to actually enumerate all these failure codes, and they're pretty unlikely to happen.
-                    throw new ApplicationException(string.Format("Copy operation failed: SHFileOperation return code {0}", result));
-                }
-                else
-                {
-                    throw Marshal.GetExceptionForHR(HResultFromWin32(result));
-                }
-            }
+                    //
+                    // check that all components of the path to the destination exists
+                    // if any do not, create them.
+                    //
+                    var path = string.Empty;
+                    var parts = enumTo.Current.Split(Path.DirectorySeparatorChar);
+                    for (var p = 0; p < parts.Length - 1; p++)
+                    {
+                        path += parts[p] + Path.DirectorySeparatorChar;
 
-            Marshal.FreeHGlobal(fromPtr);
-            Marshal.FreeHGlobal(toPtr);
+                        if (!Directory.Exists(path))
+                        {
+                            Directory.CreateDirectory(path);
+                        }
+                    }
+
+                    callback(++i, copyFrom.Count, enumFrom.Current);
+                    File.Copy(enumFrom.Current, enumTo.Current);
+                    
+                }
+
+                callback(i, copyFrom.Count, string.Empty);
+            }
+            else
+            {
+                NativeMethods.CopyOperation(copyFrom, copyTo, hwnd);
+            }
         }
 
-        public static void Delete(ICollection<string> files)
+        public static void Delete(ICollection<string> files, Progress callback)
         {
-            Delete(files, IntPtr.Zero);
+            Delete(files, IntPtr.Zero, callback);
         }
 
-        [SuppressMessage("Microsoft.Usage", "CA2201")]
-        public static void Delete(ICollection<string> files, IntPtr hwnd)
+        public static void Delete(ICollection<string> files, IntPtr hwnd, Progress callback)
         {
             if (files == null)
                 throw new ArgumentNullException("files");
@@ -108,105 +80,19 @@ namespace FooSync
 
             if (Type.GetType("Mono.Runtime") != null)
             {
-                //
-                // TODO
-                //
-                throw new NotImplementedException();
-            }
+                int i = 0;
 
-            var delStr = string.Empty;
-
-            foreach (var f in files)
-            {
-                delStr += f + '\0';
-            }
-            delStr += '\0';
-
-            var delPtr = Marshal.StringToHGlobalUni(delStr);
-
-            var op = new SHFILEOPSTRUCT();
-
-            op.hwnd = hwnd;
-            op.wFunc = FILEOP_FUNC.FO_DELETE;
-            op.pFrom = delPtr;
-            op.pTo = IntPtr.Zero;
-            op.fFlags = FILEOP_FLAGS.FOF_ALLOWUNDO
-                            | FILEOP_FLAGS.FOF_FILESONLY
-                            | FILEOP_FLAGS.FOF_NOCONFIRMATION
-                            | FILEOP_FLAGS.FOF_NORECURSION;
-            op.fAnyOperationsAborted = false;
-            op.hNameMappings = IntPtr.Zero;
-            op.lpszProgressTitle = "FooSync File Delete";
-
-            int result = SHFileOperation(ref op);
-
-            if (0 != result)
-            {
-                if ((result >= 0x70 && result <= 0x88) || result == 0xB7 || result == 0x402 || result == 0x10000 || result == 0x10074)
+                foreach (var file in files)
                 {
-                    // too lazy to actually enumerate all these failure codes, and they're pretty unlikely to happen.
-                    throw new ApplicationException(string.Format("Copy operation failed: SHFileOperation return code {0}", result));
-                }
-                else
-                {
-                    throw Marshal.GetExceptionForHR(HResultFromWin32(result));
+                    File.Delete(file);
+
+                    callback(++i, files.Count, file);
                 }
             }
-
-            Marshal.FreeHGlobal(delPtr);
-        }
-
-        [DllImport("Shell32.dll", CharSet=CharSet.Unicode)]
-        private static extern int SHFileOperation([In] ref SHFILEOPSTRUCT lpFileOp);
-
-        private struct SHFILEOPSTRUCT
-        {
-            public IntPtr       hwnd;
-            public FILEOP_FUNC  wFunc;
-            public IntPtr       pFrom;
-            public IntPtr       pTo;
-            public FILEOP_FLAGS fFlags;
-            public bool         fAnyOperationsAborted;
-            public IntPtr       hNameMappings;
-            [MarshalAs(UnmanagedType.LPWStr)]
-            public string       lpszProgressTitle;
-        }
-
-        private enum FILEOP_FUNC : uint
-        {
-            FO_MOVE   = 1,
-            FO_COPY   = 2,
-            FO_DELETE = 3,
-            FO_RENAME = 4,
-        }
-
-        private enum FILEOP_FLAGS : uint
-        {
-            FOF_MULTIDESTFILES        = 0x0001,
-            FOF_CONFIRMMOUSE          = 0x0002,
-            FOF_SILENT                = 0x0004,
-            FOF_RENAMEONCOLLISION     = 0x0008,
-            FOF_NOCONFIRMATION        = 0x0010,
-            FOF_WANTMAPPINGHANDLE     = 0x0020,
-            FOF_ALLOWUNDO             = 0x0040,
-            FOF_FILESONLY             = 0x0080,
-            FOF_SIMPLEPROGRESS        = 0x0100,
-            FOF_NOCONFIRMMKDIR        = 0x0200,
-            FOF_NOERRORUI             = 0x0400,
-            FOF_NOCOPYSECURITYATTRIBS = 0x0800,
-            FOF_NORECURSION           = 0x1000,
-            FOF_NO_CONNECTED_ELEMENTS = 0x2000,
-            FOF_WANTNUKEWARNING       = 0x4000,
-            FOF_NORECURSEREPARSE      = 0x8000,
-        }
-
-        private static int HResultFromWin32(int result)
-        {
-            const int FACILITY_WIN32 = 7;
-            UInt32 hresult = (result <= 0)
-                ? (UInt32)(result)
-                : (((UInt32)(result & 0x0000FFFF) | (FACILITY_WIN32 << 16) | 0x80000000));
-            return (int)hresult;
+            else
+            {
+                NativeMethods.DeleteOperation(files, hwnd);
+            }
         }
     }
 }

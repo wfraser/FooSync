@@ -38,7 +38,7 @@ namespace FooSync
 
             var exceptions = new List<string>();
 
-            if (dir.IgnoreRegex != null)
+            if (dir.IgnoreRegex != null && dir.IgnoreRegex.Patterns != null && dir.IgnoreRegex.Patterns.Length > 0)
             {
                 string pre = "", post = "";
                 if (dir.IgnoreRegex.CaseInsensitive)
@@ -53,7 +53,7 @@ namespace FooSync
                 }
             }
 
-            if (dir.IgnoreGlob != null)
+            if (dir.IgnoreGlob != null && dir.IgnoreGlob.Patterns != null && dir.IgnoreGlob.Patterns.Length > 0)
             {
                 string pre = "", post = "";
                 if (dir.IgnoreGlob.CaseInsensitive)
