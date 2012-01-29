@@ -18,6 +18,11 @@ namespace FooSync
 
         public void AddSource(FooTree tree, string name)
         {
+            if (tree == null)
+                throw new ArgumentNullException("tree");
+            if (name == null)
+                throw new ArgumentNullException("name");
+
             var source = new RepositorySourceState();
             source.Name = name;
 
@@ -44,7 +49,6 @@ namespace FooSync
             using (var r = new StreamReader(stateFilename, System.Text.Encoding.UTF8))
             {
                 var current = new RepositorySourceState();
-                var buf = new List<char>();
                 string source, filename, origin = null;
                 DateTime mtime;
 
@@ -131,7 +135,7 @@ namespace FooSync
             }
         }
 
-        private string ReadString(StreamReader r)
+        private static string ReadString(StreamReader r)
         {
             var buf = new List<char>();
             int c;

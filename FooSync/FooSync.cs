@@ -31,8 +31,11 @@ namespace FooSync
             return new FooFileInfo(this, path);
         }
 
-        public static List<string> PrepareExceptions(RepositoryDirectory dir)
+        public static ICollection<string> PrepareExceptions(RepositoryDirectory dir)
         {
+            if (dir == null)
+                throw new ArgumentNullException("dir");
+
             var exceptions = new List<string>();
 
             if (dir.IgnoreRegex != null)
@@ -68,8 +71,16 @@ namespace FooSync
             return exceptions;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822")]
         public IDictionary<string, FooFileInfo> Inspect(FooTree repo, FooTree source, RepositoryState state)
         {
+            if (repo == null)
+                throw new ArgumentNullException("repo");
+            if (source == null)
+                throw new ArgumentNullException("source");
+            if (state == null)
+                throw new ArgumentNullException("state");
+
             var changedFiles = new Dictionary<string, FooFileInfo>();
             var repoMissingFiles = new Dictionary<string, FooFileInfo>(source.Files);
 
@@ -125,8 +136,14 @@ namespace FooSync
             return changedFiles;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822")]
         public IDictionary<string, FooFileInfo> GetConflicts(IDictionary<string, FooFileInfo> changeset, RepositoryState repoState)
         {
+            if (changeset == null)
+                throw new ArgumentNullException("changeset");
+            if (repoState == null)
+                throw new ArgumentNullException("repoState");
+
             var conflicts = new Dictionary<string, FooFileInfo>();
 
             foreach (var pair in changeset)

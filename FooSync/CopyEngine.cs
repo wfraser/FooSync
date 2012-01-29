@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace FooSync
@@ -7,24 +8,27 @@ namespace FooSync
     /// <summary>
     /// Copies files using the system's native file copy dialog, if possible.
     /// </summary>
-    public class CopyEngine
+    public static class CopyEngine
     {
-        public static void Copy(List<string> copyFrom, List<string> copyTo)
+        public static void Copy(ICollection<string> copyFrom, ICollection<string> copyTo)
         {
             Copy(copyFrom, copyTo, IntPtr.Zero);
         }
 
-        public static void Copy(List<string> copyFrom, List<string> copyTo, IntPtr hwnd)
+        [SuppressMessage("Microsoft.Usage", "CA2201")]
+        public static void Copy(ICollection<string> copyFrom, ICollection<string> copyTo, IntPtr hwnd)
         {
+            if (copyFrom == null)
+                throw new ArgumentNullException("copyFrom");
+
+            if (copyTo == null)
+                throw new ArgumentNullException("copyTo");
+
             if (copyFrom.Count != copyTo.Count)
-            {
                 throw new ArgumentException("Unequal count of source and destination files.");
-            }
 
             if (copyFrom.Count == 0)
-            {
                 return;
-            }
 
             if (Type.GetType("Mono.Runtime") != null)
             {
@@ -75,15 +79,12 @@ namespace FooSync
             {
                 if ((result >= 0x70 && result <= 0x88) || result == 0xB7 || result == 0x402 || result == 0x10000 || result == 0x10074)
                 {
-                    throw new ApplicationException(string.Format("Copy operation failed: return code {0}", result));
+                    // too lazy to actually enumerate all these failure codes, and they're pretty unlikely to happen.
+                    throw new ApplicationException(string.Format("Copy operation failed: SHFileOperation return code {0}", result));
                 }
                 else
                 {
-                    const int FACILITY_WIN32 = 7;
-                    UInt32 hresult = (result <= 0)
-                        ? (UInt32)(result)
-                        : (((UInt32)(result & 0x0000FFFF) | (FACILITY_WIN32 << 16) | 0x80000000));
-                    throw Marshal.GetExceptionForHR((int)hresult);
+                    throw Marshal.GetExceptionForHR(HResultFromWin32(result));
                 }
             }
 
@@ -91,13 +92,20 @@ namespace FooSync
             Marshal.FreeHGlobal(toPtr);
         }
 
-        public static void Delete(List<string> files)
+        public static void Delete(ICollection<string> files)
         {
             Delete(files, IntPtr.Zero);
         }
 
-        public static void Delete(List<string> files, IntPtr hwnd)
+        [SuppressMessage("Microsoft.Usage", "CA2201")]
+        public static void Delete(ICollection<string> files, IntPtr hwnd)
         {
+            if (files == null)
+                throw new ArgumentNullException("files");
+
+            if (files.Count == 0)
+                return;
+
             if (Type.GetType("Mono.Runtime") != null)
             {
                 //
@@ -130,7 +138,20 @@ namespace FooSync
             op.hNameMappings = IntPtr.Zero;
             op.lpszProgressTitle = "FooSync File Delete";
 
-            SHFileOperation(ref op);
+            int result = SHFileOperation(ref op);
+
+            if (0 != result)
+            {
+                if ((result >= 0x70 && result <= 0x88) || result == 0xB7 || result == 0x402 || result == 0x10000 || result == 0x10074)
+                {
+                    // too lazy to actually enumerate all these failure codes, and they're pretty unlikely to happen.
+                    throw new ApplicationException(string.Format("Copy operation failed: SHFileOperation return code {0}", result));
+                }
+                else
+                {
+                    throw Marshal.GetExceptionForHR(HResultFromWin32(result));
+                }
+            }
 
             Marshal.FreeHGlobal(delPtr);
         }
@@ -177,6 +198,15 @@ namespace FooSync
             FOF_NO_CONNECTED_ELEMENTS = 0x2000,
             FOF_WANTNUKEWARNING       = 0x4000,
             FOF_NORECURSEREPARSE      = 0x8000,
+        }
+
+        private static int HResultFromWin32(int result)
+        {
+            const int FACILITY_WIN32 = 7;
+            UInt32 hresult = (result <= 0)
+                ? (UInt32)(result)
+                : (((UInt32)(result & 0x0000FFFF) | (FACILITY_WIN32 << 16) | 0x80000000));
+            return (int)hresult;
         }
     }
 }

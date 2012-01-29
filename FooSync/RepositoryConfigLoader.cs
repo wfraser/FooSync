@@ -9,7 +9,7 @@ namespace FooSync
     /// <summary>
     /// Responsible for loading FooSync repository configuration data from XML files.
     /// </summary>
-    public class RepositoryConfigLoader
+    public static class RepositoryConfigLoader
     {
         /// <summary>
         /// Name of the RepositoryConfig XML schema. It should be located in the same directory as this assembly.
@@ -34,21 +34,22 @@ namespace FooSync
                 return null;
             }
 
-            var reader = XmlReader.Create(configXmlFilename);
-            var serializer = new XmlSerializer(typeof(RepositoryConfig));
-
-            var repo = (RepositoryConfig)serializer.Deserialize(reader);
-            reader.Close();
-
-            if (System.IO.Path.DirectorySeparatorChar != '/')
+            using (var reader = XmlReader.Create(configXmlFilename))
             {
-                foreach (var directory in repo.Directories)
-                {
-                    directory.Path = directory.Path.Replace('/', System.IO.Path.DirectorySeparatorChar);
-                }
-            }
+                var serializer = new XmlSerializer(typeof(RepositoryConfig));
 
-            return repo;
+                var repo = (RepositoryConfig)serializer.Deserialize(reader);
+
+                if (System.IO.Path.DirectorySeparatorChar != '/')
+                {
+                    foreach (var directory in repo.Directories)
+                    {
+                        directory.Path = directory.Path.Replace('/', System.IO.Path.DirectorySeparatorChar);
+                    }
+                }
+
+                return repo;
+            }
         }
 
         /// <summary>
@@ -86,10 +87,11 @@ namespace FooSync
                 failureMessage = string.Format("XML Schema Validation Exception (at {1}:{2}): {0}", ex.Message, ex.LineNumber, ex.LinePosition);
                 valid = false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                failureMessage = string.Format("{0}: {1}", ex.GetType().Name, ex.Message);
-                valid = false;
+                //failureMessage = string.Format("{0}: {1}", ex.GetType().Name, ex.Message);
+                //valid = false;
+                throw;
             }
             finally
             {

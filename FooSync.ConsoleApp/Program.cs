@@ -156,7 +156,8 @@ namespace FooSync.ConsoleApp
                     {
                         case ChangeStatus.Identical:
                         case ChangeStatus.Undetermined:
-                            throw new ApplicationException("Bogus file change state");
+                            Debug.Assert(false, "Bogus file change state");
+                            break;
 
                         case ChangeStatus.Newer:
                             descr = "Newer than the repository";
@@ -218,7 +219,8 @@ namespace FooSync.ConsoleApp
                                 break;
 
                             default:
-                                throw new ApplicationException("Error, invalid change status!");
+                                Debug.Assert(false, "Invalid change status!");
+                                break;
                         }
                     }
                     // else: no-op, these are handled by the conflicts loop below
@@ -266,7 +268,7 @@ namespace FooSync.ConsoleApp
                     string rpath = Path.GetFullPath(Path.Combine(repo.Path, conflict.Key));
                     string spath = Path.GetFullPath(Path.Combine(source.Path, conflict.Key));
 
-                    FileOperation? action = GetActionFromUser(conflict.Key, File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
+                    FileOperation? action = GetActionFromUser(File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
                     if (action.HasValue)
                     {
                         fileOperations[conflict.Key] = action.Value;
@@ -351,7 +353,7 @@ namespace FooSync.ConsoleApp
                     Console.Write("\nPress Enter to perform actions, or enter a number to edit one: ");
                     string changeNum = Console.ReadLine();
 
-                    if (changeNum == string.Empty)
+                    if (string.IsNullOrEmpty(changeNum))
                     {
                         accepted = true;
                     }
@@ -391,7 +393,7 @@ namespace FooSync.ConsoleApp
                             string rpath = Path.GetFullPath(Path.Combine(repo.Path, path));
                             string spath = Path.GetFullPath(Path.Combine(source.Path, path));
 
-                            FileOperation? action = GetActionFromUser(path, File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
+                            FileOperation? action = GetActionFromUser(File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
                             if (action.HasValue)
                             {
                                 fileOperations[path] = action.Value;
@@ -410,7 +412,7 @@ namespace FooSync.ConsoleApp
                             }
                             else
                             {
-                                throw ex;
+                                throw;
                             }
                         }
                     }
@@ -531,7 +533,7 @@ namespace FooSync.ConsoleApp
             }
         }
 
-        private FooTree GetFooTree(string path, List<string> exceptions, string type)
+        private FooTree GetFooTree(string path, ICollection<string> exceptions, string type)
         {
             FooTree ret = null;
             try
@@ -556,7 +558,7 @@ namespace FooSync.ConsoleApp
             return ret;
         }
 
-        private FileOperation? GetActionFromUser(string commonPart, string repo, string source)
+        private static FileOperation? GetActionFromUser(string repo, string source)
         {
             while (true)
             {
@@ -607,14 +609,6 @@ namespace FooSync.ConsoleApp
                         Console.WriteLine("Invalid key pressed.");
                         break;
                 }
-            }
-        }
-
-        private class FileOperationComparator : IComparer<KeyValuePair<string, FileOperation>>
-        {
-            public int Compare(KeyValuePair<string, FileOperation> a, KeyValuePair<string, FileOperation> b)
-            {
-                return a.Value.CompareTo(b.Value);
             }
         }
 

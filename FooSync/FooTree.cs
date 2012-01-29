@@ -9,7 +9,7 @@ namespace FooSync
     {
         public string Path { get; private set; }
 
-        public Dictionary<string, FooFileInfo> Files;
+        public Dictionary<string, FooFileInfo> Files { get; private set; }
 
         private FooSync Foo { get; set; }
 

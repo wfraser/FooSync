@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 
 namespace FooSync
 {
-    public class FooFileInfo : IComparable<FooFileInfo>
+    public class FooFileInfo
     {
         static MD5 Hasher = MD5.Create();
 
@@ -25,6 +25,9 @@ namespace FooSync
 
         public int CompareTo(FooFileInfo other)
         {
+            if (other == null)
+                throw new ArgumentNullException("other");
+
             if (this.MTime != other.MTime)
             {
                 if (Foo.Options.ComputeHashes && (this.Hash == other.Hash))
