@@ -9,6 +9,7 @@ namespace FooSync
     {
         public const string ConfigFileName = ".FooSync_Repository.xml";
         public const string RepoStateFileName = ".FooSync_RepoState.dat";
+        public static readonly TimeSpan MTimePrecision = TimeSpan.FromSeconds(1);
 
         public FooSync()
         {
@@ -67,7 +68,7 @@ namespace FooSync
             return exceptions;
         }
 
-        public IDictionary<string, FooFileInfo> Inspect(FooTree repo, FooTree source)
+        public IDictionary<string, FooFileInfo> Inspect(FooTree repo, FooTree source, RepositoryState state)
         {
             var changedFiles = new Dictionary<string, FooFileInfo>();
             var repoMissingFiles = new Dictionary<string, FooFileInfo>(source.Files);
@@ -91,7 +92,14 @@ namespace FooSync
                 }
                 else
                 {
-                    file.Value.ChangeStatus = ChangeStatus.SourceMissing;
+                    if (state.Source.MTimes.ContainsKey(file.Key))
+                    {
+                        file.Value.ChangeStatus = ChangeStatus.SourceDeleted;
+                    }
+                    else
+                    {
+                        file.Value.ChangeStatus = ChangeStatus.SourceMissing;
+                    }
                 }
 
                 if (file.Value.ChangeStatus != ChangeStatus.Identical)
@@ -103,7 +111,15 @@ namespace FooSync
             foreach (var file in repoMissingFiles)
             {
                 changedFiles[file.Key] = file.Value;
-                changedFiles[file.Key].ChangeStatus = ChangeStatus.RepoMissing;
+
+                if (state.Repository.MTimes.ContainsKey(file.Key))
+                {
+                    changedFiles[file.Key].ChangeStatus = ChangeStatus.RepoDeleted;
+                }
+                else
+                {
+                    changedFiles[file.Key].ChangeStatus = ChangeStatus.RepoMissing;
+                }
             }
 
             return changedFiles;
@@ -150,23 +166,27 @@ namespace FooSync
                         }
                         break;
 
-                    case ChangeStatus.SourceMissing:
+                    case ChangeStatus.SourceDeleted:
                         //
-                        // Check if it was deleted (i.e. is present in the source state)
+                        // Check if the file is new in repository,
+                        //  or repository file's mtime differs from state
                         //
-                        if (repoState.Source.MTimes.ContainsKey(filename))
+                        if (!repoState.Repository.MTimes.ContainsKey(filename) 
+                                || !DateTimesWithinPrecision(fileInfo.MTime, repoState.Repository.MTimes[filename], MTimePrecision))
                         {
-                            fileInfo.ConflictStatus = ConflictStatus.DeletedInSource;
+                            fileInfo.ConflictStatus = ConflictStatus.ChangedInRepoDeletedInSource;
                         }
                         break;
 
                     case ChangeStatus.RepoMissing:
                         //
-                        // Check if it was deleted (i.e. is present in the repository state)
+                        // Check if the file is new in source,
+                        //  or source file's mtime differs from state
                         //
-                        if (repoState.Repository.MTimes.ContainsKey(filename))
+                        if (!repoState.Source.MTimes.ContainsKey(filename)
+                                || !DateTimesWithinPrecision(fileInfo.MTime, repoState.Source.MTimes[filename], MTimePrecision))
                         {
-                            fileInfo.ConflictStatus = ConflictStatus.DeletedInRepo;
+                            fileInfo.ConflictStatus = ConflictStatus.ChangedInSourceDeletedInRepo;
                         }
                         break;
                 }
@@ -184,6 +204,14 @@ namespace FooSync
             return conflicts;
         }
 
+        private static bool DateTimesWithinPrecision(DateTime a, DateTime b, TimeSpan precision)
+        {
+            DateTime a_clipped = new DateTime(a.Ticks - (a.Ticks % precision.Ticks));
+            DateTime b_clipped = new DateTime(b.Ticks - (b.Ticks % precision.Ticks));
+
+            return (a_clipped == b_clipped);
+        }
+
         public Options Options { get; private set; }
     }
 
@@ -194,15 +222,17 @@ namespace FooSync
         Identical = 0,
         Older = 1,
         RepoMissing = 2,
-        SourceMissing = 3
+        SourceMissing = 3,
+        RepoDeleted = 4,
+        SourceDeleted = 5,
     }
 
     public enum ConflictStatus
     {
         Undetermined,
         NoConflict,
-        DeletedInSource,
-        DeletedInRepo,
+        ChangedInRepoDeletedInSource,
+        ChangedInSourceDeletedInRepo,
         RepoChanged,
         SourceChanged,
     }

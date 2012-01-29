@@ -79,60 +79,25 @@ namespace FooSync.ConsoleApp
                 // Enumerate files in the source and repository trees
                 //
 
+                Console.Write("Enumerating files: repository...");
                 FooTree repo = GetFooTree(dir.Path, exceptions, "repository");
                 if (repo == null)
                     return;
 
+                Console.Write(" done. Source...");
+                
                 FooTree source = GetFooTree(dir.Source.Path, exceptions, "source");
                 if (source == null)
                     return;
 
-                //
-                // Compute & display the change set
-                //
+                Console.Write(" done.\n");
 
-                var changedFiles = Foo.Inspect(repo, source);
-
-                if (changedFiles.Count == 0)
-                {
-                    Console.WriteLine("No changes; nothing to do.");
-                    return;
-                }
-
-                Console.WriteLine("File changes:");
-                foreach (var file in changedFiles)
-                {
-                    string descr = string.Empty;
-                    switch (file.Value.ChangeStatus)
-                    {
-                        case ChangeStatus.Identical:
-                        case ChangeStatus.Undetermined:
-                            throw new ApplicationException("Bogus file change state");
-
-                        case ChangeStatus.Newer:
-                            descr = "Newer than the repository";
-                            break;
-
-                        case ChangeStatus.Older:
-                            descr = "Older than the repository";
-                            break;
-
-                        case ChangeStatus.RepoMissing:
-                            descr = "Not in the repository";
-                            break;
-
-                        case ChangeStatus.SourceMissing:
-                            descr = "Not in our directory";
-                            break;
-                    }
-
-                    Console.WriteLine("\t{0}: {1}", descr, file.Key);
-                }
 
                 //
                 // Load / generate the repository state
                 //
-                
+
+                Console.Write("Loading repository state...");
                 RepositoryState state;
                 try
                 {
@@ -167,13 +132,66 @@ namespace FooSync.ConsoleApp
                 {
                     state.Write(FooSync.RepoStateFileName);
                 }
+                Console.Write(" done.\n");
+
+                //
+                // Compute & display the change set
+                //
+
+                Console.Write("Computing change set...");
+                var changedFiles = Foo.Inspect(repo, source, state);
+                Console.Write(" done.\n");
+
+                if (changedFiles.Count == 0)
+                {
+                    Console.WriteLine("No changes; nothing to do.");
+                    return;
+                }
+
+                Console.WriteLine("File changes:");
+                foreach (var file in changedFiles)
+                {
+                    string descr = string.Empty;
+                    switch (file.Value.ChangeStatus)
+                    {
+                        case ChangeStatus.Identical:
+                        case ChangeStatus.Undetermined:
+                            throw new ApplicationException("Bogus file change state");
+
+                        case ChangeStatus.Newer:
+                            descr = "Newer than the repository";
+                            break;
+
+                        case ChangeStatus.Older:
+                            descr = "Older than the repository";
+                            break;
+
+                        case ChangeStatus.RepoMissing:
+                            descr = "Not in the repository";
+                            break;
+
+                        case ChangeStatus.SourceMissing:
+                            descr = "Not in our directory";
+                            break;
+
+                        case ChangeStatus.RepoDeleted:
+                            descr = "Deleted from repository";
+                            break;
+
+                        case ChangeStatus.SourceDeleted:
+                            descr = "Deleted from our directory";
+                            break;
+                    }
+
+                    Console.WriteLine("\t{0}: {1}", descr, file.Key);
+                }
 
                 //
                 // Check against the repository state
                 //
 
                 var conflicts = Foo.GetConflicts(changedFiles, state);
-                var copyOperations = new List<KeyValuePair<string, CopyOperation>>();
+                var fileOperations = new Dictionary<string, FileOperation>();
 
                 foreach (var change in changedFiles)
                 {
@@ -183,12 +201,20 @@ namespace FooSync.ConsoleApp
                         {
                             case ChangeStatus.Newer:
                             case ChangeStatus.RepoMissing:
-                                copyOperations.Add(new KeyValuePair<string, CopyOperation>(change.Key, CopyOperation.UseSource));
+                                fileOperations.Add(change.Key, FileOperation.UseSource);
                                 break;
 
                             case ChangeStatus.Older:
                             case ChangeStatus.SourceMissing:
-                                copyOperations.Add(new KeyValuePair<string, CopyOperation>(change.Key, CopyOperation.UseRepo));
+                                fileOperations.Add(change.Key, FileOperation.UseRepo);
+                                break;
+
+                            case ChangeStatus.RepoDeleted:
+                                fileOperations.Add(change.Key, FileOperation.DeleteSource);
+                                break;
+
+                            case ChangeStatus.SourceDeleted:
+                                fileOperations.Add(change.Key, FileOperation.DeleteRepo);
                                 break;
 
                             default:
@@ -206,11 +232,11 @@ namespace FooSync.ConsoleApp
                     string descr = string.Empty;
                     switch (conflict.Value.ConflictStatus)
                     {
-                        case ConflictStatus.DeletedInRepo:
+                        case ConflictStatus.ChangedInSourceDeletedInRepo:
                             descr = "File changed in the source and deleted in the repository";
                             break;
 
-                        case ConflictStatus.DeletedInSource:
+                        case ConflictStatus.ChangedInRepoDeletedInSource:
                             descr = "File changed in the repository and deleted in the source";
                             break;
 
@@ -224,23 +250,26 @@ namespace FooSync.ConsoleApp
                     }
 
                     Console.WriteLine("{0}:\n{1}", descr, conflict.Key);
-                    if (conflict.Value.ConflictStatus != ConflictStatus.DeletedInSource)
+                    if (conflict.Value.ConflictStatus != ConflictStatus.ChangedInRepoDeletedInSource)
                     {
                         Console.WriteLine("\tSource:     modified {0}, {1} bytes",
                             source.Files[conflict.Key].MTime.ToString(),
                             source.Files[conflict.Key].Size);
                     }
-                    if (conflict.Value.ConflictStatus != ConflictStatus.DeletedInRepo)
+                    if (conflict.Value.ConflictStatus != ConflictStatus.ChangedInSourceDeletedInRepo)
                     {
                         Console.WriteLine("\tRepository: modified {0}, {1} bytes",
                             repo.Files[conflict.Key].MTime.ToString(),
                             repo.Files[conflict.Key].Size);
                     }
 
-                    KeyValuePair<string, CopyOperation>? action = GetActionFromUser(conflict.Key);
+                    string rpath = Path.GetFullPath(Path.Combine(repo.Path, conflict.Key));
+                    string spath = Path.GetFullPath(Path.Combine(source.Path, conflict.Key));
+
+                    FileOperation? action = GetActionFromUser(conflict.Key, File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
                     if (action.HasValue)
                     {
-                        copyOperations.Add(action.Value);
+                        fileOperations[conflict.Key] = action.Value;
                     }
                 }
 
@@ -251,24 +280,72 @@ namespace FooSync.ConsoleApp
                 bool accepted = false;
                 while (!accepted)
                 {
-                    Console.WriteLine("\nActions to be taken:\n");
+                    var useRepo = new List<string>();
+                    var useSource = new List<string>();
+                    var deleteRepo = new List<string>();
+                    var deleteSource = new List<string>();
 
-                    int n = 1;
-                    foreach (var change in copyOperations)
+                    Console.WriteLine("\nActions to be taken:");
+
+                    foreach (var change in fileOperations)
                     {
-                        string sfile = Path.GetFullPath(Path.Combine(source.Path, change.Key));
-                        string rfile = Path.GetFullPath(Path.Combine(repo.Path, change.Key));
-                        string num = string.Format("{0,"
-                            + Math.Ceiling(Math.Log10(copyOperations.Count)).ToString()
-                            + "}",
-                            n++);
+                        switch (change.Value)
+                        {
+                            case FileOperation.DeleteRepo:
+                                deleteRepo.Add(change.Key);
+                                break;
 
-                        bool useRepo = (change.Value == CopyOperation.UseRepo);
+                            case FileOperation.DeleteSource:
+                                deleteSource.Add(change.Key);
+                                break;
 
-                        Console.WriteLine("{0}: {1}\n    -> {2}",
-                            num,
-                            useRepo ? rfile : sfile,
-                            useRepo ? sfile : rfile);
+                            case FileOperation.UseRepo:
+                                useRepo.Add(change.Key);
+                                break;
+
+                            case FileOperation.UseSource:
+                                useSource.Add(change.Key);
+                                break;
+                        }
+                    }
+
+                    int nwidth = (int)Math.Ceiling(Math.Log10(fileOperations.Count));
+                    int n = 1;
+
+                    if (useRepo.Count > 0)
+                    {
+                        Console.WriteLine("\nFiles to copy from repository to source:");
+                        foreach (var path in useRepo)
+                        {
+                            Console.WriteLine("{0," + nwidth + "}: {1}", n++, Path.GetFullPath(Path.Combine(repo.Path, path)));
+                        }
+                    }
+
+                    if (useSource.Count > 0)
+                    {
+                        Console.WriteLine("\nFiles to copy from source to repository:");
+                        foreach (var path in useSource)
+                        {
+                            Console.WriteLine("{0," + nwidth + "}: {1}", n++, Path.GetFullPath(Path.Combine(source.Path, path)));
+                        }
+                    }
+
+                    if (deleteRepo.Count > 0)
+                    {
+                        Console.WriteLine("\nFiles to delete from repository:");
+                        foreach (var path in deleteRepo)
+                        {
+                            Console.WriteLine("{0," + nwidth + "}: {1}", n++, Path.GetFullPath(Path.Combine(repo.Path, path)));
+                        }
+                    }
+
+                    if (deleteSource.Count > 0)
+                    {
+                        Console.WriteLine("\nFiles to delete from source:");
+                        foreach (var path in deleteSource)
+                        {
+                            Console.WriteLine("{0," + nwidth + "}: {1}", n++, Path.GetFullPath(Path.Combine(source.Path, path)));
+                        }
                     }
 
                     Console.Write("\nPress Enter to perform actions, or enter a number to edit one: ");
@@ -283,19 +360,45 @@ namespace FooSync.ConsoleApp
                         try
                         {
                             n = int.Parse(changeNum) - 1;
-                            if (n < 0 || n >= copyOperations.Count)
+                            if (n < 0 || n >= fileOperations.Count)
                                 throw new FormatException("out of range");
 
-                            string path = copyOperations[n].Key;
-
-                            var action = GetActionFromUser(path);
-                            if (action.HasValue)
+                            List<string> listFrom;
+                            int listPos;
+                            string path;
+                            if (n < useRepo.Count)
                             {
-                                copyOperations[n] = action.Value;
+                                listFrom = useRepo;
+                                listPos = n;
+                            }
+                            else if (n < useRepo.Count + useSource.Count)
+                            {
+                                listFrom = useSource;
+                                listPos = n - useRepo.Count;
+                            }
+                            else if (n < useRepo.Count + useSource.Count + deleteRepo.Count)
+                            {
+                                listFrom = deleteRepo;
+                                listPos = n - (useRepo.Count + useSource.Count);
                             }
                             else
                             {
-                                copyOperations.RemoveAt(n);
+                                listFrom = deleteSource;
+                                listPos = n - (useRepo.Count + useSource.Count + deleteRepo.Count);
+                            }
+
+                            path = listFrom[listPos];
+                            string rpath = Path.GetFullPath(Path.Combine(repo.Path, path));
+                            string spath = Path.GetFullPath(Path.Combine(source.Path, path));
+
+                            FileOperation? action = GetActionFromUser(path, File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
+                            if (action.HasValue)
+                            {
+                                fileOperations[path] = action.Value;
+                            }
+                            else
+                            {
+                                fileOperations.Remove(path);
                             }
                         }
                         catch (Exception ex)
@@ -317,7 +420,7 @@ namespace FooSync.ConsoleApp
                 // Perform the operations
                 //
 
-                if (copyOperations.Count == 0)
+                if (fileOperations.Count == 0)
                 {
                     Console.WriteLine("Nothing to do.");
                     return;
@@ -325,28 +428,48 @@ namespace FooSync.ConsoleApp
 
                 var srcFiles = new List<string>();
                 var dstFiles = new List<string>();
+                var delFiles = new List<string>();
 
-                foreach (var c in copyOperations)
+                foreach (var c in fileOperations)
                 {
-                    string srcFile, dstFile;
-                    if (c.Value == CopyOperation.UseRepo)
-                    {
-                        srcFile = Path.GetFullPath(Path.Combine(repo.Path, c.Key));
-                        dstFile = Path.GetFullPath(Path.Combine(source.Path, c.Key));
-                    }
-                    else
-                    {
-                        dstFile = Path.GetFullPath(Path.Combine(repo.Path, c.Key));
-                        srcFile = Path.GetFullPath(Path.Combine(source.Path, c.Key));
-                    }
+                    string repoFile = Path.GetFullPath(Path.Combine(repo.Path, c.Key));
+                    string sourceFile = Path.GetFullPath(Path.Combine(source.Path, c.Key));
 
-                    srcFiles.Add(srcFile);
-                    dstFiles.Add(dstFile);
+                    switch (c.Value)
+                    {
+                        case FileOperation.UseRepo:
+                            srcFiles.Add(repoFile);
+                            dstFiles.Add(sourceFile);
+                            break;
+
+                        case FileOperation.UseSource:
+                            srcFiles.Add(sourceFile);
+                            dstFiles.Add(repoFile);
+                            break;
+
+                        case FileOperation.DeleteRepo:
+                            delFiles.Add(repoFile);
+                            break;
+
+                        case FileOperation.DeleteSource:
+                            delFiles.Add(sourceFile);
+                            break;
+                    }
                 }
 
-                Console.Write("Copying files...");
-                CopyEngine.Copy(srcFiles, dstFiles);
-                Console.WriteLine(" done.");
+                if (srcFiles.Count > 0)
+                {
+                    Console.Write("Copying files...");
+                    CopyEngine.Copy(srcFiles, dstFiles);
+                    Console.WriteLine(" done.");
+                }
+
+                if (delFiles.Count > 0)
+                {
+                    Console.Write("Deleting files...");
+                    CopyEngine.Delete(delFiles);
+                    Console.WriteLine(" done.");
+                }
 
                 //TODO: check whether the file copy succeeded and all files were copied
 
@@ -354,15 +477,57 @@ namespace FooSync.ConsoleApp
                 // Update the repository state
                 //
 
-                foreach (var c in copyOperations)
+                Console.Write("Updating repository state...");
+                foreach (var c in changedFiles)
                 {
-                    if (c.Value == CopyOperation.UseSource)
+                    string filename = c.Key;
+                    ChangeStatus cstatus = c.Value.ChangeStatus;
+                    if (fileOperations.ContainsKey(filename))
                     {
-                        state.Origin[c.Key] = state.Source.Name;
+                        FileOperation operation = fileOperations[filename];
+
+                        if (cstatus == ChangeStatus.SourceDeleted
+                                && operation != FileOperation.UseRepo)
+                        {
+                            state.Source.MTimes.Remove(filename);
+                        }
+
+                        if (cstatus == ChangeStatus.RepoDeleted
+                                && operation != FileOperation.UseSource)
+                        {
+                            state.Repository.MTimes.Remove(filename);
+                        }
+                    }
+                }
+
+                foreach (var c in fileOperations)
+                {
+                    string filename = c.Key;
+                    FileOperation operation = c.Value;
+
+                    if (operation == FileOperation.UseSource)
+                    {
+                        state.Repository.MTimes[filename] = source.Files[filename].MTime;
+                        state.Source.MTimes[filename] = source.Files[filename].MTime;
+                        state.Origin[filename] = state.Source.Name;
+                    }
+                    else if (operation == FileOperation.UseRepo)
+                    {
+                        state.Repository.MTimes[filename] = repo.Files[filename].MTime;
+                        state.Source.MTimes[filename] = repo.Files[filename].MTime;
+                    }
+                    else if (operation == FileOperation.DeleteSource)
+                    {
+                        state.Source.MTimes.Remove(filename);
+                    }
+                    else if (operation == FileOperation.DeleteRepo)
+                    {
+                        state.Repository.MTimes.Remove(filename);
                     }
                 }
 
                 state.Write(FooSync.RepoStateFileName);
+                Console.Write(" done.");
             }
         }
 
@@ -391,46 +556,76 @@ namespace FooSync.ConsoleApp
             return ret;
         }
 
-        private KeyValuePair<string, CopyOperation>? GetActionFromUser(string path)
+        private FileOperation? GetActionFromUser(string commonPart, string repo, string source)
         {
-            KeyValuePair<string, CopyOperation>? ret = null;
-
-            bool actionAccepted = false;
-            while (!actionAccepted)
+            while (true)
             {
-                Console.Write("Action: Take (R)epository | Take (S)ource | Do (N)othing : ");
+                Console.Write("Repository: {0}\nSource: {1}\n", repo ?? "(not present)", source ?? "(not present)");
+                Console.Write("Action: ");
+                if (repo != null)
+                {
+                    Console.Write("(1) Copy Repository | ");
+                }
+                if (source != null)
+                {
+                    Console.Write("(2) Copy Source | ");
+                }
+                if (repo != null)
+                {
+                    Console.Write("(3) Delete Repository | ");
+                }
+                if (source != null)
+                {
+                    Console.Write("(4) Delete Source | ");
+                }
+                Console.Write("(5) Do Nothing : ");
+
                 var key = Console.ReadKey(false);
-                actionAccepted = true;
                 switch (key.Key)
                 {
-                    case ConsoleKey.R:
-                        ret = new KeyValuePair<string, CopyOperation>(path, CopyOperation.UseRepo);
-                        break;
+                    case ConsoleKey.D1:
+                    case ConsoleKey.NumPad1:
+                        return FileOperation.UseRepo;
 
-                    case ConsoleKey.S:
-                        ret = new KeyValuePair<string, CopyOperation>(path, CopyOperation.UseSource);
-                        break;
+                    case ConsoleKey.D2:
+                    case ConsoleKey.NumPad2:
+                        return FileOperation.UseSource;
 
-                    case ConsoleKey.N:
-                        ret = null;
-                        break;
+                    case ConsoleKey.D3:
+                    case ConsoleKey.NumPad3:
+                        return FileOperation.DeleteRepo;
+
+                    case ConsoleKey.D4:
+                    case ConsoleKey.NumPad4:
+                        return FileOperation.DeleteSource;
+
+                    case ConsoleKey.D5:
+                    case ConsoleKey.NumPad5:
+                        return null;
 
                     default:
                         Console.WriteLine("Invalid key pressed.");
-                        actionAccepted = false;
                         break;
                 }
             }
+        }
 
-            return ret;
+        private class FileOperationComparator : IComparer<KeyValuePair<string, FileOperation>>
+        {
+            public int Compare(KeyValuePair<string, FileOperation> a, KeyValuePair<string, FileOperation> b)
+            {
+                return a.Value.CompareTo(b.Value);
+            }
         }
 
         private FooSync Foo { get; set; }
 
-        private enum CopyOperation
+        private enum FileOperation
         {
             UseRepo,
-            UseSource
+            UseSource,
+            DeleteRepo,
+            DeleteSource
         }
     }
 }

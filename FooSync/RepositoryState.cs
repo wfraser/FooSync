@@ -24,14 +24,6 @@ namespace FooSync
             foreach (var file in tree.Files)
             {
                 string filename = file.Key;
-
-                //
-                // Convert normalized path back to system directory separators.
-                //
-                if (Path.DirectorySeparatorChar != '/')
-                {
-                    filename = filename.Replace(Path.DirectorySeparatorChar, '/');
-                }
                 
                 source.MTimes.Add(filename, file.Value.MTime);
 
@@ -53,81 +45,49 @@ namespace FooSync
             {
                 var current = new RepositorySourceState();
                 var buf = new List<char>();
-                string source = null, filename = null, mtime = null, origin = null;
+                string source, filename, origin = null;
+                DateTime mtime;
 
-                bool lastWasNull = false;
-                int c;
-                while (-1 != (c = r.Read()))
+                while (!r.EndOfStream)
                 {
-                    if (c == 0)
+                    source = ReadString(r);
+                    while (r.Peek() != 0)
                     {
-                        if (lastWasNull)
+                        filename = ReadString(r);
+
+                        //
+                        // Normalize the path to use forward slashes instead of whatever
+                        //  the system normally uses.
+                        // Rationale: Unix filenames can contain backslashes, but
+                        //  Windows filenames can't contain forward slashes, so
+                        //  forward slashes win.
+                        //
+                        if (Path.DirectorySeparatorChar != '/')
                         {
-                            //
-                            // double null; end of source
-                            //
-
-                            current.Name = source;
-                            Sources.Add(source, current);
-                            current = new RepositorySourceState();
-                            source = null;
-                        }
-                        else if (source == null)
-                        {
-                            source = new string(buf.ToArray());
-                            buf.Clear();
-                        }
-                        else if (filename == null)
-                        {
-                            filename = new string(buf.ToArray());
-                            buf.Clear();
-
-                            //
-                            // Normalize the path to use forward slashes instead of whatever
-                            //  the system normally uses.
-                            // Rationale: Unix filenames can contain backslashes, but
-                            //  Windows filenames can't contain forward slashes, so
-                            //  forward slashes win.
-                            //
-                            if (Path.DirectorySeparatorChar != '/')
-                            {
-                                filename = filename.Replace('/', Path.DirectorySeparatorChar);
-                            }
-                        }
-                        else if (source == RepositoryState.RepoSourceName
-                                    && origin == null)
-                        {
-                            //
-                            // only the repository state lists the origin
-                            //
-
-                            origin = new string(buf.ToArray());
-                            buf.Clear();
-                        }
-                        else if (mtime == null)
-                        {
-                            mtime = new string(buf.ToArray());
-                            buf.Clear();
-
-                            current.MTimes.Add(filename, DateTime.Parse(mtime));
-
-                            if (origin != null)
-                            {
-                                Origin.Add(filename, origin);
-                                origin = null;
-                            }
-
-                            filename = null;
-                            mtime = null;
+                            filename = filename.Replace('/', Path.DirectorySeparatorChar);
                         }
 
-                        lastWasNull = true;
+                        if (source == RepositoryState.RepoSourceName)
+                        {
+                            origin = ReadString(r);
+                        }
+
+                        mtime = DateTime.FromFileTimeUtc(long.Parse(ReadString(r)));
+
+                        current.MTimes.Add(filename, mtime);
+
+                        if (origin != null)
+                        {
+                            Origin.Add(filename, origin);
+                            origin = null;
+                        }
                     }
-                    else
-                    {
-                        lastWasNull = false;
-                        buf.Add((char)c);
-                    }
+
+                    current.Name = source;
+                    Sources.Add(source, current);
+                    current = new RepositorySourceState();
+
+                    r.Read();
                 }
             }
         }
@@ -143,7 +103,17 @@ namespace FooSync
 
                     foreach (var mtime in source.MTimes)
                     {
-                        w.Write(mtime.Key);
+                        string filename = mtime.Key;
+
+                        //
+                        // Convert normalized path back to system directory separators.
+                        //
+                        if (Path.DirectorySeparatorChar != '/')
+                        {
+                            filename = filename.Replace(Path.DirectorySeparatorChar, '/');
+                        }
+
+                        w.Write(filename);
                         w.Write('\0');
 
                         if (source.Name == RepositoryState.RepoSourceName)
@@ -152,13 +122,32 @@ namespace FooSync
                             w.Write('\0');
                         }
 
-                        w.Write(mtime.Value.ToUniversalTime().ToString() + " Z");
+                        w.Write(mtime.Value.ToFileTimeUtc());
                         w.Write('\0');
                     }
 
                     w.Write('\0');
                 }
             }
+        }
+
+        private string ReadString(StreamReader r)
+        {
+            var buf = new List<char>();
+            int c;
+            while (-1 != (c = r.Read()))
+            {
+                if (c == 0)
+                {
+                    break;
+                }
+                else
+                {
+                    buf.Add((char)c);
+                }
+            }
+
+            return new string(buf.ToArray());
         }
 
         #endregion

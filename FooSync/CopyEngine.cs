@@ -39,6 +39,7 @@ namespace FooSync
 
             foreach (var f in copyFrom)
             {
+                System.Diagnostics.Debug.Assert(System.IO.File.Exists(f), string.Format("Trying to copy nonexistant file {0}", f));
                 fromStr += f + '\0';
             }
             fromStr += '\0';
@@ -58,7 +59,8 @@ namespace FooSync
             op.wFunc = FILEOP_FUNC.FO_COPY;
             op.pFrom = fromPtr;
             op.pTo = toPtr;
-            op.fFlags = FILEOP_FLAGS.FOF_FILESONLY
+            op.fFlags = FILEOP_FLAGS.FOF_ALLOWUNDO
+                            | FILEOP_FLAGS.FOF_FILESONLY
                             | FILEOP_FLAGS.FOF_MULTIDESTFILES
                             | FILEOP_FLAGS.FOF_NOCONFIRMMKDIR
                             | FILEOP_FLAGS.FOF_NOCONFIRMATION
@@ -67,10 +69,70 @@ namespace FooSync
             op.hNameMappings = IntPtr.Zero;
             op.lpszProgressTitle = "FooSync File Copy";
 
-            SHFileOperation(ref op);
+            int result = SHFileOperation(ref op);
+
+            if (0 != result)
+            {
+                if ((result >= 0x70 && result <= 0x88) || result == 0xB7 || result == 0x402 || result == 0x10000 || result == 0x10074)
+                {
+                    throw new ApplicationException(string.Format("Copy operation failed: return code {0}", result));
+                }
+                else
+                {
+                    const int FACILITY_WIN32 = 7;
+                    UInt32 hresult = (result <= 0)
+                        ? (UInt32)(result)
+                        : (((UInt32)(result & 0x0000FFFF) | (FACILITY_WIN32 << 16) | 0x80000000));
+                    throw Marshal.GetExceptionForHR((int)hresult);
+                }
+            }
 
             Marshal.FreeHGlobal(fromPtr);
             Marshal.FreeHGlobal(toPtr);
+        }
+
+        public static void Delete(List<string> files)
+        {
+            Delete(files, IntPtr.Zero);
+        }
+
+        public static void Delete(List<string> files, IntPtr hwnd)
+        {
+            if (Type.GetType("Mono.Runtime") != null)
+            {
+                //
+                // TODO
+                //
+                throw new NotImplementedException();
+            }
+
+            var delStr = string.Empty;
+
+            foreach (var f in files)
+            {
+                delStr += f + '\0';
+            }
+            delStr += '\0';
+
+            var delPtr = Marshal.StringToHGlobalUni(delStr);
+
+            var op = new SHFILEOPSTRUCT();
+
+            op.hwnd = hwnd;
+            op.wFunc = FILEOP_FUNC.FO_DELETE;
+            op.pFrom = delPtr;
+            op.pTo = IntPtr.Zero;
+            op.fFlags = FILEOP_FLAGS.FOF_ALLOWUNDO
+                            | FILEOP_FLAGS.FOF_FILESONLY
+                            | FILEOP_FLAGS.FOF_NOCONFIRMATION
+                            | FILEOP_FLAGS.FOF_NORECURSION;
+            op.fAnyOperationsAborted = false;
+            op.hNameMappings = IntPtr.Zero;
+            op.lpszProgressTitle = "FooSync File Delete";
+
+            SHFileOperation(ref op);
+
+            Marshal.FreeHGlobal(delPtr);
         }
 
         [DllImport("Shell32.dll", CharSet=CharSet.Unicode)]
