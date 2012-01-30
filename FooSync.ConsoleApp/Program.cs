@@ -14,12 +14,11 @@ namespace FooSync.ConsoleApp
         {
             var programArgs = new ProgramArguments(args);
             var fooOptions = new Options();
+            var foo = new FooSync(fooOptions);
             
             Console.WriteLine("FooSync.ConsoleApp v{0} / FooSync v{1}",
                 System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
-                (Type.GetType("FooSync.FooSync FooSync") == null)
-                    ? "(unable to load FooSync.dll)" 
-                    : System.Reflection.Assembly.GetAssembly(Type.GetType("FooSync.FooSync, FooSync")).GetName().Version.ToString());
+                foo.GetType().Assembly.GetName().Version.ToString());
 
             Console.WriteLine("{0} / {1} / {2}",
                 Environment.MachineName,
@@ -38,13 +37,13 @@ namespace FooSync.ConsoleApp
                 return;
             }
 
-            var program = new Program(fooOptions);
+            var program = new Program(foo);
             program.Run(programArgs);
         }
 
-        Program(Options fooOptions)
+        Program(FooSync foo)
         {
-            this.Foo = new FooSync(fooOptions);
+            this.Foo = foo;
         }
 
         void Run(ProgramArguments args)
@@ -557,7 +556,7 @@ namespace FooSync.ConsoleApp
                 }
 
                 state.Write(FooSync.RepoStateFileName);
-                Console.Write(" done.");
+                Console.WriteLine(" done.");
             }
         }
 
