@@ -87,11 +87,15 @@ namespace FooSync
                 failureMessage = string.Format("XML Schema Validation Exception (at {1}:{2}): {0}", ex.Message, ex.LineNumber, ex.LinePosition);
                 valid = false;
             }
-            catch (Exception)
+            catch (System.IO.FileNotFoundException ex)
             {
-                //failureMessage = string.Format("{0}: {1}", ex.GetType().Name, ex.Message);
-                //valid = false;
-                throw;
+                failureMessage = ex.Message;
+                valid = false;
+            }
+            catch (Exception ex)
+            {
+                failureMessage = string.Format("{0}: {1}", ex.GetType().Name, ex.Message);
+                valid = false;
             }
             finally
             {
