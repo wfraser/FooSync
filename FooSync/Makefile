@@ -3,7 +3,7 @@ TARGETTYPE=library
 TARGETDEST=../lib
 TARGET=$(TARGETDEST)/$(TARGETNAME)
 
-MCS=dmcs
+MCS=dmcs -debug+
 SDK=4
 
 SOURCES=\
@@ -11,6 +11,7 @@ SOURCES=\
     FooFileInfo.cs \
     FooSync.cs \
     FooTree.cs \
+    NativeMethods.cs \
     Options.cs \
     RepositoryConfig.cs \
     RepositoryConfigLoader.cs \

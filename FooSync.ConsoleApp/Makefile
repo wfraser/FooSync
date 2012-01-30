@@ -3,7 +3,7 @@ TARGETTYPE=exe
 TARGETDEST=../lib
 TARGET=$(TARGETDEST)/$(TARGETNAME)
 
-MCS=dmcs
+MCS=dmcs -debug+
 SDK=4
 
 SOURCES=\

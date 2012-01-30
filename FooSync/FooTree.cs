@@ -28,7 +28,7 @@ namespace FooSync
 
         private void Walk(string path, string basePath, IEnumerable<string> exceptions)
         {
-            foreach (string file in Directory.EnumerateFiles(path))
+            foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
             {
                 System.Diagnostics.Debug.Assert(file.StartsWith(basePath), "file is supposed to start with basePath");
 
@@ -53,11 +53,6 @@ namespace FooSync
                 {
                     Files[trimmedName] = Foo.FileInfo(file);
                 }
-            }
-
-            foreach (string dir in Directory.EnumerateDirectories(path))
-            {
-                Walk(dir, basePath, exceptions);
             }
         }
     }
