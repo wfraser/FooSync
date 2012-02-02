@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FooSync", "FooSync\FooSync.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FooSync.ConsoleApp", "FooSync.ConsoleApp\FooSync.ConsoleApp.csproj", "{3A7B58E5-EFA8-4BDE-8117-644648488293}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FooSync.WPFApp", "FooSync.WPFApp\FooSync.WPFApp.csproj", "{94CE44D4-502A-4335-B28F-6E111FE867AA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,16 @@ Global
 		{3A7B58E5-EFA8-4BDE-8117-644648488293}.Release|Mixed Platforms.Build.0 = Release|x86
 		{3A7B58E5-EFA8-4BDE-8117-644648488293}.Release|x86.ActiveCfg = Release|x86
 		{3A7B58E5-EFA8-4BDE-8117-644648488293}.Release|x86.Build.0 = Release|x86
+		{94CE44D4-502A-4335-B28F-6E111FE867AA}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{94CE44D4-502A-4335-B28F-6E111FE867AA}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{94CE44D4-502A-4335-B28F-6E111FE867AA}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{94CE44D4-502A-4335-B28F-6E111FE867AA}.Debug|x86.ActiveCfg = Debug|x86
+		{94CE44D4-502A-4335-B28F-6E111FE867AA}.Debug|x86.Build.0 = Debug|x86
+		{94CE44D4-502A-4335-B28F-6E111FE867AA}.Release|Any CPU.ActiveCfg = Release|x86
+		{94CE44D4-502A-4335-B28F-6E111FE867AA}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{94CE44D4-502A-4335-B28F-6E111FE867AA}.Release|Mixed Platforms.Build.0 = Release|x86
+		{94CE44D4-502A-4335-B28F-6E111FE867AA}.Release|x86.ActiveCfg = Release|x86
+		{94CE44D4-502A-4335-B28F-6E111FE867AA}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

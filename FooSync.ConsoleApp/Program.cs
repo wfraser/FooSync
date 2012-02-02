@@ -14,6 +14,12 @@ namespace FooSync.ConsoleApp
         {
             var programArgs = new ProgramArguments(args);
             var fooOptions = new Options();
+
+            if (programArgs.Flags.Contains("nohash"))
+            {
+                fooOptions.ComputeHashes = false;
+            }
+
             var foo = new FooSync(fooOptions);
             
             Console.WriteLine("FooSync.ConsoleApp v{0} / FooSync v{1}",
@@ -61,7 +67,26 @@ namespace FooSync.ConsoleApp
                 return;
             }
 
-            foreach (var dir in config.Directories)
+
+            List<RepositoryDirectory> directories;
+            if (args.Options.ContainsKey("directory"))
+            {
+                directories = new List<RepositoryDirectory>();
+                foreach (var dir in config.Directories)
+                {
+                    if (dir.Path == args.Options["directory"])
+                    {
+                        directories.Add(dir);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                directories = new List<RepositoryDirectory>(config.Directories);
+            }
+
+            foreach (var dir in directories)
             {
                 if (dir.Source == null)
                 {
@@ -147,6 +172,7 @@ namespace FooSync.ConsoleApp
                     continue;
                 }
 
+                /*
                 Console.WriteLine("File changes:");
                 foreach (var file in changedFiles)
                 {
@@ -185,6 +211,7 @@ namespace FooSync.ConsoleApp
 
                     Console.WriteLine("\t{0}: {1}", descr, file.Key);
                 }
+                 */
 
                 //
                 // Check against the repository state

@@ -1,0 +1,7 @@
+﻿<Window x:Class="FooSync.WPFApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="FooSync" Height="430" Width="700" Icon="/FooSync;component/Resources/loki_128.png"
+        Closed="Window_Closed">
+    <Image Source="/FooSync;component/Resources/loki_128.png"/>
+</Window>

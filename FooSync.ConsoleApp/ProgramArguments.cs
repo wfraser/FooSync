@@ -10,8 +10,8 @@ namespace FooSync.ConsoleApp
     /// </summary>
     class ProgramArguments
     {
-        private static readonly string[] OPTIONS = { };
-        private static readonly string[] FLAGS = { "&help" };
+        private static readonly string[] OPTIONS = { "&directory" };
+        private static readonly string[] FLAGS = { "&help", "nohash" };
 
         public ProgramArguments()
         {

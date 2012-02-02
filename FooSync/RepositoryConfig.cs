@@ -71,8 +71,10 @@ namespace FooSync
         [XmlElement]
         public string Path { get; set; }
 
+        /* Maybe support this later...
         [XmlElement]
         public MergeStrategy MergeStrategy { get; set; }
+         */
     }
 
     [Serializable]
