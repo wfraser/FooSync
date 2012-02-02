@@ -24,7 +24,7 @@ namespace FooSync.WPFApp
             InitializeComponent();
             this.Show();
 
-            var start = new StartWindow();
+            start = new StartWindow();
             start.Left = this.Left + (this.Width / 2) - (start.Width / 2);
             start.Top = this.Top + (this.Height / 2) - (start.Height / 2);
             start.Topmost = true;
@@ -41,12 +41,24 @@ namespace FooSync.WPFApp
         void OpenRepository(object sender, RoutedEventArgs e)
         {
             EnableControls();
+            start = null;
             MessageBox.Show("[TODO: Open Repository dialog]", "TODO", MessageBoxButton.OK, MessageBoxImage.Asterisk);
         }
 
         void NewRepository(object sender, RoutedEventArgs e)
         {
+            start = null;
             MessageBox.Show("[TODO: New Repository dialog]", "TODO", MessageBoxButton.OK, MessageBoxImage.Asterisk);
         }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            if (start != null)
+            {
+                start.Close();
+            }
+        }
+
+        private StartWindow start = null;
     }
 }
