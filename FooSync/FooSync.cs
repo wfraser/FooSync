@@ -160,7 +160,7 @@ namespace FooSync
                     
                     case ChangeStatus.Newer:
                         if (repoState.Origin[filename] != repoState.Source.Name
-                                || repoState.Repository.MTimes[filename] != fileInfo.MTime)
+                                && !DateTimesWithinPrecision(repoState.Repository.MTimes[filename], fileInfo.MTime, MTimePrecision))
                                 // ^ check if the recorded mtime differs from the repo's
                                 // actual mtime
                         {
@@ -173,7 +173,7 @@ namespace FooSync
                         break;
 
                     case ChangeStatus.Older:
-                        if (repoState.Source.MTimes[filename] != fileInfo.MTime)
+                        if (!DateTimesWithinPrecision(repoState.Source.MTimes[filename], fileInfo.MTime, MTimePrecision))
                         {
                             //
                             // source file was updated, then repository was updated from elsewhere
@@ -185,23 +185,20 @@ namespace FooSync
 
                     case ChangeStatus.SourceDeleted:
                         //
-                        // Check if the file is new in repository,
-                        //  or repository file's mtime differs from state
+                        // Check if repository file's mtime differs from state
                         //
-                        if (!repoState.Repository.MTimes.ContainsKey(filename) 
-                                || !DateTimesWithinPrecision(fileInfo.MTime, repoState.Repository.MTimes[filename], MTimePrecision))
+                        if (!DateTimesWithinPrecision(fileInfo.MTime, repoState.Repository.MTimes[filename], MTimePrecision))
                         {
                             fileInfo.ConflictStatus = ConflictStatus.ChangedInRepoDeletedInSource;
                         }
                         break;
 
-                    case ChangeStatus.RepoMissing:
+                    case ChangeStatus.RepoDeleted:
                         //
                         // Check if the file is new in source,
                         //  or source file's mtime differs from state
                         //
-                        if (!repoState.Source.MTimes.ContainsKey(filename)
-                                || !DateTimesWithinPrecision(fileInfo.MTime, repoState.Source.MTimes[filename], MTimePrecision))
+                        if (!DateTimesWithinPrecision(fileInfo.MTime, repoState.Source.MTimes[filename], MTimePrecision))
                         {
                             fileInfo.ConflictStatus = ConflictStatus.ChangedInSourceDeletedInRepo;
                         }
