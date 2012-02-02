@@ -1,0 +1,26 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:FooSync.WPFApp">
+    
+    <Style TargetType="{x:Type local:ImageTextButton}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type local:ImageTextButton}">
+                    <Button>
+                        <StackPanel Height="Auto" Orientation="Vertical" Background="{TemplateBinding Background}">
+                            <Image Width="64" Height="64" Stretch="Fill" Source="{TemplateBinding ImageSource}"/>
+                            <TextBlock Text="{TemplateBinding Content}"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TaskButtonTextBrush}"
+                                   FontWeight="Bold"
+                                   Margin="0,5,0,0"
+                                   VerticalAlignment="Center"
+                                   FontSize="12" />
+                        </StackPanel>
+                    </Button>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>
