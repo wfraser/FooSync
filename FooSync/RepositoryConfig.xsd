@@ -24,6 +24,7 @@
   <xs:complexType name="RepositorySource">
     <xs:all>
       <xs:element name="Path" type="xs:string" minOccurs="1" maxOccurs="1"/>
+      <!--
       <xs:element name="MergeStrategy" minOccurs="1" maxOccurs="1">
         <xs:simpleType>
           <xs:restriction base="xs:string">
@@ -31,6 +32,7 @@
           </xs:restriction>
         </xs:simpleType>
       </xs:element>
+      -->
     </xs:all>
     
     <xs:attribute name="Name" type="xs:string"/>
