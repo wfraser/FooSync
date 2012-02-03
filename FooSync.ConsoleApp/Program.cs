@@ -20,7 +20,7 @@ namespace FooSync.ConsoleApp
                 fooOptions.ComputeHashes = false;
             }
 
-            var foo = new FooSync(fooOptions);
+            var foo = new FooSyncEngine(fooOptions);
             
             Console.WriteLine("FooSync.ConsoleApp v{0} / FooSync v{1}",
                 System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
@@ -39,7 +39,7 @@ namespace FooSync.ConsoleApp
             if (programArgs.Flags.Contains("help"))
             {
                 Console.WriteLine("usage: {0} [options]", System.Reflection.Assembly.GetExecutingAssembly().GetName().Name);
-                Console.WriteLine("Loads its configuration from {0} in the current directory", FooSync.ConfigFileName);
+                Console.WriteLine("Loads its configuration from {0} in the current directory", FooSyncEngine.ConfigFileName);
                 return;
             }
 
@@ -47,7 +47,7 @@ namespace FooSync.ConsoleApp
             program.Run(programArgs);
         }
 
-        Program(FooSync foo)
+        Program(FooSyncEngine foo)
         {
             this.Foo = foo;
         }
@@ -59,7 +59,7 @@ namespace FooSync.ConsoleApp
             //
 
             string repoConfigError;
-            RepositoryConfig config = RepositoryConfigLoader.GetRepositoryConfig(FooSync.ConfigFileName, out repoConfigError);
+            RepositoryConfig config = RepositoryConfigLoader.GetRepositoryConfig(FooSyncEngine.ConfigFileName, out repoConfigError);
 
             if (config == null)
             {
@@ -97,7 +97,7 @@ namespace FooSync.ConsoleApp
                     continue;
                 }
 
-                var exceptions = FooSync.PrepareExceptions(dir);
+                var exceptions = FooSyncEngine.PrepareExceptions(dir);
 
                 //
                 // Enumerate files in the source and repository trees
@@ -125,7 +125,7 @@ namespace FooSync.ConsoleApp
                 RepositoryState state;
                 try
                 {
-                    state = new RepositoryState(Path.Combine(dir.Path, FooSync.RepoStateFileName));
+                    state = new RepositoryState(Path.Combine(dir.Path, FooSyncEngine.RepoStateFileName));
                 }
                 catch (FileNotFoundException)
                 {
@@ -154,7 +154,7 @@ namespace FooSync.ConsoleApp
 
                 if (stateChanged)
                 {
-                    state.Write(Path.Combine(dir.Path, FooSync.RepoStateFileName));
+                    state.Write(Path.Combine(dir.Path, FooSyncEngine.RepoStateFileName));
                 }
                 Console.Write(" done.\n");
 
@@ -582,7 +582,7 @@ namespace FooSync.ConsoleApp
                     }
                 }
 
-                state.Write(FooSync.RepoStateFileName);
+                state.Write(FooSyncEngine.RepoStateFileName);
                 Console.WriteLine(" done.");
             }
         }
@@ -666,7 +666,7 @@ namespace FooSync.ConsoleApp
             }
         }
 
-        private FooSync Foo { get; set; }
+        private FooSyncEngine Foo { get; set; }
 
         private enum FileOperation
         {

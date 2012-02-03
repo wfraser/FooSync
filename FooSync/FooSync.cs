@@ -5,18 +5,18 @@ using System.Text.RegularExpressions;
 
 namespace FooSync
 {
-    public class FooSync
+    public class FooSyncEngine
     {
         public const string ConfigFileName = ".FooSync_Repository.xml";
         public const string RepoStateFileName = ".FooSync_RepoState.dat";
         public static readonly TimeSpan MTimePrecision = TimeSpan.FromSeconds(1);
 
-        public FooSync()
+        public FooSyncEngine()
         {
             this.Options = new Options();
         }
 
-        public FooSync(Options options)
+        public FooSyncEngine(Options options)
         {
             this.Options = options;
         }

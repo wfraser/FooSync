@@ -44,9 +44,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FooSync\FooSync.csproj">
+    <ProjectReference Include="..\FooSync\FooSyncEngine.csproj">
       <Project>{9DD175E1-7392-4A9E-A4DB-22F9EE18D916}</Project>
-      <Name>FooSync_Library</Name>
+      <Name>FooSyncEngine</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

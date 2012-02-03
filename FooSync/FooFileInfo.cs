@@ -8,7 +8,7 @@ namespace FooSync
     {
         static MD5 Hasher = MD5.Create();
 
-        internal FooFileInfo(FooSync foo, string path)
+        internal FooFileInfo(FooSyncEngine foo, string path)
         {
             System.Diagnostics.Debug.Assert(
                 (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSync"),
@@ -118,7 +118,7 @@ namespace FooSync
             }
         }
 
-        private FooSync Foo { get; set; }
+        private FooSyncEngine Foo { get; set; }
 
         #endregion
 

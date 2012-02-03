@@ -11,9 +11,9 @@ namespace FooSync
 
         public Dictionary<string, FooFileInfo> Files { get; private set; }
 
-        private FooSync Foo { get; set; }
+        private FooSyncEngine Foo { get; set; }
 
-        internal FooTree(FooSync foo, string path, IEnumerable<string> exceptions)
+        internal FooTree(FooSyncEngine foo, string path, IEnumerable<string> exceptions)
         {
             System.Diagnostics.Debug.Assert(
                 (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSync"),
@@ -34,7 +34,7 @@ namespace FooSync
 
                 string trimmedName = file.Substring(basePath.Length + 1);
 
-                if (trimmedName == FooSync.ConfigFileName || trimmedName == FooSync.RepoStateFileName)
+                if (trimmedName == FooSyncEngine.ConfigFileName || trimmedName == FooSyncEngine.RepoStateFileName)
                 {
                     continue;
                 }

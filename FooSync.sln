@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FooSync", "FooSync\FooSync.csproj", "{9DD175E1-7392-4A9E-A4DB-22F9EE18D916}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FooSyncEngine", "FooSync\FooSyncEngine.csproj", "{9DD175E1-7392-4A9E-A4DB-22F9EE18D916}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FooSync.ConsoleApp", "FooSync.ConsoleApp\FooSync.ConsoleApp.csproj", "{3A7B58E5-EFA8-4BDE-8117-644648488293}"
 EndProject
