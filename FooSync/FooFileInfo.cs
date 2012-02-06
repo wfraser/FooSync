@@ -16,8 +16,6 @@ namespace FooSync
             
             this.Foo = foo;
             this.Path = path;
-            this.ChangeStatus = ChangeStatus.Undetermined;
-            this.ConflictStatus = ConflictStatus.Undetermined;
             this.Source = "";
         }
 
@@ -96,8 +94,6 @@ namespace FooSync
             }
         }
 
-        public ChangeStatus   ChangeStatus   { get; set; }
-        public ConflictStatus ConflictStatus { get; set; }
         public string         Source         { get; set; }
         public string         Path           { get; private set; }
 

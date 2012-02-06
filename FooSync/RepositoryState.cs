@@ -122,7 +122,7 @@ namespace FooSync
 
                         if (source.Name == RepositoryState.RepoSourceName)
                         {
-                            w.Write(Origin[mtime.Key]);
+                            w.Write(Origin.ContainsKey(mtime.Key) ? Origin[mtime.Key] : RepositoryState.RepoSourceName);
                             w.Write('\0');
                         }
 

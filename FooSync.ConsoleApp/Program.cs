@@ -163,85 +163,43 @@ namespace FooSync.ConsoleApp
                 //
 
                 Console.Write("Computing change set...");
-                var changedFiles = Foo.Inspect(repo, source, state);
+                var changeset = Foo.Inspect(repo, source, state);
                 Console.Write(" done.\n");
 
-                if (changedFiles.Count == 0)
+                if (changeset.Count(e => e.ChangeStatus != ChangeStatus.Identical) == 0)
                 {
                     Console.WriteLine("No changes; nothing to do.\n");
                     continue;
                 }
 
-                /*
-                Console.WriteLine("File changes:");
-                foreach (var file in changedFiles)
-                {
-                    string descr = string.Empty;
-                    switch (file.Value.ChangeStatus)
-                    {
-                        case ChangeStatus.Identical:
-                        case ChangeStatus.Undetermined:
-                            Debug.Assert(false, "Bogus file change state");
-                            break;
-
-                        case ChangeStatus.Newer:
-                            descr = "Newer than the repository";
-                            break;
-
-                        case ChangeStatus.Older:
-                            descr = "Older than the repository";
-                            break;
-
-                        case ChangeStatus.RepoMissing:
-                            descr = "Not in the repository";
-                            break;
-
-                        case ChangeStatus.SourceMissing:
-                            descr = "Not in our directory";
-                            break;
-
-                        case ChangeStatus.RepoDeleted:
-                            descr = "Deleted from repository";
-                            break;
-
-                        case ChangeStatus.SourceDeleted:
-                            descr = "Deleted from our directory";
-                            break;
-                    }
-
-                    Console.WriteLine("\t{0}: {1}", descr, file.Key);
-                }
-                 */
-
                 //
                 // Check against the repository state
                 //
 
-                var conflicts = Foo.GetConflicts(changedFiles, state);
-                var fileOperations = new Dictionary<string, FileOperation>();
+                Foo.GetConflicts(ref changeset, state, repo, source);
 
-                foreach (var change in changedFiles)
+                foreach (var filename in changeset)
                 {
-                    if (change.Value.ConflictStatus == ConflictStatus.NoConflict)
+                    if (changeset[filename].ConflictStatus == ConflictStatus.NoConflict)
                     {
-                        switch (change.Value.ChangeStatus)
+                        switch (changeset[filename].ChangeStatus)
                         {
                             case ChangeStatus.Newer:
                             case ChangeStatus.RepoMissing:
-                                fileOperations.Add(change.Key, FileOperation.UseSource);
+                                changeset[filename].FileOperation = FileOperation.UseSource;
                                 break;
 
                             case ChangeStatus.Older:
                             case ChangeStatus.SourceMissing:
-                                fileOperations.Add(change.Key, FileOperation.UseRepo);
+                                changeset[filename].FileOperation = FileOperation.UseRepo;
                                 break;
 
                             case ChangeStatus.RepoDeleted:
-                                fileOperations.Add(change.Key, FileOperation.DeleteSource);
+                                changeset[filename].FileOperation = FileOperation.DeleteSource;
                                 break;
 
                             case ChangeStatus.SourceDeleted:
-                                fileOperations.Add(change.Key, FileOperation.DeleteRepo);
+                                changeset[filename].FileOperation = FileOperation.DeleteRepo;
                                 break;
 
                             default:
@@ -252,52 +210,54 @@ namespace FooSync.ConsoleApp
                     // else: no-op, these are handled by the conflicts loop below
                 }
 
-                if (conflicts.Count > 0) {
-                    Console.WriteLine("\n{0} Conflicts:\n", conflicts.Count);
-                }
-                foreach (var conflict in conflicts)
-                {
-                    string descr = string.Empty;
-                    switch (conflict.Value.ConflictStatus)
+                int conflictCount = changeset.Count(e => e.ConflictStatus != ConflictStatus.NoConflict);
+                if (conflictCount > 0) {
+                    Console.WriteLine("\n{0} Conflicts:\n", conflictCount);
+
+                    foreach (var filename in changeset.Conflicts)
                     {
-                        case ConflictStatus.ChangedInSourceDeletedInRepo:
-                            descr = "File changed in the source and deleted in the repository";
-                            break;
+                        string descr = string.Empty;
+                        switch (changeset[filename].ConflictStatus)
+                        {
+                            case ConflictStatus.ChangedInSourceDeletedInRepo:
+                                descr = "File changed in the source and deleted in the repository";
+                                break;
 
-                        case ConflictStatus.ChangedInRepoDeletedInSource:
-                            descr = "File changed in the repository and deleted in the source";
-                            break;
+                            case ConflictStatus.ChangedInRepoDeletedInSource:
+                                descr = "File changed in the repository and deleted in the source";
+                                break;
 
-                        case ConflictStatus.RepoChanged:
-                            descr = "File changed in the repository and in the source (source newer)";
-                            break;
+                            case ConflictStatus.RepoChanged:
+                                descr = "File changed in the repository and in the source (source newer)";
+                                break;
 
-                        case ConflictStatus.SourceChanged:
-                            descr = "File changed in the repository and in the source (repository newer)";
-                            break;
-                    }
+                            case ConflictStatus.SourceChanged:
+                                descr = "File changed in the repository and in the source (repository newer)";
+                                break;
+                        }
 
-                    Console.WriteLine("{0}:\n{1}", descr, conflict.Key);
-                    if (conflict.Value.ConflictStatus != ConflictStatus.ChangedInRepoDeletedInSource)
-                    {
-                        Console.WriteLine("\tSource:     modified {0}, {1} bytes",
-                            source.Files[conflict.Key].MTime.ToString(),
-                            source.Files[conflict.Key].Size);
-                    }
-                    if (conflict.Value.ConflictStatus != ConflictStatus.ChangedInSourceDeletedInRepo)
-                    {
-                        Console.WriteLine("\tRepository: modified {0}, {1} bytes",
-                            repo.Files[conflict.Key].MTime.ToString(),
-                            repo.Files[conflict.Key].Size);
-                    }
+                        Console.WriteLine("{0}:\n{1}", descr, filename);
+                        if (changeset[filename].ConflictStatus != ConflictStatus.ChangedInRepoDeletedInSource)
+                        {
+                            Console.WriteLine("\tSource:     modified {0}, {1} bytes",
+                                source.Files[filename].MTime.ToString(),
+                                source.Files[filename].Size);
+                        }
+                        if (changeset[filename].ConflictStatus != ConflictStatus.ChangedInSourceDeletedInRepo)
+                        {
+                            Console.WriteLine("\tRepository: modified {0}, {1} bytes",
+                                repo.Files[filename].MTime.ToString(),
+                                repo.Files[filename].Size);
+                        }
 
-                    string rpath = Path.GetFullPath(Path.Combine(repo.Path, conflict.Key));
-                    string spath = Path.GetFullPath(Path.Combine(source.Path, conflict.Key));
+                        string rpath = Path.GetFullPath(Path.Combine(repo.Path, filename));
+                        string spath = Path.GetFullPath(Path.Combine(source.Path, filename));
 
-                    FileOperation? action = GetActionFromUser(File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
-                    if (action.HasValue)
-                    {
-                        fileOperations[conflict.Key] = action.Value;
+                        FileOperation? action = GetActionFromUser(File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
+                        if (action.HasValue)
+                        {
+                            changeset[filename].FileOperation = action.Value;
+                        }
                     }
                 }
 
@@ -308,71 +268,49 @@ namespace FooSync.ConsoleApp
                 bool accepted = false;
                 while (!accepted)
                 {
-                    var useRepo = new List<string>();
-                    var useSource = new List<string>();
-                    var deleteRepo = new List<string>();
-                    var deleteSource = new List<string>();
-
+                    var byIndex = new List<string>();
                     Console.WriteLine("\nActions to be taken:");
 
-                    foreach (var change in fileOperations)
-                    {
-                        switch (change.Value)
-                        {
-                            case FileOperation.DeleteRepo:
-                                deleteRepo.Add(change.Key);
-                                break;
+                    int nwidth = (int)Math.Ceiling(Math.Log10(changeset.Count(e => e.FileOperation != FileOperation.NoOp)));
+                    int n = 0;
 
-                            case FileOperation.DeleteSource:
-                                deleteSource.Add(change.Key);
-                                break;
-
-                            case FileOperation.UseRepo:
-                                useRepo.Add(change.Key);
-                                break;
-
-                            case FileOperation.UseSource:
-                                useSource.Add(change.Key);
-                                break;
-                        }
-                    }
-
-                    int nwidth = (int)Math.Ceiling(Math.Log10(fileOperations.Count));
-                    int n = 1;
-
-                    if (useRepo.Count > 0)
+                    if (changeset.WithFileOperation(FileOperation.UseRepo) != null)
                     {
                         Console.WriteLine("\nFiles to copy from repository to source:");
-                        foreach (var path in useRepo)
+                        foreach (var path in changeset.WithFileOperation(FileOperation.UseRepo))
                         {
-                            Console.WriteLine("{0," + nwidth + "}: {1}", n++, Path.GetFullPath(Path.Combine(repo.Path, path)));
+                            byIndex.Add(path);
+                            Console.WriteLine("{0," + nwidth + "}: {1}", ++n, Path.GetFullPath(Path.Combine(repo.Path, path)));
                         }
                     }
 
-                    if (useSource.Count > 0)
+                    if (changeset.WithFileOperation(FileOperation.UseSource) != null)
                     {
                         Console.WriteLine("\nFiles to copy from source to repository:");
-                        foreach (var path in useSource)
+                        foreach (var path in changeset.WithFileOperation(FileOperation.UseSource))
                         {
-                            Console.WriteLine("{0," + nwidth + "}: {1}", n++, Path.GetFullPath(Path.Combine(source.Path, path)));
+                            byIndex.Add(path);
+                            Console.WriteLine("{0," + nwidth + "}: {1}", ++n, Path.GetFullPath(Path.Combine(source.Path, path)));
                         }
                     }
 
-                    if (deleteRepo.Count > 0)
+                    if (changeset.WithFileOperation(FileOperation.DeleteRepo) != null)
                     {
                         Console.WriteLine("\nFiles to delete from repository:");
-                        foreach (var path in deleteRepo)
+                        foreach (var path in changeset.WithFileOperation(FileOperation.DeleteRepo))
                         {
-                            Console.WriteLine("{0," + nwidth + "}: {1}", n++, Path.GetFullPath(Path.Combine(repo.Path, path)));
+                            byIndex.Add(path);
+                            Console.WriteLine("{0," + nwidth + "}: {1}", ++n, Path.GetFullPath(Path.Combine(repo.Path, path)));
                         }
                     }
 
-                    if (deleteSource.Count > 0)
+                    if (changeset.WithFileOperation(FileOperation.DeleteSource) != null)
                     {
                         Console.WriteLine("\nFiles to delete from source:");
-                        foreach (var path in deleteSource)
+                        foreach (var path in changeset.WithFileOperation(FileOperation.DeleteSource))
                         {
-                            Console.WriteLine("{0," + nwidth + "}: {1}", n++, Path.GetFullPath(Path.Combine(source.Path, path)));
+                            byIndex.Add(path);
+                            Console.WriteLine("{0," + nwidth + "}: {1}", ++n, Path.GetFullPath(Path.Combine(source.Path, path)));
                         }
                     }
 
@@ -401,45 +339,21 @@ namespace FooSync.ConsoleApp
                             */
 
                             n = int.Parse(changeNum) - 1;
-                            if (n < 0 || n >= fileOperations.Count)
+                            if (n < 0 || n >= changeset.Count(e => e.FileOperation != FileOperation.NoOp))
                                 throw new FormatException("out of range");
 
-                            List<string> listFrom;
-                            int listPos;
-                            string path;
-                            if (n < useRepo.Count)
-                            {
-                                listFrom = useRepo;
-                                listPos = n;
-                            }
-                            else if (n < useRepo.Count + useSource.Count)
-                            {
-                                listFrom = useSource;
-                                listPos = n - useRepo.Count;
-                            }
-                            else if (n < useRepo.Count + useSource.Count + deleteRepo.Count)
-                            {
-                                listFrom = deleteRepo;
-                                listPos = n - (useRepo.Count + useSource.Count);
-                            }
-                            else
-                            {
-                                listFrom = deleteSource;
-                                listPos = n - (useRepo.Count + useSource.Count + deleteRepo.Count);
-                            }
-
-                            path = listFrom[listPos];
+                            var path = byIndex[n];
                             string rpath = Path.GetFullPath(Path.Combine(repo.Path, path));
                             string spath = Path.GetFullPath(Path.Combine(source.Path, path));
 
                             FileOperation? action = GetActionFromUser(File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
                             if (action.HasValue)
                             {
-                                fileOperations[path] = action.Value;
+                                changeset[path].FileOperation = action.Value;
                             }
                             else
                             {
-                                fileOperations.Remove(path);
+                                changeset[path].FileOperation = FileOperation.NoOp;
                             }
                         }
                         catch (Exception ex)
@@ -461,7 +375,7 @@ namespace FooSync.ConsoleApp
                 // Perform the operations
                 //
 
-                if (fileOperations.Count == 0)
+                if (changeset.Count(e => e.FileOperation != FileOperation.NoOp) > 0)
                 {
                     Console.WriteLine("Nothing to do.\n");
                     continue;
@@ -471,12 +385,12 @@ namespace FooSync.ConsoleApp
                 var dstFiles = new List<string>();
                 var delFiles = new List<string>();
 
-                foreach (var c in fileOperations)
+                foreach (var filename in changeset.Where(e => e.FileOperation != FileOperation.NoOp))
                 {
-                    string repoFile = Path.GetFullPath(Path.Combine(repo.Path, c.Key));
-                    string sourceFile = Path.GetFullPath(Path.Combine(source.Path, c.Key));
+                    string repoFile = Path.GetFullPath(Path.Combine(repo.Path, filename));
+                    string sourceFile = Path.GetFullPath(Path.Combine(source.Path, filename));
 
-                    switch (c.Value)
+                    switch (changeset[filename].FileOperation)
                     {
                         case FileOperation.UseRepo:
                             srcFiles.Add(repoFile);
@@ -534,32 +448,22 @@ namespace FooSync.ConsoleApp
                 //
 
                 Console.Write("Updating repository state...");
-                foreach (var c in changedFiles)
+                foreach (var filename in changeset.Where(e => e.FileOperation != FileOperation.NoOp))
                 {
-                    string filename = c.Key;
-                    ChangeStatus cstatus = c.Value.ChangeStatus;
-                    if (fileOperations.ContainsKey(filename))
+                    ChangeStatus cstatus = changeset[filename].ChangeStatus;
+                    FileOperation operation = changeset[filename].FileOperation;
+
+                    if (cstatus == ChangeStatus.SourceDeleted
+                            && operation != FileOperation.UseRepo)
                     {
-                        FileOperation operation = fileOperations[filename];
-
-                        if (cstatus == ChangeStatus.SourceDeleted
-                                && operation != FileOperation.UseRepo)
-                        {
-                            state.Source.MTimes.Remove(filename);
-                        }
-
-                        if (cstatus == ChangeStatus.RepoDeleted
-                                && operation != FileOperation.UseSource)
-                        {
-                            state.Repository.MTimes.Remove(filename);
-                        }
+                        state.Source.MTimes.Remove(filename);
                     }
-                }
 
-                foreach (var c in fileOperations)
-                {
-                    string filename = c.Key;
-                    FileOperation operation = c.Value;
+                    if (cstatus == ChangeStatus.RepoDeleted
+                            && operation != FileOperation.UseSource)
+                    {
+                        state.Repository.MTimes.Remove(filename);
+                    }
 
                     if (operation == FileOperation.UseSource)
                     {
@@ -667,13 +571,5 @@ namespace FooSync.ConsoleApp
         }
 
         private FooSyncEngine Foo { get; set; }
-
-        private enum FileOperation
-        {
-            UseRepo,
-            UseSource,
-            DeleteRepo,
-            DeleteSource
-        }
     }
 }

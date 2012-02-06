@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FooSync
 {
@@ -29,6 +31,11 @@ namespace FooSync
         public FooFileInfo FileInfo(string path)
         {
             return new FooFileInfo(this, path);
+        }
+
+        public FooChangeSet ChangeSet()
+        {
+            return new FooChangeSet(this);
         }
 
         public static ICollection<string> PrepareExceptions(RepositoryDirectory dir)
@@ -71,87 +78,80 @@ namespace FooSync
             return exceptions;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822")]
-        public IDictionary<string, FooFileInfo> Inspect(FooTree repo, FooTree source, RepositoryState state)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822: Mark members as static")]
+        public FooChangeSet Inspect(FooTree repo, FooTree source, RepositoryState state)
         {
             if (repo == null)
                 throw new ArgumentNullException("repo");
             if (source == null)
                 throw new ArgumentNullException("source");
-            if (state == null)
-                throw new ArgumentNullException("state");
 
-            var changedFiles = new Dictionary<string, FooFileInfo>();
-            var repoMissingFiles = new Dictionary<string, FooFileInfo>(source.Files);
+            var changeset = this.ChangeSet();
+            var repoMissingFiles = new HashSet<string>(source.Files.Keys);
 
-            foreach (var file in repo.Files)
+            Parallel.ForEach(repo.Files, file =>
             {
-                file.Value.ChangeStatus = ChangeStatus.Identical;
+                var filename = file.Key;
+                ChangeStatus status = ChangeStatus.Identical;
 
-                if (source.Files.ContainsKey(file.Key))
+                if (source.Files.ContainsKey(filename))
                 {
-                    repoMissingFiles.Remove(file.Key);
-                    int comp = file.Value.CompareTo(source.Files[file.Key]);
-                    if (comp == 0)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        file.Value.ChangeStatus = (ChangeStatus)comp;
-                    }
+                    repoMissingFiles.Remove(filename);
+                    int comp = file.Value.CompareTo(source.Files[filename]);
+                    status = (ChangeStatus)comp;
                 }
                 else
                 {
-                    if (state.Source.MTimes.ContainsKey(file.Key))
+                    if (state.Source.MTimes.ContainsKey(filename))
                     {
-                        file.Value.ChangeStatus = ChangeStatus.SourceDeleted;
+                        status = ChangeStatus.SourceDeleted;
                     }
                     else
                     {
-                        file.Value.ChangeStatus = ChangeStatus.SourceMissing;
+                        status = ChangeStatus.SourceMissing;
                     }
                 }
 
-                if (file.Value.ChangeStatus != ChangeStatus.Identical)
+                if (status != ChangeStatus.Identical)
                 {
-                    changedFiles[file.Key] = file.Value;
+                    changeset.Add(filename, status);
                 }
-            }
+            });
 
-            foreach (var file in repoMissingFiles)
+            Parallel.ForEach(repoMissingFiles, filename =>
             {
-                changedFiles[file.Key] = file.Value;
+                ChangeStatus status = ChangeStatus.Undetermined;
 
-                if (state.Repository.MTimes.ContainsKey(file.Key))
+                if (state.Repository.MTimes.ContainsKey(filename))
                 {
-                    changedFiles[file.Key].ChangeStatus = ChangeStatus.RepoDeleted;
+                    status = ChangeStatus.RepoDeleted;
                 }
                 else
                 {
-                    changedFiles[file.Key].ChangeStatus = ChangeStatus.RepoMissing;
+                    status = ChangeStatus.RepoMissing;
                 }
-            }
 
-            return changedFiles;
+                changeset.Add(filename, status);
+            });
+
+            return changeset;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822")]
-        public IDictionary<string, FooFileInfo> GetConflicts(IDictionary<string, FooFileInfo> changeset, RepositoryState repoState)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822: Mark members as static")]
+        public void GetConflicts(ref FooChangeSet changeset, RepositoryState repoState, FooTree repo, FooTree source)
         {
             if (changeset == null)
                 throw new ArgumentNullException("changeset");
             if (repoState == null)
                 throw new ArgumentNullException("repoState");
+            if (source == null)
+                throw new ArgumentNullException("source");
 
             var conflicts = new Dictionary<string, FooFileInfo>();
 
-            foreach (var pair in changeset)
+            foreach (var filename in changeset)
             {
-                var filename = pair.Key;
-                var fileInfo = pair.Value;
-
-                switch (fileInfo.ChangeStatus)
+                switch (changeset[filename].ChangeStatus)
                 {
                     case ChangeStatus.Undetermined:
                     case ChangeStatus.Identical:
@@ -160,26 +160,24 @@ namespace FooSync
                     
                     case ChangeStatus.Newer:
                         if (repoState.Origin[filename] != repoState.Source.Name
-                                && !DateTimesWithinPrecision(repoState.Repository.MTimes[filename], fileInfo.MTime, MTimePrecision))
-                                // ^ check if the recorded mtime differs from the repo's
-                                // actual mtime
+                                && !DateTimesWithinPrecision(repoState.Repository.MTimes[filename], repo.Files[filename].MTime, MTimePrecision))
                         {
                             //
                             // repository file was updated independently of the source's change
                             //
 
-                            fileInfo.ConflictStatus = ConflictStatus.RepoChanged;
+                            changeset[filename].ConflictStatus = ConflictStatus.RepoChanged;
                         }
                         break;
 
                     case ChangeStatus.Older:
-                        if (!DateTimesWithinPrecision(repoState.Source.MTimes[filename], fileInfo.MTime, MTimePrecision))
+                        if (!DateTimesWithinPrecision(repoState.Source.MTimes[filename], source.Files[filename].MTime, MTimePrecision))
                         {
                             //
                             // source file was updated, then repository was updated from elsewhere
                             //
 
-                            fileInfo.ConflictStatus = ConflictStatus.SourceChanged;
+                            changeset[filename].ConflictStatus = ConflictStatus.SourceChanged;
                         }
                         break;
 
@@ -187,9 +185,9 @@ namespace FooSync
                         //
                         // Check if repository file's mtime differs from state
                         //
-                        if (!DateTimesWithinPrecision(fileInfo.MTime, repoState.Repository.MTimes[filename], MTimePrecision))
+                        if (!DateTimesWithinPrecision(repo.Files[filename].MTime, repoState.Repository.MTimes[filename], MTimePrecision))
                         {
-                            fileInfo.ConflictStatus = ConflictStatus.ChangedInRepoDeletedInSource;
+                            changeset[filename].ConflictStatus = ConflictStatus.ChangedInRepoDeletedInSource;
                         }
                         break;
 
@@ -198,24 +196,18 @@ namespace FooSync
                         // Check if the file is new in source,
                         //  or source file's mtime differs from state
                         //
-                        if (!DateTimesWithinPrecision(fileInfo.MTime, repoState.Source.MTimes[filename], MTimePrecision))
+                        if (!DateTimesWithinPrecision(source.Files[filename].MTime, repoState.Source.MTimes[filename], MTimePrecision))
                         {
-                            fileInfo.ConflictStatus = ConflictStatus.ChangedInSourceDeletedInRepo;
+                            changeset[filename].ConflictStatus = ConflictStatus.ChangedInSourceDeletedInRepo;
                         }
                         break;
                 }
 
-                if (fileInfo.ConflictStatus != ConflictStatus.Undetermined)
+                if (changeset[filename].ConflictStatus == ConflictStatus.Undetermined)
                 {
-                    conflicts.Add(filename, fileInfo);
-                }
-                else
-                {
-                    fileInfo.ConflictStatus = ConflictStatus.NoConflict;
+                    changeset[filename].ConflictStatus = ConflictStatus.NoConflict;
                 }
             }
-
-            return conflicts;
         }
 
         private static bool DateTimesWithinPrecision(DateTime a, DateTime b, TimeSpan precision)
@@ -249,5 +241,14 @@ namespace FooSync
         ChangedInSourceDeletedInRepo,
         RepoChanged,
         SourceChanged,
+    }
+
+    public enum FileOperation
+    {
+        NoOp,
+        UseRepo,
+        UseSource,
+        DeleteRepo,
+        DeleteSource
     }
 }
