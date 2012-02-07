@@ -1,4 +1,4 @@
-TARGETNAME=FooSync.dll
+TARGETNAME=FooSyncEngine.dll
 TARGETTYPE=library
 TARGETDEST=../lib
 TARGET=$(TARGETDEST)/$(TARGETNAME)
@@ -8,6 +8,7 @@ SDK=4
 
 SOURCES=\
     CopyEngine.cs \
+    FooChangeSet.cs \
     FooFileInfo.cs \
     FooSync.cs \
     FooTree.cs \
