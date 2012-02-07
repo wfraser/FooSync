@@ -85,6 +85,8 @@ namespace FooSync
                 throw new ArgumentNullException("repo");
             if (source == null)
                 throw new ArgumentNullException("source");
+            if (state == null)
+                throw new ArgumentNullException("state");
 
             var changeset = this.ChangeSet();
             var repoMissingFiles = new HashSet<string>(source.Files.Keys);

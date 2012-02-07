@@ -274,7 +274,7 @@ namespace FooSync.ConsoleApp
                     int nwidth = (int)Math.Ceiling(Math.Log10(changeset.Count(e => e.FileOperation != FileOperation.NoOp)));
                     int n = 0;
 
-                    if (changeset.WithFileOperation(FileOperation.UseRepo) != null)
+                    if (changeset.Count(e => e.FileOperation == FileOperation.UseRepo) > 0)
                     {
                         Console.WriteLine("\nFiles to copy from repository to source:");
                         foreach (var path in changeset.WithFileOperation(FileOperation.UseRepo))
@@ -284,7 +284,7 @@ namespace FooSync.ConsoleApp
                         }
                     }
 
-                    if (changeset.WithFileOperation(FileOperation.UseSource) != null)
+                    if (changeset.Count(e => e.FileOperation == FileOperation.UseSource) > 0)
                     {
                         Console.WriteLine("\nFiles to copy from source to repository:");
                         foreach (var path in changeset.WithFileOperation(FileOperation.UseSource))
@@ -294,7 +294,7 @@ namespace FooSync.ConsoleApp
                         }
                     }
 
-                    if (changeset.WithFileOperation(FileOperation.DeleteRepo) != null)
+                    if (changeset.Count(e => e.FileOperation == FileOperation.DeleteRepo) > 0)
                     {
                         Console.WriteLine("\nFiles to delete from repository:");
                         foreach (var path in changeset.WithFileOperation(FileOperation.DeleteRepo))
@@ -304,7 +304,7 @@ namespace FooSync.ConsoleApp
                         }
                     }
 
-                    if (changeset.WithFileOperation(FileOperation.DeleteSource) != null)
+                    if (changeset.Count(e => e.FileOperation == FileOperation.DeleteSource) > 0)
                     {
                         Console.WriteLine("\nFiles to delete from source:");
                         foreach (var path in changeset.WithFileOperation(FileOperation.DeleteSource))
@@ -375,7 +375,7 @@ namespace FooSync.ConsoleApp
                 // Perform the operations
                 //
 
-                if (changeset.Count(e => e.FileOperation != FileOperation.NoOp) > 0)
+                if (changeset.Count(e => e.FileOperation != FileOperation.NoOp) == 0)
                 {
                     Console.WriteLine("Nothing to do.\n");
                     continue;

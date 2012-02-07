@@ -10,7 +10,7 @@ namespace FooSync
         public FooChangeSet(FooSyncEngine foo)
         {
             System.Diagnostics.Debug.Assert(
-                (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSync"),
+                (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSyncEngine"),
                 "Don't directly instantiate FooClasses");
 
             this.Foo = foo;
@@ -31,17 +31,6 @@ namespace FooSync
             }
         }
 
-        public IEnumerable<string> Conflicts
-        {
-            get
-            {
-                return from e in Elems
-                       where e.Value.ConflictStatus != ConflictStatus.NoConflict
-                          || e.Value.ConflictStatus != ConflictStatus.Undetermined
-                       select e.Key;
-            }
-        }
-
         public IEnumerable<string> WithFileOperation(FileOperation oper)
         {
             return from e in Elems
@@ -59,6 +48,17 @@ namespace FooSync
         public int Count(Func<FooChangeSetElem, bool> predicate)
         {
             return Elems.Values.Count(predicate);
+        }
+
+        public IEnumerable<string> Conflicts
+        {
+            get
+            {
+                return from e in Elems
+                       where e.Value.ConflictStatus != ConflictStatus.NoConflict
+                          || e.Value.ConflictStatus != ConflictStatus.Undetermined
+                       select e.Key;
+            }
         }
 
         public IEnumerator<string> GetEnumerator()

@@ -16,7 +16,7 @@ namespace FooSync
         internal FooTree(FooSyncEngine foo, string path, IEnumerable<string> exceptions)
         {
             System.Diagnostics.Debug.Assert(
-                (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSync"),
+                (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSyncEngine"),
                 "Don't directly instantiate FooClasses");
 
             this.Foo   = foo;
