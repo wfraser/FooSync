@@ -12,7 +12,7 @@ SOURCES=\
     Properties/AssemblyInfo.cs
 
 REFERENCES=\
-    FooSync.dll
+    FooSyncEngine.dll
 
 LIBDIR=../lib
 
