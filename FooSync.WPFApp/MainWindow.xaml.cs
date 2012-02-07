@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using FooSync;
+using Ookii.Dialogs.Wpf;
 
 namespace FooSync.WPFApp
 {
@@ -30,14 +31,14 @@ namespace FooSync.WPFApp
 
         public void ShowStartWindow()
         {
-            start = new StartWindow();
-            start.Left = this.Left + (this.Width / 2) - (start.Width / 2);
-            start.Top = this.Top + (this.Height / 2) - (start.Height / 2);
-            start.Topmost = true;
-            start.WindowStyle = System.Windows.WindowStyle.None;
-            start.NewButton.Click += new RoutedEventHandler(NewRepository);
-            start.OpenButton.Click += new RoutedEventHandler(OpenRepository);
-            start.Show();
+            _start = new StartWindow();
+            _start.Left = this.Left + (this.Width / 2) - (_start.Width / 2);
+            _start.Top = this.Top + (this.Height / 2) - (_start.Height / 2);
+            _start.Topmost = true;
+            _start.WindowStyle = System.Windows.WindowStyle.None;
+            _start.NewButton.Click += new RoutedEventHandler(NewRepository);
+            _start.OpenButton.Click += new RoutedEventHandler(OpenRepository);
+            _start.Show();
         }
 
         private void EnableControls(DependencyObject parent, bool enabled)
@@ -46,7 +47,10 @@ namespace FooSync.WPFApp
             {
                 if (obj is Control)
                 {
-                    (obj as Control).IsEnabled = enabled ;
+                    if (obj != InspectButton && obj != DoActionsButton)
+                    {
+                        (obj as Control).IsEnabled = enabled;
+                    }
                 }
                 else if (obj is DependencyObject)
                 {
@@ -62,52 +66,91 @@ namespace FooSync.WPFApp
 
         private void OpenRepository(object sender, RoutedEventArgs e)
         {
+            string filename = null;
+            bool cancelled = false;
+
             var dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.Filter = "FooSync Repository Config|" + FooSyncEngine.ConfigFileName;
             dlg.FilterIndex = 1;
             dlg.Multiselect = false;
 
-            bool? result = dlg.ShowDialog();
-            var filename = dlg.FileName;
+            cancelled = !(dlg.ShowDialog() ?? false);
+            filename = dlg.FileName;
 
-            if (!result.HasValue || result.Value == false)
+            if (cancelled)
             {
                 ShowStartWindow();
             }
             else
             {
-                EnableControls(true);
-                MessageBox.Show(filename);
+                string errStr = string.Empty;
+                try
+                {
+                    _config = RepositoryConfigLoader.GetRepositoryConfig(filename, out errStr);
+                }
+                catch (Exception ex)
+                {
+                    errStr = ex.Message;
+                }
+                finally
+                {
+                    if (errStr != string.Empty)
+                    {
+                        MessageBox.Show("Loading config failed: " + errStr, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+
+                if (_config == null)
+                {
+                    ShowStartWindow();
+                }
+                else
+                {
+                    PopulateControlsFromConfig();
+                }
             }
         }
 
         private void NewRepository(object sender, RoutedEventArgs e)
         {
-            var dlg = new Microsoft.Win32.SaveFileDialog();
-            dlg.FileName = FooSyncEngine.ConfigFileName;
-            dlg.Filter = "FooSync Repository Config|" + FooSyncEngine.ConfigFileName;
-            dlg.FilterIndex = 1;
+            string filename = null;
+            bool cancelled = false;
 
-            bool? result = dlg.ShowDialog();
-            var filename = dlg.FileName;
+            if (VistaFolderBrowserDialog.IsVistaFolderDialogSupported)
+            {
+                var dlg = new VistaFolderBrowserDialog();
+                dlg.Description = "Select the location for the new repository:";
 
-            if (!result.HasValue || result.Value == false)
+                cancelled = !(dlg.ShowDialog() ?? false);
+
+                filename =
+                    Path.GetFullPath(
+                        Path.Combine(
+                            dlg.SelectedPath,
+                            FooSyncEngine.ConfigFileName));
+            }
+            else
+            {
+                var dlg = new Microsoft.Win32.SaveFileDialog();
+                dlg.FileName = FooSyncEngine.ConfigFileName;
+                dlg.Filter = "FooSync Repository Config|" + FooSyncEngine.ConfigFileName;
+                dlg.FilterIndex = 1;
+
+                cancelled = !(dlg.ShowDialog() ?? false);
+
+                filename =
+                    Path.GetFullPath(
+                        Path.Combine(
+                            Path.GetDirectoryName(dlg.FileName), // Discard whatever filename they chose
+                            FooSyncEngine.ConfigFileName));
+            }
+
+            if (cancelled)
             {
                 ShowStartWindow();
             }
             else
             {
-                //
-                // Discard whatever filename they chose;
-                // Just use the path and append the standard config filename.
-                //
-
-                filename = 
-                    Path.GetFullPath(
-                        Path.Combine(
-                            Path.GetDirectoryName(filename),
-                            FooSyncEngine.ConfigFileName));
-
                 MessageBox.Show(
                     string.Format(
                         "[TODO: New Repository dialog]\nPath={0}",
@@ -126,12 +169,22 @@ namespace FooSync.WPFApp
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            if (start != null)
+            if (_start != null)
             {
-                start.Close();
+                _start.Close();
             }
         }
 
-        private StartWindow start = null;
+        private void PopulateControlsFromConfig()
+        {
+        }
+
+        private StartWindow _start = null;
+        private RepositoryConfig _config = null;
+
+        private void Inspect(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

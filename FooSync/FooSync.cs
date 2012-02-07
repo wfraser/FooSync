@@ -144,10 +144,10 @@ namespace FooSync
                 throw new ArgumentNullException("changeset");
             if (repoState == null)
                 throw new ArgumentNullException("repoState");
+            if (repo == null)
+                throw new ArgumentNullException("repo");
             if (source == null)
                 throw new ArgumentNullException("source");
-
-            var conflicts = new Dictionary<string, FooFileInfo>();
 
             foreach (var filename in changeset)
             {

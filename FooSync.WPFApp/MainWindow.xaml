@@ -3,8 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="FooSync" Height="430" Width="700" Icon="/FooSync;component/Resources/loki_128.png"
         Closed="Window_Closed">
-    <StackPanel>
-        <ToolBar>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        
+        <ToolBar Grid.Row="0" Grid.ColumnSpan="3">
             <Button ToolTip="New Repository" Click="NewRepository">
                 <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16"/>
             </Button>
@@ -15,14 +27,20 @@
                 <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16"/>
             </Button>
         </ToolBar>
-        <Expander Header="New Files:" IsExpanded="False">
-            <ListView Template="{StaticResource FileGrid}"/>
-        </Expander>
-        <Expander Header="Changed Files:" IsExpanded="False">
-            <ListView Template="{StaticResource FileGrid}"/>
-        </Expander>
-        <Expander Header="Deleted Files:" IsExpanded="False">
-            <ListView Template="{StaticResource FileGrid}"/>
-        </Expander>
-    </StackPanel>
+        <Label Grid.Row="1" Grid.Column="0" Content="Directory: "/>
+        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectorySelector" />
+        <Button x:Name="InspectButton" Grid.Row="1" Grid.Column="2" Click="Inspect" Content="Inspect Files" IsEnabled="False"/>
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
+            <Expander Header="New Files:" IsExpanded="False">
+                <ListView Template="{StaticResource FileGrid}"/>
+            </Expander>
+            <Expander Header="Changed Files:" IsExpanded="False">
+                <ListView Template="{StaticResource FileGrid}"/>
+            </Expander>
+            <Expander Header="Deleted Files:" IsExpanded="False">
+                <ListView Template="{StaticResource FileGrid}"/>
+            </Expander>
+        </StackPanel>
+        <Button x:Name="DoActionsButton" Grid.Row="3" Grid.ColumnSpan="3" Content="Do Actions" VerticalAlignment="Bottom" IsEnabled="False"/>
+    </Grid>
 </Window>
