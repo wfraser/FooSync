@@ -42,7 +42,7 @@ namespace FooSync
                 bool failsRegex = false;
                 foreach (string ex in exceptions)
                 {
-                    if (Regex.Match(System.IO.Path.GetFileName(file), ex).Success)
+                    if (Regex.Match(System.IO.Path.GetFileName(file), ex, Foo.Options.CaseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.None).Success)
                     {
                         failsRegex = true;
                         break;

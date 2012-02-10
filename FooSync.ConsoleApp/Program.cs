@@ -15,9 +15,21 @@ namespace FooSync.ConsoleApp
             var programArgs = new ProgramArguments(args);
             var fooOptions = new Options();
 
-            if (programArgs.Flags.Contains("nohash"))
+            if (programArgs.Flags.ContainsKey("hash"))
             {
-                fooOptions.ComputeHashes = false;
+                fooOptions.ComputeHashes = programArgs.Flags["hash"];
+            }
+
+            if (programArgs.Flags.ContainsKey("casesensitive"))
+            {
+                fooOptions.CaseInsensitive = !programArgs.Flags["casesensitive"];
+            }
+            else
+            {
+                //
+                // default to case-sensitive on Unix
+                //
+                fooOptions.CaseInsensitive = !(Environment.OSVersion.Platform == PlatformID.Unix);
             }
 
             var foo = new FooSyncEngine(fooOptions);
@@ -36,7 +48,7 @@ namespace FooSync.ConsoleApp
             }
             Console.WriteLine();
 
-            if (programArgs.Flags.Contains("help"))
+            if (programArgs.Flags.ContainsKey("help"))
             {
                 Console.WriteLine("usage: {0} [options]", System.Reflection.Assembly.GetExecutingAssembly().GetName().Name);
                 Console.WriteLine("Loads its configuration from {0} in the current directory", FooSyncEngine.ConfigFileName);
@@ -88,6 +100,8 @@ namespace FooSync.ConsoleApp
 
             foreach (var dir in directories)
             {
+                Console.WriteLine("Synchronizing directory {0}:", dir.Path);
+
                 if (dir.Source == null)
                 {
                     Console.WriteLine("There's no entry matching your machine name ({0}) in the "
@@ -162,7 +176,7 @@ namespace FooSync.ConsoleApp
                 // Compute & display the change set
                 //
 
-                Console.Write("Computing change set...");
+                Console.Write("Comparing files...");
                 var changeset = Foo.Inspect(repo, source, state);
                 Console.Write(" done.\n");
 
@@ -176,7 +190,7 @@ namespace FooSync.ConsoleApp
                 // Check against the repository state
                 //
 
-                Foo.GetConflicts(ref changeset, state, repo, source);
+                Foo.GetConflicts(changeset, state, repo, source);
 
                 foreach (var filename in changeset)
                 {
@@ -253,11 +267,9 @@ namespace FooSync.ConsoleApp
                         string rpath = Path.GetFullPath(Path.Combine(repo.Path, filename));
                         string spath = Path.GetFullPath(Path.Combine(source.Path, filename));
 
-                        FileOperation? action = GetActionFromUser(File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
-                        if (action.HasValue)
-                        {
-                            changeset[filename].FileOperation = action.Value;
-                        }
+                        FileOperation action = GetActionFromUser(File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
+                        changeset[filename].FileOperation = action;
+                        Console.WriteLine();
                     }
                 }
 
@@ -325,35 +337,57 @@ namespace FooSync.ConsoleApp
                     {
                         try
                         {
-                            /* TODO: allow changing ranges
-                            int n_start, n_end;
                             if (changeNum.Contains("-"))
                             {
+                                int n_start, n_end;
                                 n_start = int.Parse(changeNum.Substring(0, changeNum.IndexOf('-')).Trim()) - 1;
                                 n_end = int.Parse(changeNum.Substring(changeNum.IndexOf('-') + 1).Trim()) - 1;
+
+                                if (n_start < 0 || n_end >= changeset.Count(e => e.FileOperation != FileOperation.NoOp))
+                                {
+                                    Console.WriteLine("Selection out of range. Try again.");
+                                    continue;
+                                }
+
+                                FileOperation action = GetActionFromUser("multiple", "multiple");
+
+                                for (int i = n_start; i <= n_end; i++)
+                                {
+                                    var path = byIndex[i];
+
+                                    string rpath = Path.GetFullPath(Path.Combine(repo.Path, path));
+                                    string spath = Path.GetFullPath(Path.Combine(source.Path, path));
+
+                                    if ((action == FileOperation.UseRepo || action == FileOperation.DeleteRepo) && !File.Exists(rpath))
+                                    {
+                                        Console.WriteLine("Repo path {0} doesn't exist; can't {1} from there. Not changing the action on this one.",
+                                            rpath, 
+                                            (action == FileOperation.UseRepo) ? "copy" : "delete");
+                                    }
+                                    else if ((action == FileOperation.UseSource || action == FileOperation.DeleteSource) && !File.Exists(spath))
+                                    {
+                                        Console.WriteLine("Source path {0} doesn't exist; can't {1} from there. Not changing the action on this one.",
+                                            spath,
+                                            (action == FileOperation.UseRepo) ? "copy" : "delete");
+                                    }
+                                    else
+                                    {
+                                        changeset[path].FileOperation = action;
+                                    }
+                                }
                             }
                             else
                             {
-                                n_start = n_end = int.Parse(changeNum);
-                            }
-                            */
+                                n = int.Parse(changeNum) - 1;
+                                if (n < 0 || n >= changeset.Count(e => e.FileOperation != FileOperation.NoOp))
+                                    throw new FormatException("out of range");
 
-                            n = int.Parse(changeNum) - 1;
-                            if (n < 0 || n >= changeset.Count(e => e.FileOperation != FileOperation.NoOp))
-                                throw new FormatException("out of range");
+                                var path = byIndex[n];
+                                string rpath = Path.GetFullPath(Path.Combine(repo.Path, path));
+                                string spath = Path.GetFullPath(Path.Combine(source.Path, path));
 
-                            var path = byIndex[n];
-                            string rpath = Path.GetFullPath(Path.Combine(repo.Path, path));
-                            string spath = Path.GetFullPath(Path.Combine(source.Path, path));
-
-                            FileOperation? action = GetActionFromUser(File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
-                            if (action.HasValue)
-                            {
-                                changeset[path].FileOperation = action.Value;
-                            }
-                            else
-                            {
-                                changeset[path].FileOperation = FileOperation.NoOp;
+                                FileOperation action = GetActionFromUser(File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
+                                changeset[path].FileOperation = action;
                             }
                         }
                         catch (Exception ex)
@@ -416,7 +450,8 @@ namespace FooSync.ConsoleApp
                 {
                     Console.WriteLine("Copying files...");
                     int width = 0;
-                    CopyEngine.Copy(srcFiles, dstFiles, delegate(int completed, int total, string file) {
+                    CopyEngine.Copy(srcFiles, dstFiles, delegate(int completed, int total, string file)
+                    {
                         string line = string.Format("{0}/{1} {2}", completed, total, file);
                         Console.Write("\r{0,"+width+"}\r", string.Empty);
                         Console.Write(line);
@@ -430,7 +465,7 @@ namespace FooSync.ConsoleApp
                 {
                     Console.WriteLine("Deleting files...");
                     int width = 0;
-                    CopyEngine.Copy(srcFiles, dstFiles, delegate(int completed, int total, string file)
+                    CopyEngine.Delete(delFiles, delegate(int completed, int total, string file)
                     {
                         string line = string.Format("{0}/{1} {2}", completed, total, file);
                         Console.Write("\r{0," + width + "}\r", string.Empty);
@@ -487,7 +522,7 @@ namespace FooSync.ConsoleApp
                 }
 
                 state.Write(FooSyncEngine.RepoStateFileName);
-                Console.WriteLine(" done.");
+                Console.WriteLine(" done.\n");
             }
         }
 
@@ -516,7 +551,7 @@ namespace FooSync.ConsoleApp
             return ret;
         }
 
-        private static FileOperation? GetActionFromUser(string repo, string source)
+        private static FileOperation GetActionFromUser(string repo, string source)
         {
             while (true)
             {
@@ -541,6 +576,7 @@ namespace FooSync.ConsoleApp
                 Console.Write("(5) Do Nothing : ");
 
                 var key = Console.ReadKey(false);
+                Console.WriteLine();
                 switch (key.Key)
                 {
                     case ConsoleKey.D1:
@@ -561,7 +597,7 @@ namespace FooSync.ConsoleApp
 
                     case ConsoleKey.D5:
                     case ConsoleKey.NumPad5:
-                        return null;
+                        return FileOperation.NoOp;
 
                     default:
                         Console.WriteLine("Invalid key pressed.");

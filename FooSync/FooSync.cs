@@ -140,7 +140,7 @@ namespace FooSync
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822: Mark members as static")]
-        public void GetConflicts(ref FooChangeSet changeset, RepositoryState repoState, FooTree repo, FooTree source)
+        public void GetConflicts(FooChangeSet changeset, RepositoryState repoState, FooTree repo, FooTree source)
         {
             if (changeset == null)
                 throw new ArgumentNullException("changeset");
@@ -161,8 +161,9 @@ namespace FooSync
                         break;
                     
                     case ChangeStatus.Newer:
-                        if (repoState.Origin[filename] != repoState.Source.Name
-                                && !DateTimesWithinPrecision(repoState.Repository.MTimes[filename], repo.Files[filename].MTime, MTimePrecision))
+                        if (!repoState.Origin.ContainsKey(filename) || !repoState.Repository.MTimes.ContainsKey(filename)
+                                || (repoState.Origin[filename] != repoState.Source.Name
+                                        && !DateTimesWithinPrecision(repoState.Repository.MTimes[filename], repo.Files[filename].MTime, MTimePrecision)))
                         {
                             //
                             // repository file was updated independently of the source's change
@@ -173,7 +174,8 @@ namespace FooSync
                         break;
 
                     case ChangeStatus.Older:
-                        if (!DateTimesWithinPrecision(repoState.Source.MTimes[filename], source.Files[filename].MTime, MTimePrecision))
+                        if (!repoState.Source.MTimes.ContainsKey(filename)
+                                || !DateTimesWithinPrecision(repoState.Source.MTimes[filename], source.Files[filename].MTime, MTimePrecision))
                         {
                             //
                             // source file was updated, then repository was updated from elsewhere

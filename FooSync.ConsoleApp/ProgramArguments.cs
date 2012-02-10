@@ -11,19 +11,19 @@ namespace FooSync.ConsoleApp
     class ProgramArguments
     {
         private static readonly string[] OPTIONS = { "&directory" };
-        private static readonly string[] FLAGS = { "&help", "nohash" };
+        private static readonly string[] FLAGS = { "&help", "hash", "casesensitive" };
 
         public ProgramArguments()
         {
             Options = new Dictionary<string, string>();
-            Flags = new HashSet<string>();
+            Flags = new Dictionary<string, bool>();
             Values = new List<string>();
         }
 
         public ProgramArguments(string[] args)
         {
             Options = new Dictionary<string, string>();
-            Flags = new HashSet<string>();
+            Flags = new Dictionary<string, bool>();
             Values = new List<string>();
 
             if (_flags == null)
@@ -67,6 +67,7 @@ namespace FooSync.ConsoleApp
             {
                 if (parsingFlags)
                 {
+                    bool flagSet = true;
                     var a = args[i];
                     
                     if (a.StartsWith("--"))
@@ -84,6 +85,12 @@ namespace FooSync.ConsoleApp
                         continue;
                     }
 
+                    if (a.StartsWith("no") && _flags.Contains(a.Substring(2)))
+                    {
+                        flagSet = false;
+                        a = a.Substring(2);
+                    }
+
                     string val = null;
                     bool valueFromArgs = false;
                     int splitIndex = a.IndexOf(":");
@@ -94,17 +101,24 @@ namespace FooSync.ConsoleApp
                     }
                     else
                     {
-                        val = args[i+1];
+                        if (args.Length > i + 1)
+                        {
+                            val = args[i + 1];
+                        }
+                        else
+                        {
+                            val = null;
+                        }
                         valueFromArgs = true;
                     }
 
                     if (_flags.Contains(a))
                     {
-                        Flags.Add(a);
+                        Flags.Add(a, flagSet);
                     }
                     else if (_shortFlags.ContainsKey(a))
                     {
-                        Flags.Add(_shortFlags[a]);
+                        Flags.Add(_shortFlags[a], flagSet);
                     }
                     else if (_options.Contains(a))
                     {
@@ -136,7 +150,7 @@ namespace FooSync.ConsoleApp
         }
 
         public Dictionary<string, string> Options { get; private set; }
-        public HashSet<string> Flags { get; private set; }
+        public Dictionary<string, bool> Flags { get; private set; }
         public List<string> Values { get; private set; }
 
         private static HashSet<string> _options = null;

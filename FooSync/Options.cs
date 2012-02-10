@@ -8,9 +8,11 @@ namespace FooSync
         {
             ComputeHashes = true;
             SearchHashes = true;
+            CaseInsensitive = true;
         }
 
         public bool ComputeHashes { get; set; }
         public bool SearchHashes { get; set; }
+        public bool CaseInsensitive { get; set; }
     }
 }

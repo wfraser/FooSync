@@ -56,7 +56,6 @@ namespace FooSync
             {
                 return from e in Elems
                        where e.Value.ConflictStatus != ConflictStatus.NoConflict
-                          || e.Value.ConflictStatus != ConflictStatus.Undetermined
                        select e.Key;
             }
         }
