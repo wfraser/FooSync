@@ -13,6 +13,42 @@ namespace FooSync.ConsoleApp
         private static readonly string[] OPTIONS = { "&directory" };
         private static readonly string[] FLAGS = { "&help", "hash", "casesensitive" };
 
+        static ProgramArguments()
+        {
+            _options = new HashSet<string>();
+            _shortOptions = new Dictionary<string, string>();
+            _flags = new HashSet<string>();
+            _shortFlags = new Dictionary<string, string>();
+
+            for (int i = 0; i < OPTIONS.Length; i++)
+            {
+                int index = OPTIONS[i].IndexOf('&');
+                if (index != -1)
+                {
+                    _options.Add(OPTIONS[i].Replace("&", ""));
+                    _shortOptions.Add(OPTIONS[i][index + 1].ToString(), OPTIONS[i].Replace("&", ""));
+                }
+                else
+                {
+                    _options.Add(OPTIONS[i]);
+                }
+            }
+
+            for (int i = 0; i < FLAGS.Length; i++)
+            {
+                int index = FLAGS[i].IndexOf('&');
+                if (index != -1)
+                {
+                    _flags.Add(FLAGS[i].Replace("&", ""));
+                    _shortFlags.Add(FLAGS[i][index + 1].ToString(), FLAGS[i].Replace("&", ""));
+                }
+                else
+                {
+                    _flags.Add(FLAGS[i]);
+                }
+            }
+        }
+
         public ProgramArguments()
         {
             Options = new Dictionary<string, string>();
@@ -25,42 +61,6 @@ namespace FooSync.ConsoleApp
             Options = new Dictionary<string, string>();
             Flags = new Dictionary<string, bool>();
             Values = new List<string>();
-
-            if (_flags == null)
-            {
-                _options = new HashSet<string>();
-                _shortOptions = new Dictionary<string, string>();
-                _flags = new HashSet<string>();
-                _shortFlags = new Dictionary<string, string>();
-
-                for (int i = 0; i < OPTIONS.Length; i++)
-                {
-                    int index = OPTIONS[i].IndexOf('&');
-                    if (index != -1)
-                    {
-                        _options.Add(OPTIONS[i].Replace("&", ""));
-                        _shortOptions.Add(OPTIONS[i][index + 1].ToString(), OPTIONS[i].Replace("&", ""));
-                    }
-                    else
-                    {
-                        _options.Add(OPTIONS[i]);
-                    }
-                }
-
-                for (int i = 0; i < FLAGS.Length; i++)
-                {
-                    int index = FLAGS[i].IndexOf('&');
-                    if (index != -1)
-                    {
-                        _flags.Add(FLAGS[i].Replace("&", ""));
-                        _shortFlags.Add(FLAGS[i][index + 1].ToString(), FLAGS[i].Replace("&", ""));
-                    }
-                    else
-                    {
-                        _flags.Add(FLAGS[i]);
-                    }
-                }
-            }
             
             bool parsingFlags = true;
             for (int i = 0; i < args.Length; i++)
