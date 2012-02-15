@@ -48,6 +48,8 @@ namespace FooSync
                     }
                 }
 
+                repo.Filename = configXmlFilename;
+
                 return repo;
             }
         }

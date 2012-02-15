@@ -23,6 +23,8 @@ namespace FooSync.WPFApp
     {
         public MainWindow()
         {
+            _foo = new FooSyncEngine();
+
             InitializeComponent();
             EnableControls(false);
             this.Show();
@@ -106,8 +108,10 @@ namespace FooSync.WPFApp
                 }
                 else
                 {
-                    PopulateControlsFromConfig();
+                    DirectorySelector.ItemsSource = _config.Directories;
                 }
+
+                EnableControls(true);
             }
         }
 
@@ -175,16 +179,37 @@ namespace FooSync.WPFApp
             }
         }
 
-        private void PopulateControlsFromConfig()
-        {
-        }
-
         private StartWindow _start = null;
         private RepositoryConfig _config = null;
+        private FooSyncEngine _foo = null;
+        private FooTree _repo = null;
+        private FooTree _source = null;
+        private RepositoryState _state = null;
 
         private void Inspect(object sender, RoutedEventArgs e)
         {
+            RepositoryDirectory dir = DirectorySelector.SelectedItem as RepositoryDirectory;
 
+            if (dir == null)
+                return;
+
+            //WRFDEV TODO: add progress callbacks to all these
+
+            var exceptions = FooSyncEngine.PrepareExceptions(dir);
+            _repo = _foo.Tree(Path.Combine(_config.RepositoryPath, dir.Path), exceptions);
+            _source = _foo.Tree(dir.Source.Path, exceptions);
+            _state = new RepositoryState(Path.Combine(_config.RepositoryPath, dir.Path, FooSyncEngine.RepoStateFileName));
+
+            var changeset = _foo.Inspect(_repo, _source, _state);
+
+            //WRFDEV TODO
+        }
+
+        private void DirectorySelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            RepositoryDirectory dir = e.AddedItems[0] as RepositoryDirectory;
+
+            InspectButton.IsEnabled = (dir != null);
         }
     }
 }

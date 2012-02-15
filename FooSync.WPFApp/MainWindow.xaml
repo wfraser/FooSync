@@ -28,7 +28,7 @@
             </Button>
         </ToolBar>
         <Label Grid.Row="1" Grid.Column="0" Content="Directory: "/>
-        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectorySelector" />
+        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectorySelector" SelectionChanged="DirectorySelector_SelectionChanged" />
         <Button x:Name="InspectButton" Grid.Row="1" Grid.Column="2" Click="Inspect" Content="Inspect Files" IsEnabled="False"/>
         <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
             <Expander Header="New Files:" IsExpanded="False">

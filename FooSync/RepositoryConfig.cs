@@ -16,12 +16,23 @@ namespace FooSync
 
         [XmlAttribute]
         public string RepositoryName { get; set; }
+
+        [XmlIgnore]
+        public string Filename { get; set; }
+
+        [XmlIgnore]
+        public string RepositoryPath { get { return System.IO.Path.GetDirectoryName(Filename); } }
     }
 
     [Serializable]
     [XmlType(Namespace = "http://www.codewise.org/schema/foosync/RepositoryConfig.xsd")]
     public class RepositoryDirectory
     {
+        public override string ToString()
+        {
+            return Path;
+        }
+
         [XmlElement]
         public string Path { get; set; }
 
