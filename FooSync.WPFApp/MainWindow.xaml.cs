@@ -179,12 +179,15 @@ namespace FooSync.WPFApp
             }
         }
 
-        private StartWindow _start = null;
-        private RepositoryConfig _config = null;
-        private FooSyncEngine _foo = null;
-        private FooTree _repo = null;
-        private FooTree _source = null;
-        private RepositoryState _state = null;
+        public static NullStringConverter<DateTime> NullDateTimeConverter = new NullStringConverter<DateTime>();
+
+        private StartWindow         _start      = null;
+        private RepositoryConfig    _config     = null;
+        private FooSyncEngine       _foo        = null;
+        private FooTree             _repo       = null;
+        private FooTree             _source     = null;
+        private RepositoryState     _state      = null;
+        private FooChangeSet        _changeset  = null;
 
         private void Inspect(object sender, RoutedEventArgs e)
         {
@@ -200,7 +203,17 @@ namespace FooSync.WPFApp
             _source = _foo.Tree(dir.Source.Path, exceptions);
             _state = new RepositoryState(Path.Combine(_config.RepositoryPath, dir.Path, FooSyncEngine.RepoStateFileName));
 
-            var changeset = _foo.Inspect(_repo, _source, _state);
+            _changeset = _foo.Inspect(_repo, _source, _state);
+
+            var newFiles = _changeset.Where(elem => !_state.Repository.MTimes.ContainsKey(elem.Filename) && !_state.Source.MTimes.ContainsKey(elem.Filename));
+
+            NewFiles.ItemsSource = new BindableChangeSet(_changeset, newFiles, _repo, _source);
+            if (newFiles.Count() > 0)
+            {
+                (NewFiles.Parent as Expander).IsExpanded = true;
+            }
+
+            //(NewFiles.View as GridView).Columns[0].DisplayMemberBinding = new Binding("Filename");
 
             //WRFDEV TODO
         }
@@ -210,6 +223,32 @@ namespace FooSync.WPFApp
             RepositoryDirectory dir = e.AddedItems[0] as RepositoryDirectory;
 
             InspectButton.IsEnabled = (dir != null);
+        }
+    }
+
+    public class NullStringConverter<T> : IValueConverter where T : struct
+    {
+        public object Convert(object value, Type target, object parameter, System.Globalization.CultureInfo culture)
+        {
+            var v = value as Nullable<T>;
+
+            if (v == null)
+            {
+                return "none";
+            }
+            else if (!v.HasValue)
+            {
+                return "none";
+            }
+            else
+            {
+                return v.Value;
+            }
+        }
+
+        public object ConvertBack(object value, Type target, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 }

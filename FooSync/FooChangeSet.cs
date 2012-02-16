@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 
 namespace FooSync
 {
-    public class FooChangeSet
+    public class FooChangeSet : INotifyCollectionChanged
     {
         public FooChangeSet(FooSyncEngine foo)
         {
@@ -28,6 +29,11 @@ namespace FooSync
                     ConflictStatus = ConflictStatus.Undetermined,
                     FileOperation = FileOperation.NoOp,
                 });
+
+                if (CollectionChanged != null)
+                {
+                    CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, filename));
+                }
             }
         }
 
@@ -70,6 +76,8 @@ namespace FooSync
             get { return Elems[filename]; }
             set { Elems[filename] = value; }
         }
+
+        public event NotifyCollectionChangedEventHandler CollectionChanged;
 
         private FooSyncEngine Foo;
         private Dictionary<string, FooChangeSetElem> Elems;

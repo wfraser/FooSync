@@ -58,6 +58,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BindableChangeSet.cs" />
     <Compile Include="ImageTextButton.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\Interop\COMGuids.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\Interop\ErrorHelper.cs" />
