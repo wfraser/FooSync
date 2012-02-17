@@ -6,7 +6,7 @@
         Closed="Window_Closed">
     <Window.Resources>
         <ControlTemplate x:Key="FileGrid" TargetType="{x:Type ListView}">
-            <ListView ItemsSource="{Binding RelativeSource={RelativeSource TemplatedParent}}">
+            <ListView ItemsSource="{Binding Path=.}">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="Filename" DisplayMemberBinding="{Binding Filename}"/>
@@ -47,19 +47,7 @@
         <Button x:Name="InspectButton" Grid.Row="1" Grid.Column="2" Click="Inspect" Content="Inspect Files" IsEnabled="False"/>
         <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
             <Expander Header="New Files:" IsExpanded="False">
-                <ListView Template="{StaticResource FileGrid}" x:Name="NewFiles"/>
-                <!--
-                <ListView x:Name="NewFiles">
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn Header="Filename" DisplayMemberBinding="{Binding Filename}"/>
-                            <GridViewColumn Header="Repository Date" DisplayMemberBinding="{Binding RepositoryDate}"/>
-                            <GridViewColumn Header="Action" DisplayMemberBinding="{Binding Action}"/>
-                            <GridViewColumn Header="Source Date" DisplayMemberBinding="{Binding SourceDate}"/>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-                -->
+                <ListView Template="{StaticResource FileGrid}" x:Name="NewFiles" ItemsSource="{Binding Path=.}"/>
             </Expander>
             <Expander Header="Changed Files:" IsExpanded="False">
                 <ListView Template="{StaticResource FileGrid}" x:Name="ChangedFiles"/>

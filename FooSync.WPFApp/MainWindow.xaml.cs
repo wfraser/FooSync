@@ -28,7 +28,24 @@ namespace FooSync.WPFApp
             InitializeComponent();
             EnableControls(false);
             this.Show();
-            ShowStartWindow();
+
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                //
+                // WRFDEV: for testing purposes
+                //
+
+                string error;
+                _config = RepositoryConfigLoader.GetRepositoryConfig(@"C:\Users\Bill\Desktop\repo\.FooSync_Repository.xml", out error);
+                DirectorySelector.ItemsSource = _config.Directories;
+                EnableControls(true);
+                DirectorySelector.SelectedIndex = 0;
+                InspectButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+            else
+            {
+                ShowStartWindow();
+            }
         }
 
         public void ShowStartWindow()
@@ -196,18 +213,47 @@ namespace FooSync.WPFApp
             if (dir == null)
                 return;
 
+            if (dir.Source == null)
+            {
+                var result = MessageBox.Show(
+                    "There's no source configured for this repository directory that matches your computer.\n\nWould you like to configure one?",
+                    "No Valid Source",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Exclamation,
+                    MessageBoxResult.No);
+                if (result == MessageBoxResult.Yes)
+                {
+                    MessageBox.Show("[[TODO: Configure Window]]");
+                }
+                else
+                {
+                    return;
+                }
+            }
+
             //WRFDEV TODO: add progress callbacks to all these
 
             var exceptions = FooSyncEngine.PrepareExceptions(dir);
             _repo = _foo.Tree(Path.Combine(_config.RepositoryPath, dir.Path), exceptions);
             _source = _foo.Tree(dir.Source.Path, exceptions);
-            _state = new RepositoryState(Path.Combine(_config.RepositoryPath, dir.Path, FooSyncEngine.RepoStateFileName));
+
+            try
+            {
+                _state = new RepositoryState(Path.Combine(_config.RepositoryPath, dir.Path, FooSyncEngine.RepoStateFileName));
+            }
+            catch (FileNotFoundException)
+            {
+                _state = new RepositoryState();
+                _state.AddSource(_repo, RepositoryState.RepoSourceName);
+                _state.AddSource(_source, Environment.MachineName.ToLower());
+                _state.Write(Path.Combine(_config.RepositoryPath, dir.Path, FooSyncEngine.RepoStateFileName));
+            }
 
             _changeset = _foo.Inspect(_repo, _source, _state);
 
             var newFiles = _changeset.Where(elem => !_state.Repository.MTimes.ContainsKey(elem.Filename) && !_state.Source.MTimes.ContainsKey(elem.Filename));
 
-            NewFiles.ItemsSource = new BindableChangeSet(_changeset, newFiles, _repo, _source);
+            NewFiles.DataContext = new BindableChangeSet(_changeset, newFiles, _repo, _source);
             if (newFiles.Count() > 0)
             {
                 (NewFiles.Parent as Expander).IsExpanded = true;
