@@ -13,7 +13,7 @@ namespace FooSync.WPFApp
             _repo = repository;
             _source = source;
 
-            _changeset.CollectionChanged += CollectionChanged;
+            _changeset.CollectionChanged += ChangesetChanged;
         }
 
         public IEnumerator<BindableChangeSetElem> GetEnumerator()
@@ -24,6 +24,14 @@ namespace FooSync.WPFApp
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        private void ChangesetChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (CollectionChanged != null)
+            {
+                CollectionChanged(this, e);
+            }
         }
 
         public event NotifyCollectionChangedEventHandler CollectionChanged;

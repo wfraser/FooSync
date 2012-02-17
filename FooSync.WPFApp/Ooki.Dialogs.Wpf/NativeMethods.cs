@@ -22,6 +22,13 @@ namespace Ookii.Dialogs.Wpf
 
         #region LoadLibrary
 
+        [DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern Ookii.Dialogs.Wpf.SafeModuleHandle LoadLibraryEx(
+            string lpFileName,
+            IntPtr hFile,
+            LoadLibraryExFlags dwFlags
+            );
+
         [DllImport("kernel32", SetLastError = true),
         ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
         [return: MarshalAs(UnmanagedType.Bool)]

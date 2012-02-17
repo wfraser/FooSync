@@ -13,7 +13,7 @@ namespace FooSync
 
         private FooSyncEngine Foo { get; set; }
 
-        internal FooTree(FooSyncEngine foo, string path, IEnumerable<string> exceptions)
+        internal FooTree(FooSyncEngine foo, string path, IEnumerable<string> exceptions, Progress callback = null)
         {
             System.Diagnostics.Debug.Assert(
                 (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSyncEngine"),
@@ -23,12 +23,13 @@ namespace FooSync
             this.Path  = path;
             this.Files = new Dictionary<string, FooFileInfo>();
 
-            Walk(path, path, exceptions);
+            Walk(path, path, exceptions, callback);
         }
 
-        private void Walk(string path, string basePath, IEnumerable<string> exceptions)
+        private void Walk(string path, string basePath, IEnumerable<string> exceptions, Progress callback)
         {
-            foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
+            int n = 0;
+            foreach (string file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
             {
                 System.Diagnostics.Debug.Assert(file.StartsWith(basePath), "file is supposed to start with basePath");
 
@@ -37,6 +38,11 @@ namespace FooSync
                 if (trimmedName == FooSyncEngine.ConfigFileName || trimmedName == FooSyncEngine.RepoStateFileName)
                 {
                     continue;
+                }
+
+                if (callback != null)
+                {
+                    callback(++n, -1, System.IO.Path.GetDirectoryName(file));
                 }
 
                 bool failsRegex = false;

@@ -55,6 +55,11 @@ namespace FooSync.ConsoleApp
                 return;
             }
 
+            if (programArgs.Values.Count == 1)
+            {
+                Directory.SetCurrentDirectory(programArgs.Values[0]);
+            }
+
             var program = new Program(foo);
             program.Run(programArgs);
         }
@@ -177,7 +182,7 @@ namespace FooSync.ConsoleApp
                 //
 
                 Console.Write("Comparing files...");
-                var changeset = Foo.Inspect(repo, source, state);
+                var changeset = Foo.Inspect(state, repo, source);
                 Console.Write(" done.\n");
 
                 if (changeset.Count(e => e.ChangeStatus != ChangeStatus.Identical) == 0)
@@ -192,37 +197,7 @@ namespace FooSync.ConsoleApp
 
                 Foo.GetConflicts(changeset, state, repo, source);
 
-                foreach (var filename in changeset)
-                {
-                    if (changeset[filename].ConflictStatus == ConflictStatus.NoConflict)
-                    {
-                        switch (changeset[filename].ChangeStatus)
-                        {
-                            case ChangeStatus.Newer:
-                            case ChangeStatus.RepoMissing:
-                                changeset[filename].FileOperation = FileOperation.UseSource;
-                                break;
-
-                            case ChangeStatus.Older:
-                            case ChangeStatus.SourceMissing:
-                                changeset[filename].FileOperation = FileOperation.UseRepo;
-                                break;
-
-                            case ChangeStatus.RepoDeleted:
-                                changeset[filename].FileOperation = FileOperation.DeleteSource;
-                                break;
-
-                            case ChangeStatus.SourceDeleted:
-                                changeset[filename].FileOperation = FileOperation.DeleteRepo;
-                                break;
-
-                            default:
-                                Debug.Assert(false, "Invalid change status!");
-                                break;
-                        }
-                    }
-                    // else: no-op, these are handled by the conflicts loop below
-                }
+                Foo.SetDefaultActions(changeset);
 
                 int conflictCount = changeset.Count(e => e.ConflictStatus != ConflictStatus.NoConflict);
                 if (conflictCount > 0) {

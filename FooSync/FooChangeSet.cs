@@ -56,6 +56,11 @@ namespace FooSync
             return Elems.Values.Count(predicate);
         }
 
+        public int Count()
+        {
+            return Elems.Values.Count();
+        }
+
         public IEnumerable<string> Conflicts
         {
             get
@@ -75,6 +80,14 @@ namespace FooSync
         {
             get { return Elems[filename]; }
             set { Elems[filename] = value; }
+        }
+
+        public void AdviseChanged(string filename)
+        {
+            if (CollectionChanged != null)
+            {
+                CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            }
         }
 
         public event NotifyCollectionChangedEventHandler CollectionChanged;

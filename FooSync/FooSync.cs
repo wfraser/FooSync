@@ -23,9 +23,9 @@ namespace FooSync
             this.Options = options;
         }
 
-        public FooTree Tree(string path, IEnumerable<string> exceptions)
+        public FooTree Tree(string path, IEnumerable<string> exceptions, Progress callback = null)
         {
-            return new FooTree(this, path, exceptions);
+            return new FooTree(this, path, exceptions, callback);
         }
 
         public FooFileInfo FileInfo(string path)
@@ -79,7 +79,7 @@ namespace FooSync
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822: Mark members as static")]
-        public FooChangeSet Inspect(FooTree repo, FooTree source, RepositoryState state)
+        public FooChangeSet Inspect(RepositoryState state, FooTree repo, FooTree source, Progress callback = null)
         {
             if (repo == null)
                 throw new ArgumentNullException("repo");
@@ -91,10 +91,16 @@ namespace FooSync
             var changeset = this.ChangeSet();
             var repoMissingFiles = new HashSet<string>(source.Files.Keys);
 
-            Parallel.ForEach(repo.Files, file =>
+            int n = 0;
+            foreach (var file in repo.Files)
             {
                 var filename = file.Key;
                 ChangeStatus status = ChangeStatus.Identical;
+
+                if (callback != null)
+                {
+                    callback(n++, repo.Files.Count + repoMissingFiles.Count, Path.GetDirectoryName(filename));
+                }
 
                 if (source.Files.ContainsKey(filename))
                 {
@@ -118,11 +124,16 @@ namespace FooSync
                 {
                     changeset.Add(filename, status);
                 }
-            });
-
-            Parallel.ForEach(repoMissingFiles, filename =>
+            }
+            
+            foreach (var filename in repoMissingFiles)
             {
                 ChangeStatus status = ChangeStatus.Undetermined;
+
+                if (callback != null)
+                {
+                    callback(n++, repo.Files.Count + repoMissingFiles.Count, Path.GetDirectoryName(filename));
+                }
 
                 if (state.Repository.MTimes.ContainsKey(filename))
                 {
@@ -134,7 +145,7 @@ namespace FooSync
                 }
 
                 changeset.Add(filename, status);
-            });
+            }
 
             return changeset;
         }
@@ -214,6 +225,40 @@ namespace FooSync
             }
         }
 
+        public void SetDefaultActions(FooChangeSet changeset)
+        {
+            foreach (var filename in changeset)
+            {
+                if (changeset[filename].ConflictStatus == ConflictStatus.NoConflict)
+                {
+                    switch (changeset[filename].ChangeStatus)
+                    {
+                        case ChangeStatus.Newer:
+                        case ChangeStatus.RepoMissing:
+                            changeset[filename].FileOperation = FileOperation.UseSource;
+                            break;
+
+                        case ChangeStatus.Older:
+                        case ChangeStatus.SourceMissing:
+                            changeset[filename].FileOperation = FileOperation.UseRepo;
+                            break;
+
+                        case ChangeStatus.RepoDeleted:
+                            changeset[filename].FileOperation = FileOperation.DeleteSource;
+                            break;
+
+                        case ChangeStatus.SourceDeleted:
+                            changeset[filename].FileOperation = FileOperation.DeleteRepo;
+                            break;
+
+                        default:
+                            System.Diagnostics.Debug.Assert(false, "Invalid change status!");
+                            break;
+                    }
+                }
+            }
+        }
+
         private static bool DateTimesWithinPrecision(DateTime a, DateTime b, TimeSpan precision)
         {
             DateTime a_clipped = new DateTime(a.Ticks - (a.Ticks % precision.Ticks));
@@ -224,6 +269,8 @@ namespace FooSync
 
         public Options Options { get; private set; }
     }
+
+    public delegate void Progress(int completed, int total, string item);
 
     public enum ChangeStatus
     {
@@ -253,6 +300,7 @@ namespace FooSync
         UseRepo,
         UseSource,
         DeleteRepo,
-        DeleteSource
+        DeleteSource,
+        MaxFileOperation
     }
 }

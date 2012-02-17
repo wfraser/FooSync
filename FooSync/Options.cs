@@ -6,8 +6,8 @@ namespace FooSync
     {
         public Options()
         {
-            ComputeHashes = true;
-            SearchHashes = true;
+            ComputeHashes = false;
+            SearchHashes = false;
             CaseInsensitive = true;
         }
 

@@ -30,7 +30,14 @@ namespace FooSync
     {
         public override string ToString()
         {
-            return Path;
+            if (Path == ".")
+            {
+                return "(main directory)";
+            }
+            else
+            {
+                return Path;
+            }
         }
 
         [XmlElement]

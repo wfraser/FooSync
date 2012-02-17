@@ -5,19 +5,61 @@
         Title="FooSync" Height="430" Width="700" Icon="/FooSync;component/Resources/loki_128.png"
         Closed="Window_Closed">
     <Window.Resources>
+        <foo:NullDateTimeConverter x:Key="NullDateTimeConverter"/>
+        <foo:NullDateTimeItalicConverter x:Key="NullDateTimeItalicConverter"/>
+        <foo:FileOperationValueConverter x:Key="FileOperationValueConverter"/>
+        
         <ControlTemplate x:Key="FileGrid" TargetType="{x:Type ListView}">
             <ListView ItemsSource="{Binding Path=.}">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="Filename" DisplayMemberBinding="{Binding Filename}"/>
-                        <GridViewColumn Header="Repository Date" DisplayMemberBinding="{Binding RepositoryDate}"/>
-                        <GridViewColumn Header="Action" DisplayMemberBinding="{Binding Action}"/>
-                        <GridViewColumn Header="Source Date" DisplayMemberBinding="{Binding SourceDate}"/>
+                        
+                        <GridViewColumn Header="Filename">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Filename}"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        
+                        <GridViewColumn Header="Repository Date">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding RepositoryDate, Converter={StaticResource NullDateTimeConverter}}"
+                                               FontStyle="{Binding RepositoryDate, Converter={StaticResource NullDateTimeItalicConverter}}"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>   
+                        
+                        <GridViewColumn Header="Action">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="{Binding Action, Converter={StaticResource FileOperationValueConverter}}"
+                                            Command="foo:MainWindow.ActionClick" CommandParameter="{Binding Filename}"
+                                            HorizontalAlignment="Center"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        
+                        <GridViewColumn Header="Source Date">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding SourceDate, Converter={StaticResource NullDateTimeConverter}}"
+                                               FontStyle="{Binding SourceDate, Converter={StaticResource NullDateTimeItalicConverter}}"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        
                     </GridView>
                 </ListView.View>
             </ListView>
         </ControlTemplate>
     </Window.Resources>
+    
+    <Window.CommandBindings>
+        <CommandBinding Command="foo:MainWindow.ActionClick" Executed="OnActionClick"/>
+    </Window.CommandBindings>
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -42,20 +84,23 @@
                 <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16"/>
             </Button>
         </ToolBar>
-        <Label Grid.Row="1" Grid.Column="0" Content="Directory: "/>
+        
+        <Label Grid.Row="1" Grid.Column="0" Content="Subirectory: "/>
         <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectorySelector" SelectionChanged="DirectorySelector_SelectionChanged" />
         <Button x:Name="InspectButton" Grid.Row="1" Grid.Column="2" Click="Inspect" Content="Inspect Files" IsEnabled="False"/>
-        <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
+        
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="3" x:Name="FilesPanel">
             <Expander Header="New Files:" IsExpanded="False">
                 <ListView Template="{StaticResource FileGrid}" x:Name="NewFiles" ItemsSource="{Binding Path=.}"/>
             </Expander>
             <Expander Header="Changed Files:" IsExpanded="False">
-                <ListView Template="{StaticResource FileGrid}" x:Name="ChangedFiles"/>
+                <ListView Template="{StaticResource FileGrid}" x:Name="ChangedFiles" ItemsSource="{Binding Path=.}"/>
             </Expander>
             <Expander Header="Deleted Files:" IsExpanded="False">
-                <ListView Template="{StaticResource FileGrid}" x:Name="DeletedFiles"/>
+                <ListView Template="{StaticResource FileGrid}" x:Name="DeletedFiles" ItemsSource="{Binding Path=.}"/>
             </Expander>
         </StackPanel>
+        
         <Button x:Name="DoActionsButton" Grid.Row="3" Grid.ColumnSpan="3" Content="Do Actions" VerticalAlignment="Bottom" IsEnabled="False"/>
     </Grid>
 </Window>

@@ -59,14 +59,27 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="BindableChangeSet.cs" />
+    <Compile Include="FileOperationValueConverter.cs" />
+    <Compile Include="NullDateTimeItalicConverter.cs" />
     <Compile Include="ImageTextButton.cs" />
+    <Compile Include="NullDateTimeConverter.cs" />
+    <Compile Include="Ooki.Dialogs.Wpf\AnimationResource.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\Interop\COMGuids.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\Interop\ErrorHelper.cs" />
+    <Compile Include="Ooki.Dialogs.Wpf\Interop\IProgressDialog.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\Interop\ShellComInterfaces.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\Interop\ShellWrapperDefinitions.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\NativeMethods.cs" />
+    <Compile Include="Ooki.Dialogs.Wpf\ProgressBarStyle.cs" />
+    <Compile Include="Ooki.Dialogs.Wpf\ProgressDialog.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Ooki.Dialogs.Wpf\ProgressDialog.designer.cs">
+      <DependentUpon>ProgressDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Ooki.Dialogs.Wpf\Resources.Designer.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\SafeHandles.cs" />
+    <Compile Include="Ooki.Dialogs.Wpf\ShellAnimation.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\VistaFolderBrowserDialog.cs" />
     <Compile Include="StartWindow.xaml.cs">
       <DependentUpon>StartWindow.xaml</DependentUpon>
@@ -106,6 +119,9 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <EmbeddedResource Include="Ooki.Dialogs.Wpf\ProgressDialog.resx">
+      <DependentUpon>ProgressDialog.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Ooki.Dialogs.Wpf\Resources.resx" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

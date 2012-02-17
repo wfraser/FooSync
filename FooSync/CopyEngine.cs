@@ -10,8 +10,6 @@ namespace FooSync
     /// </summary>
     public static class CopyEngine
     {
-        public delegate void Progress(int completed, int total, string file);
-
         public static void Copy(ICollection<string> copyFrom, ICollection<string> copyTo, Progress callback)
         {
             Copy(copyFrom, copyTo, IntPtr.Zero, callback);
