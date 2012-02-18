@@ -31,7 +31,7 @@ namespace FooSync.WPFApp
             EnableControls(FilesPanel, false);
             this.Show();
 
-            if (System.Diagnostics.Debugger.IsAttached && false)
+            if (System.Diagnostics.Debugger.IsAttached)
             {
                 //
                 // WRFDEV: for testing purposes
@@ -41,7 +41,7 @@ namespace FooSync.WPFApp
                 _config = RepositoryConfigLoader.GetRepositoryConfig(@"W:\.FooSync_Repository.xml", out error);
                 DirectorySelector.ItemsSource = _config.Directories;
                 EnableControls(true);
-                DirectorySelector.SelectedIndex = 3;
+                DirectorySelector.SelectedIndex = 0;
                 InspectButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             }
             else
@@ -316,14 +316,18 @@ namespace FooSync.WPFApp
 
             EnableControls(FilesPanel, true);
 
-            var newFiles = _changeset.Where(elem => !_state.Repository.MTimes.ContainsKey(elem.Filename) && !_state.Source.MTimes.ContainsKey(elem.Filename));
+            var newFiles = _changeset.Where(elem => 
+                (!_state.Repository.MTimes.ContainsKey(elem.Filename) && !_repo.Files.ContainsKey(elem.Filename))
+                    || (!_state.Source.MTimes.ContainsKey(elem.Filename) && !_source.Files.ContainsKey(elem.Filename)));
             NewFiles.DataContext = new BindableChangeSet(_changeset, newFiles, _repo, _source);
             if (newFiles.Count() > 0)
             {
                 (NewFiles.Parent as Expander).IsExpanded = true;
             }
 
-            var deletedFiles = _changeset.Where(elem => elem.FileOperation == FileOperation.DeleteRepo || elem.FileOperation == FileOperation.DeleteSource);
+            var deletedFiles = _changeset.Where(elem =>
+                (_state.Repository.MTimes.ContainsKey(elem.Filename) && !_repo.Files.ContainsKey(elem.Filename))
+                    || (_state.Source.MTimes.ContainsKey(elem.Filename) && !_source.Files.ContainsKey(elem.Filename)));
             DeletedFiles.DataContext = new BindableChangeSet(_changeset, deletedFiles, _repo, _source);
             if (deletedFiles.Count() > 0)
             {
@@ -347,6 +351,62 @@ namespace FooSync.WPFApp
             }
         }
 
+        private void ContextMenu_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            var list = sender as ListView;
+
+            if (list != null && list.ContextMenu != null && list.ContextMenu.Items != null)
+            {
+                for (int i = 0; i < list.ContextMenu.Items.Count; i++)
+                {
+                    var item = list.ContextMenu.Items[i] as MenuItem;
+                    if (item != null)
+                    {
+                        //
+                        // This is kinda hacky, but x:Name can't be used in a ControlTemplate :/
+                        // The alternative is switching on the Header property...
+                        //
+
+                        if (i == 0 || i == 3) // Open file [location] (Repository)
+                        {
+                            item.IsEnabled = (list.SelectedItems.Count == 1
+                                    && (list.SelectedItem as BindableChangeSetElem).RepositoryDate.HasValue);
+                        }
+                        else if (i == 1 || i == 4) // Open file [location] (Source)
+                        {
+                            item.IsEnabled = (list.SelectedItems.Count == 1
+                                    && (list.SelectedItem as BindableChangeSetElem).SourceDate.HasValue);
+                        }
+                        else if (i == 6) // Change action to:
+                        {
+                            for (int j = 0; j < item.Items.Count; j++)
+                            {
+                                var subItem = item.Items[j] as MenuItem;
+                                if (subItem != null)
+                                {
+                                    //WRFDEV TODO
+                                    subItem.IsEnabled = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public void OpenExplorerAt(string filename)
+        {
+            System.Diagnostics.Process.Start("explorer.exe", "/select," + filename);
+        }
+
+        public void OpenWithDefaultApplication(string filename)
+        {
+            System.Diagnostics.Process.Start(filename);
+        }
+
+        #region Actions
+
+        public static RoutedCommand ActionClick = new RoutedCommand("ActionClick", typeof(MainWindow));
         /// <summary>
         /// Responsible for updating the file operation on a file. Fired when the 'Action' buttons in the file grid are clicked.
         /// </summary>
@@ -387,6 +447,97 @@ namespace FooSync.WPFApp
             _changeset.AdviseChanged(filename);
         }
 
-        public static RoutedCommand ActionClick = new RoutedCommand("ActionClick", typeof(MainWindow));
+        public static RoutedCommand OpenLocationRepo = new RoutedCommand("OpenLocationRepo", typeof(MainWindow));
+        private void OnOpenLocationRepo(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e == null)
+                return;
+
+            var list = (e.Parameter as ListView);
+
+            if (list != null)
+            {
+                if (list.SelectedItems.Count == 1)
+                {
+                    var item = list.SelectedItem as BindableChangeSetElem;
+                    OpenExplorerAt(Path.Combine(_repo.Path, item.Filename));
+                }
+            }
+        }
+
+        public static RoutedCommand OpenLocationSource = new RoutedCommand("OpenLocationSource", typeof(MainWindow));
+        private void OnOpenLocationSource(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e == null)
+                return;
+
+            var list = (e.Parameter as ListView);
+
+            if (list != null)
+            {
+                if (list.SelectedItems.Count == 1)
+                {
+                    var item = list.SelectedItem as BindableChangeSetElem;
+                    OpenExplorerAt(Path.Combine(_source.Path, item.Filename));
+                }
+            }
+        }
+
+        public static RoutedCommand OpenFileRepo = new RoutedCommand("OpenFileRepo", typeof(MainWindow));
+        private void OnOpenFileRepo(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e == null)
+                return;
+
+            var list = (e.Parameter as ListView);
+
+            if (list != null)
+            {
+                if (list.SelectedItems.Count == 1)
+                {
+                    var item = list.SelectedItem as BindableChangeSetElem;
+                    OpenWithDefaultApplication(Path.Combine(_repo.Path, item.Filename));
+                }
+            }
+        }
+
+        public static RoutedCommand OpenFileSource = new RoutedCommand("OpenFileSource", typeof(MainWindow));
+        private void OnOpenFileSource(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e == null)
+                return;
+
+            var list = (e.Parameter as ListView);
+
+            if (list != null)
+            {
+                if (list.SelectedItems.Count == 1)
+                {
+                    var item = list.SelectedItem as BindableChangeSetElem;
+                    OpenWithDefaultApplication(Path.Combine(_source.Path, item.Filename));
+                }
+            }
+        }
+
+        public static RoutedCommand ChangeFileOperation = new RoutedCommand("ChangeFileOperation", typeof(MainWindow));
+        private void OnChangeFileOperation(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e == null)
+                return;
+
+            var args = e.Parameter as object[];
+
+            if (args != null)
+            {
+                var item = args[0] as BindableChangeSetElem;
+                var newOp = (FooSync.FileOperation)Enum.Parse(typeof(FooSync.FileOperation), args[1] as string);
+
+                item.Action = newOp;
+
+                _changeset.AdviseChanged(item.Filename);
+            }
+        }
+
+        #endregion
     }
 }

@@ -5,16 +5,20 @@
         Title="FooSync" Height="430" Width="700" Icon="/FooSync;component/Resources/loki_128.png"
         Closed="Window_Closed">
     <Window.Resources>
-        <foo:NullDateTimeConverter x:Key="NullDateTimeConverter"/>
-        <foo:NullDateTimeItalicConverter x:Key="NullDateTimeItalicConverter"/>
         <foo:FileOperationValueConverter x:Key="FileOperationValueConverter"/>
+        <foo:MultiBindingAsArrayConverter x:Key="MultiBindingAsArrayConverter"/>
+        
+        <Style TargetType="ListViewItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
         
         <ControlTemplate x:Key="FileGrid" TargetType="{x:Type ListView}">
-            <ListView ItemsSource="{Binding Path=.}">
+            <ListView ItemsSource="{Binding Path=.}" ContextMenuOpening="ContextMenu_ContextMenuOpening">
                 <ListView.View>
                     <GridView>
                         
-                        <GridViewColumn Header="Filename">
+                        <GridViewColumn>
+                            <GridViewColumnHeader Content="Filename"/>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Filename}"/>
@@ -25,8 +29,9 @@
                         <GridViewColumn Header="Repository Date">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding RepositoryDate, Converter={StaticResource NullDateTimeConverter}}"
-                                               FontStyle="{Binding RepositoryDate, Converter={StaticResource NullDateTimeItalicConverter}}"/>
+                                    <TextBlock Text="{Binding RepositoryDate, TargetNullValue=(none)}"
+                                               FontStyle="{Binding RepositoryDate, StringFormat=Normal, TargetNullValue=Italic}"
+                                               HorizontalAlignment="Center"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>   
@@ -44,20 +49,80 @@
                         <GridViewColumn Header="Source Date">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding SourceDate, Converter={StaticResource NullDateTimeConverter}}"
-                                               FontStyle="{Binding SourceDate, Converter={StaticResource NullDateTimeItalicConverter}}"/>
+                                    <TextBlock Text="{Binding SourceDate, TargetNullValue=(none)}"
+                                               FontStyle="{Binding SourceDate, StringFormat=Normal, TargetNullValue=Italic}"
+                                               HorizontalAlignment="Center"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                         
                     </GridView>
                 </ListView.View>
+
+                <ListView.ContextMenu>
+                    <ContextMenu DataContext="{Binding Path=PlacementTarget, RelativeSource={RelativeSource Self}}">
+                        <MenuItem Header="Open file location (Repository)" Command="foo:MainWindow.OpenLocationRepo" CommandParameter="{Binding}"/>
+                        <MenuItem Header="Open file location (Source)" Command="foo:MainWindow.OpenLocationSource" CommandParameter="{Binding}"/>
+                        <Separator/>
+                        <MenuItem Header="Open file (Repository)" Command="foo:MainWindow.OpenFileRepo" CommandParameter="{Binding}"/>
+                        <MenuItem Header="Open file (Source)" Command="foo:MainWindow.OpenFileSource" CommandParameter="{Binding}"/>
+                        <Separator/>
+                        <MenuItem Header="Change action to:">
+                            <!-- keep the index the same as in the FileOperation enum -->
+                            <MenuItem Header="Do nothing" Command="foo:MainWindow.ChangeFileOperation">
+                                <MenuItem.CommandParameter>
+                                    <MultiBinding Converter="{StaticResource MultiBindingAsArrayConverter}">
+                                        <Binding/>
+                                        <Binding RelativeSource="{RelativeSource Self}"/>
+                                    </MultiBinding>
+                                </MenuItem.CommandParameter>
+                            </MenuItem>
+                            <MenuItem Header="Copy from repository" Command="foo:MainWindow.ChangeFileOperation">
+                                <MenuItem.CommandParameter>
+                                    <MultiBinding Converter="{StaticResource MultiBindingAsArrayConverter}">
+                                        <Binding/>
+                                        <Binding StringFormat="UseRepo"/>
+                                    </MultiBinding>
+                                </MenuItem.CommandParameter>
+                            </MenuItem>
+                            <MenuItem Header="Copy from source" Command="foo:MainWindow.ChangeFileOperation">
+                                <MenuItem.CommandParameter>
+                                    <MultiBinding Converter="{StaticResource MultiBindingAsArrayConverter}">
+                                        <Binding/>
+                                        <Binding StringFormat="UseSource"/>
+                                    </MultiBinding>
+                                </MenuItem.CommandParameter>
+                            </MenuItem>
+                            <MenuItem Header="Delete from repository" Command="foo:MainWindow.ChangeFileOperation">
+                                <MenuItem.CommandParameter>
+                                    <MultiBinding Converter="{StaticResource MultiBindingAsArrayConverter}">
+                                        <Binding/>
+                                        <Binding StringFormat="DeleteRepo"/>
+                                    </MultiBinding>
+                                </MenuItem.CommandParameter>
+                            </MenuItem>
+                            <MenuItem Header="Delete from source" Command="foo:MainWindow.ChangeFileOperation">
+                                <MenuItem.CommandParameter>
+                                    <MultiBinding Converter="{StaticResource MultiBindingAsArrayConverter}">
+                                        <Binding/>
+                                        <Binding StringFormat="DeleteSource"/>
+                                    </MultiBinding>
+                                </MenuItem.CommandParameter>
+                            </MenuItem>
+                        </MenuItem>
+                    </ContextMenu>
+                </ListView.ContextMenu>
             </ListView>
         </ControlTemplate>
     </Window.Resources>
     
     <Window.CommandBindings>
         <CommandBinding Command="foo:MainWindow.ActionClick" Executed="OnActionClick"/>
+        <CommandBinding Command="foo:MainWindow.OpenLocationRepo" Executed="OnOpenLocationRepo"/>
+        <CommandBinding Command="foo:MainWindow.OpenLocationSource" Executed="OnOpenLocationSource"/>
+        <CommandBinding Command="foo:MainWindow.OpenFileRepo" Executed="OnOpenFileRepo"/>
+        <CommandBinding Command="foo:MainWindow.OpenFileSource" Executed="OnOpenFileSource"/>
+        <CommandBinding Command="foo:MainWindow.ChangeFileOperation" Executed="OnChangeFileOperation"/>
     </Window.CommandBindings>
     
     <Grid>
@@ -85,22 +150,24 @@
             </Button>
         </ToolBar>
         
-        <Label Grid.Row="1" Grid.Column="0" Content="Subirectory: "/>
-        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectorySelector" SelectionChanged="DirectorySelector_SelectionChanged" />
-        <Button x:Name="InspectButton" Grid.Row="1" Grid.Column="2" Click="Inspect" Content="Inspect Files" IsEnabled="False"/>
+        <Label Grid.Row="1" Grid.Column="0" Content="Subirectory: " Margin="7" Padding="3" />
+        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectorySelector" VerticalAlignment="Center" SelectionChanged="DirectorySelector_SelectionChanged" Margin="7" Padding="3" />
+        <Button x:Name="InspectButton" Grid.Row="1" Grid.Column="2" Click="Inspect" Content="Inspect Files" IsEnabled="False" Margin="7" Padding="3" />
         
-        <StackPanel Grid.Row="2" Grid.ColumnSpan="3" x:Name="FilesPanel">
-            <Expander Header="New Files:" IsExpanded="False">
-                <ListView Template="{StaticResource FileGrid}" x:Name="NewFiles" ItemsSource="{Binding Path=.}"/>
-            </Expander>
-            <Expander Header="Changed Files:" IsExpanded="False">
-                <ListView Template="{StaticResource FileGrid}" x:Name="ChangedFiles" ItemsSource="{Binding Path=.}"/>
-            </Expander>
-            <Expander Header="Deleted Files:" IsExpanded="False">
-                <ListView Template="{StaticResource FileGrid}" x:Name="DeletedFiles" ItemsSource="{Binding Path=.}"/>
-            </Expander>
-        </StackPanel>
-        
+        <ScrollViewer Grid.Row="2" Grid.ColumnSpan="3" x:Name="FilesPanel">
+            <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
+                <Expander Header="New Files:" IsExpanded="False">
+                    <ListView Template="{StaticResource FileGrid}" x:Name="NewFiles" ItemsSource="{Binding Path=.}"/>
+                </Expander>
+                <Expander Header="Changed Files:" IsExpanded="False">
+                    <ListView Template="{StaticResource FileGrid}" x:Name="ChangedFiles" ItemsSource="{Binding Path=.}"/>
+                </Expander>
+                <Expander Header="Deleted Files:" IsExpanded="False">
+                    <ListView Template="{StaticResource FileGrid}" x:Name="DeletedFiles" ItemsSource="{Binding Path=.}"/>
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+
         <Button x:Name="DoActionsButton" Grid.Row="3" Grid.ColumnSpan="3" Content="Do Actions" VerticalAlignment="Bottom" IsEnabled="False"/>
     </Grid>
 </Window>

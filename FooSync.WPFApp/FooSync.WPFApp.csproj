@@ -60,9 +60,8 @@
     </ApplicationDefinition>
     <Compile Include="BindableChangeSet.cs" />
     <Compile Include="FileOperationValueConverter.cs" />
-    <Compile Include="NullDateTimeItalicConverter.cs" />
+    <Compile Include="MultiBindingAsArrayConverter.cs" />
     <Compile Include="ImageTextButton.cs" />
-    <Compile Include="NullDateTimeConverter.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\AnimationResource.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\Interop\COMGuids.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\Interop\ErrorHelper.cs" />
