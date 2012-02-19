@@ -82,7 +82,7 @@ namespace FooSync
             set { Elems[filename] = value; }
         }
 
-        public void AdviseChanged(string filename)
+        public void AdviseChanged()
         {
             if (CollectionChanged != null)
             {

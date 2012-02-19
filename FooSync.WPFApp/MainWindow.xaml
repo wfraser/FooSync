@@ -6,7 +6,7 @@
         Closed="Window_Closed">
     <Window.Resources>
         <foo:FileOperationValueConverter x:Key="FileOperationValueConverter"/>
-        <foo:MultiBindingAsArrayConverter x:Key="MultiBindingAsArrayConverter"/>
+        <foo:MultiBindingAsTuplePairConverter x:Key="MultiBindingAsTuplePairConverter"/>
         
         <Style TargetType="ListViewItem">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -71,41 +71,41 @@
                             <!-- keep the index the same as in the FileOperation enum -->
                             <MenuItem Header="Do nothing" Command="foo:MainWindow.ChangeFileOperation">
                                 <MenuItem.CommandParameter>
-                                    <MultiBinding Converter="{StaticResource MultiBindingAsArrayConverter}">
+                                    <MultiBinding Converter="{StaticResource MultiBindingAsTuplePairConverter}">
                                         <Binding/>
-                                        <Binding RelativeSource="{RelativeSource Self}"/>
+                                        <Binding Source="NoOp"/>
                                     </MultiBinding>
                                 </MenuItem.CommandParameter>
                             </MenuItem>
                             <MenuItem Header="Copy from repository" Command="foo:MainWindow.ChangeFileOperation">
                                 <MenuItem.CommandParameter>
-                                    <MultiBinding Converter="{StaticResource MultiBindingAsArrayConverter}">
+                                    <MultiBinding Converter="{StaticResource MultiBindingAsTuplePairConverter}">
                                         <Binding/>
-                                        <Binding StringFormat="UseRepo"/>
+                                        <Binding Source="UseRepo"/>
                                     </MultiBinding>
                                 </MenuItem.CommandParameter>
                             </MenuItem>
                             <MenuItem Header="Copy from source" Command="foo:MainWindow.ChangeFileOperation">
                                 <MenuItem.CommandParameter>
-                                    <MultiBinding Converter="{StaticResource MultiBindingAsArrayConverter}">
+                                    <MultiBinding Converter="{StaticResource MultiBindingAsTuplePairConverter}">
                                         <Binding/>
-                                        <Binding StringFormat="UseSource"/>
+                                        <Binding Source="UseSource"/>
                                     </MultiBinding>
                                 </MenuItem.CommandParameter>
                             </MenuItem>
                             <MenuItem Header="Delete from repository" Command="foo:MainWindow.ChangeFileOperation">
                                 <MenuItem.CommandParameter>
-                                    <MultiBinding Converter="{StaticResource MultiBindingAsArrayConverter}">
+                                    <MultiBinding Converter="{StaticResource MultiBindingAsTuplePairConverter}">
                                         <Binding/>
-                                        <Binding StringFormat="DeleteRepo"/>
+                                        <Binding Source="DeleteRepo"/>
                                     </MultiBinding>
                                 </MenuItem.CommandParameter>
                             </MenuItem>
                             <MenuItem Header="Delete from source" Command="foo:MainWindow.ChangeFileOperation">
                                 <MenuItem.CommandParameter>
-                                    <MultiBinding Converter="{StaticResource MultiBindingAsArrayConverter}">
+                                    <MultiBinding Converter="{StaticResource MultiBindingAsTuplePairConverter}">
                                         <Binding/>
-                                        <Binding StringFormat="DeleteSource"/>
+                                        <Binding Source="DeleteSource"/>
                                     </MultiBinding>
                                 </MenuItem.CommandParameter>
                             </MenuItem>
@@ -168,6 +168,6 @@
             </StackPanel>
         </ScrollViewer>
 
-        <Button x:Name="DoActionsButton" Grid.Row="3" Grid.ColumnSpan="3" Content="Do Actions" VerticalAlignment="Bottom" IsEnabled="False"/>
+        <Button x:Name="DoActionsButton" Grid.Row="3" Grid.ColumnSpan="3" Content="Do Actions" VerticalAlignment="Bottom" IsEnabled="False" Click="DoActionsButton_Click"/>
     </Grid>
 </Window>

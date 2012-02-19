@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Globalization;
+using System.Windows.Controls;
 using System.Windows.Data;
 
 namespace FooSync.WPFApp
 {
-    public class MultiBindingAsArrayConverter : IMultiValueConverter
+    public class MultiBindingAsTuplePairConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            return values;
+            return new Tuple<object, object>(values[0], values[1]);
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
-            //return (object[])value;
             throw new NotImplementedException();
         }
     }

@@ -31,7 +31,8 @@ namespace FooSync.WPFApp
             EnableControls(FilesPanel, false);
             this.Show();
 
-            if (System.Diagnostics.Debugger.IsAttached)
+            //if (System.Diagnostics.Debugger.IsAttached)
+            if (false)
             {
                 //
                 // WRFDEV: for testing purposes
@@ -207,13 +208,7 @@ namespace FooSync.WPFApp
             }
         }
 
-        private StartWindow         _start      = null;
-        private RepositoryConfig    _config     = null;
-        private FooSyncEngine       _foo        = null;
-        private FooTree             _repo       = null;
-        private FooTree             _source     = null;
-        private RepositoryState     _state      = null;
-        private FooChangeSet        _changeset  = null;
+        #region Directory inspection methods
 
         private void Inspect(object sender, RoutedEventArgs e)
         {
@@ -240,44 +235,66 @@ namespace FooSync.WPFApp
                 }
             }
 
+            InspectButton.IsEnabled = false;
+            EnableControls(false);
+            EnableControls(FilesPanel, false);
+            
+            NewFiles.DataContext = null;
+            ChangedFiles.DataContext = null;
+            DeletedFiles.DataContext = null;
+
             ProgressDialog dlg = new ProgressDialog();
 
             dlg.WindowTitle = "Inspecting Directory";
             dlg.Text = "Inspecting Directory...";
-            dlg.ProgressBarStyle = ProgressBarStyle.ProgressBar;
-            dlg.ShowCancelButton = false;
+            dlg.ShowCancelButton = true;
+            dlg.UseCompactPathsForDescription = true;
+            dlg.ProgressBarStyle = ProgressBarStyle.MarqueeProgressBar;
 
-            dlg.DoWork += new DoWorkEventHandler(InspectDirectoryWorker);
-            dlg.RunWorkerCompleted += new RunWorkerCompletedEventHandler(InspectDirectoryCompletedWorker);
+            dlg.DoWork += new DoWorkEventHandler(EnumerateFilesWorker);
+            dlg.RunWorkerCompleted += new RunWorkerCompletedEventHandler(EnumerateFilesCompletedWorker);
             dlg.Show(dir);
         }
 
-        void InspectDirectoryWorker(object sender, DoWorkEventArgs e)
+        void EnumerateFilesWorker(object sender, DoWorkEventArgs e)
         {
             var dir = e.Argument as RepositoryDirectory;
             var dlg = sender as ProgressDialog;
 
             var exceptions = FooSyncEngine.PrepareExceptions(dir);
 
-            _repo = _foo.Tree(Path.Combine(_config.RepositoryPath, dir.Path), exceptions, 
+            DateTime last = DateTime.Now;
+            _repo = _foo.Tree(Path.Combine(_config.RepositoryPath, dir.Path), exceptions,
             (Progress)delegate(int n, int total, string d)
             {
-                if (n % 100 == 0)
+                if ((DateTime.Now - last).TotalMilliseconds > 100)
                 {
-                    dlg.ReportProgress(0, "Enumerating Repository Files...", d);
+                    last = DateTime.Now;
+                    dlg.ReportProgress(0, "Enumerating Repository Files...", string.Format("Found {0} files\n{1}", n, d));
+
+                    if (dlg.CancellationPending)
+                    {
+                        throw new OperationCanceledException();
+                    }
                 }
             });
 
             _source = _foo.Tree(dir.Source.Path, exceptions,
             (Progress)delegate(int n, int total, string d)
             {
-                if (n % 100 == 0)
+                if ((DateTime.Now - last).TotalMilliseconds > 100)
                 {
-                    dlg.ReportProgress(0, "Enumerating Source Files...", d);
+                    last = DateTime.Now;
+                    dlg.ReportProgress(0, "Enumerating Source Files...", string.Format("Found {0} files\n{1}", n, d));
+
+                    if (dlg.CancellationPending)
+                    {
+                        throw new OperationCanceledException();
+                    }
                 }
             });
 
-            dlg.ReportProgress(0, "Loading Repository State...", null);
+            dlg.ReportProgress(0, "Loading Repository State...", "");
 
             try
             {
@@ -291,14 +308,53 @@ namespace FooSync.WPFApp
                 _state.Write(Path.Combine(_config.RepositoryPath, dir.Path, FooSyncEngine.RepoStateFileName));
             }
 
+            // save this for the completed worker
+            e.Result = dir;
+        }
+
+        void EnumerateFilesCompletedWorker(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Error != null && e.Error is OperationCanceledException)
+            {
+                InspectButton.IsEnabled = true;
+                EnableControls(true);
+                return;
+            }
+
+            var dir = e.Result as RepositoryDirectory;
+
+            ProgressDialog dlg = new ProgressDialog();
+
+            dlg.WindowTitle = "Inspecting Directory";
+            dlg.Text = "Inspecting Directory...";
+            dlg.ShowCancelButton = true;
+            dlg.UseCompactPathsForDescription = true;
             dlg.ProgressBarStyle = ProgressBarStyle.ProgressBar;
 
+            dlg.DoWork += new DoWorkEventHandler(InspectDirectoryWorker);
+            dlg.RunWorkerCompleted += new RunWorkerCompletedEventHandler(InspectDirectoryCompletedWorker);
+            dlg.Show(dir);
+        }
+
+        private void InspectDirectoryWorker(object sender, DoWorkEventArgs e)
+        {
+            var dir = e.Argument as RepositoryDirectory;
+            var dlg = sender as ProgressDialog;
+
+            DateTime last = DateTime.Now;
             _changeset = _foo.Inspect(_state, _repo, _source,
-            (Progress)delegate(int n, int total, string d)
+            (Progress)delegate(int n, int total, string d) 
             {
-                if (n % 100 == 0)
+                if ((DateTime.Now - last).TotalMilliseconds > 100)
                 {
-                    dlg.ReportProgress((int)Math.Round((double)n / total * 100), "Comparing Files...", d);
+                    last = DateTime.Now;
+                    var percent = (int)Math.Round((double)n / total * 100);
+                    dlg.ReportProgress(percent, "Comparing Files...", string.Format("{0}%:\n{1}", percent, d));
+
+                    if (dlg.CancellationPending)
+                    {
+                        throw new OperationCanceledException();
+                    }
                 }
             });
 
@@ -306,15 +362,25 @@ namespace FooSync.WPFApp
             _foo.SetDefaultActions(_changeset);
         }
 
-        void InspectDirectoryCompletedWorker(object sender, RunWorkerCompletedEventArgs e)
+        private void InspectDirectoryCompletedWorker(object sender, RunWorkerCompletedEventArgs e)
         {
+            InspectButton.IsEnabled = true;
+            EnableControls(true);
+
+            if (e.Error != null && e.Error is OperationCanceledException)
+            {
+
+                return;
+            }
+
+            EnableControls(FilesPanel, true);
+            DoActionsButton.IsEnabled = true;
+
             if (_changeset.Count() == 0)
             {
                 MessageBox.Show("No changes detected. Nothing to do.", "Change set empty", MessageBoxButton.OK, MessageBoxImage.Asterisk);
                 return;
             }
-
-            EnableControls(FilesPanel, true);
 
             var newFiles = _changeset.Where(elem => 
                 (!_state.Repository.MTimes.ContainsKey(elem.Filename) && !_repo.Files.ContainsKey(elem.Filename))
@@ -342,6 +408,8 @@ namespace FooSync.WPFApp
             }
         }
 
+        #endregion
+
         private void DirectorySelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count != 0)
@@ -357,6 +425,14 @@ namespace FooSync.WPFApp
 
             if (list != null && list.ContextMenu != null && list.ContextMenu.Items != null)
             {
+                var selectedItems = list.SelectedItems.Cast<BindableChangeSetElem>().ToList();
+
+                bool repoPresent = (selectedItems != null && selectedItems.Count == 1
+                            && selectedItems[0].RepositoryDate.HasValue);
+
+                bool sourcePresent = (selectedItems != null && selectedItems.Count == 1
+                            && selectedItems[0].SourceDate.HasValue);
+
                 for (int i = 0; i < list.ContextMenu.Items.Count; i++)
                 {
                     var item = list.ContextMenu.Items[i] as MenuItem;
@@ -369,23 +445,34 @@ namespace FooSync.WPFApp
 
                         if (i == 0 || i == 3) // Open file [location] (Repository)
                         {
-                            item.IsEnabled = (list.SelectedItems.Count == 1
-                                    && (list.SelectedItem as BindableChangeSetElem).RepositoryDate.HasValue);
+                            item.IsEnabled = repoPresent;
                         }
                         else if (i == 1 || i == 4) // Open file [location] (Source)
                         {
-                            item.IsEnabled = (list.SelectedItems.Count == 1
-                                    && (list.SelectedItem as BindableChangeSetElem).SourceDate.HasValue);
+                            item.IsEnabled = sourcePresent;
                         }
                         else if (i == 6) // Change action to:
                         {
+                            repoPresent = selectedItems != null && selectedItems.All(elem => elem.RepositoryDate.HasValue);
+                            sourcePresent = selectedItems != null && selectedItems.All(elem => elem.SourceDate.HasValue);
+
                             for (int j = 0; j < item.Items.Count; j++)
                             {
                                 var subItem = item.Items[j] as MenuItem;
                                 if (subItem != null)
                                 {
-                                    //WRFDEV TODO
-                                    subItem.IsEnabled = true;
+                                    if (j == 0) // NoOp
+                                    {
+                                        subItem.IsEnabled = true;
+                                    }
+                                    else if (j == 1 || j == 3) // UseRepo || DeleteRepo
+                                    {
+                                        subItem.IsEnabled = repoPresent;
+                                    }
+                                    else if (j == 2 || j == 4) // UseSource || DeleteSource
+                                    {
+                                        subItem.IsEnabled = sourcePresent;
+                                    }
                                 }
                             }
                         }
@@ -394,12 +481,70 @@ namespace FooSync.WPFApp
             }
         }
 
-        public void OpenExplorerAt(string filename)
+        private void DoActionsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var copySrc = new List<string>();
+            var copyDst = new List<string>();
+            var deletes = new List<string>();
+
+            foreach (var filename in _changeset)
+            {
+                var repoFilename = Path.Combine(_repo.Path, filename);
+                var sourceFilename = Path.Combine(_source.Path, filename);
+
+                switch (_changeset[filename].FileOperation)
+                {
+                    case FileOperation.UseRepo:
+                        copySrc.Add(repoFilename);
+                        copyDst.Add(sourceFilename);
+                        break;
+
+                    case FileOperation.UseSource:
+                        copySrc.Add(sourceFilename);
+                        copyDst.Add(repoFilename);
+                        break;
+
+                    case FileOperation.DeleteRepo:
+                        deletes.Add(repoFilename);
+                        break;
+
+                    case FileOperation.DeleteSource:
+                        deletes.Add(sourceFilename);
+                        break;
+
+                }
+            }
+
+            if (copySrc.Count + deletes.Count == 0)
+            {
+                MessageBox.Show("No actions to take. Done!", "Nothing to do", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+
+            if (copySrc.Count > 0)
+            {
+                CopyEngine.Copy(copySrc, copyDst, new Progress(delegate(int n, int total, string filename)
+                    {
+
+                    })
+                );
+            }
+
+            if (deletes.Count > 0)
+            {
+                CopyEngine.Delete(deletes, new Progress(delegate(int n, int total, string filename)
+                    {
+
+                    })
+                );
+            }
+        }
+
+        private void OpenExplorerAt(string filename)
         {
             System.Diagnostics.Process.Start("explorer.exe", "/select," + filename);
         }
 
-        public void OpenWithDefaultApplication(string filename)
+        private void OpenWithDefaultApplication(string filename)
         {
             System.Diagnostics.Process.Start(filename);
         }
@@ -431,6 +576,7 @@ namespace FooSync.WPFApp
                         || _changeset[filename].ChangeStatus == ChangeStatus.RepoMissing)
                     && (_changeset[filename].FileOperation == FileOperation.UseRepo 
                         || _changeset[filename].FileOperation == FileOperation.DeleteRepo))
+
                 || (((_changeset[filename].ChangeStatus == ChangeStatus.SourceDeleted 
                         || _changeset[filename].ChangeStatus == ChangeStatus.SourceMissing)
                     && (_changeset[filename].FileOperation == FileOperation.UseSource 
@@ -444,7 +590,7 @@ namespace FooSync.WPFApp
                 _changeset[filename].FileOperation = (FileOperation)0;
             }
 
-            _changeset.AdviseChanged(filename);
+            _changeset.AdviseChanged();
         }
 
         public static RoutedCommand OpenLocationRepo = new RoutedCommand("OpenLocationRepo", typeof(MainWindow));
@@ -525,19 +671,33 @@ namespace FooSync.WPFApp
             if (e == null)
                 return;
 
-            var args = e.Parameter as object[];
+            var args = e.Parameter as Tuple<object, object>;
 
             if (args != null)
             {
-                var item = args[0] as BindableChangeSetElem;
-                var newOp = (FooSync.FileOperation)Enum.Parse(typeof(FooSync.FileOperation), args[1] as string);
+                var list = args.Item1 as ListView;
+                var newOp = (FooSync.FileOperation)Enum.Parse(typeof(FooSync.FileOperation), args.Item2 as string);
 
-                item.Action = newOp;
+                if (list != null && list.SelectedItems != null)
+                {
+                    foreach (BindableChangeSetElem item in list.SelectedItems)
+                    {
+                        _changeset[item.Filename].FileOperation = newOp;
+                    }
+                }
 
-                _changeset.AdviseChanged(item.Filename);
+                _changeset.AdviseChanged();
             }
         }
 
         #endregion
+
+        private StartWindow _start = null;
+        private RepositoryConfig _config = null;
+        private FooSyncEngine _foo = null;
+        private FooTree _repo = null;
+        private FooTree _source = null;
+        private RepositoryState _state = null;
+        private FooChangeSet _changeset = null;
     }
 }
