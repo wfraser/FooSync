@@ -61,6 +61,7 @@ namespace FooSync.WPFApp
                         RepositoryDate = (_repo.Files.ContainsKey(_key.Current)) ? (DateTime?)_repo.Files[_key.Current].MTime : null,
                         SourceDate = (_source.Files.ContainsKey(_key.Current)) ? (DateTime?)_source.Files[_key.Current].MTime : null,
                         Action = _changeset[_key.Current].FileOperation,
+                        ConflictStatus = _changeset[_key.Current].ConflictStatus,
                     };
                 }
             }
@@ -98,5 +99,6 @@ namespace FooSync.WPFApp
         public DateTime? RepositoryDate { get; set; }
         public DateTime? SourceDate { get; set; }
         public FileOperation Action { get; set; }
+        public ConflictStatus ConflictStatus { get; set; }
     }
 }

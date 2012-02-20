@@ -16,7 +16,7 @@ namespace FooSync
             
             this.Foo = foo;
             this.Path = path;
-            this.Source = "";
+            this.Source = string.Empty;
         }
 
         #region public methods 
@@ -56,7 +56,7 @@ namespace FooSync
                     using (FileStream f = Info.OpenRead())
                     {
                         byte[] bytes = Hasher.ComputeHash(f);
-                        _hash = "";
+                        _hash = string.Empty;
                         foreach (byte b in bytes)
                         {
                             _hash += string.Format("{0:X2}", b);

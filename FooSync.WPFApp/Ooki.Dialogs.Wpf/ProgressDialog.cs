@@ -193,9 +193,7 @@ namespace Ookii.Dialogs.Wpf
                     string[] lines = _description.Split(new char[] { '\n' }, 2);
 
                     _dialog.SetLine(2, lines[0], UseCompactPathsForDescription, IntPtr.Zero);
-
-                    if (lines.Length > 1)
-                        _dialog.SetLine(3, lines[1], UseCompactPathsForDescription, IntPtr.Zero);
+                    _dialog.SetLine(3, (lines.Length > 1) ? lines[1] : string.Empty, UseCompactPathsForDescription, IntPtr.Zero);
                 }
             }
         }
@@ -230,9 +228,7 @@ namespace Ookii.Dialogs.Wpf
                     string[] lines = _description.Split(new char[] { '\n' }, 2);
 
                     _dialog.SetLine(2, lines[0], UseCompactPathsForDescription, IntPtr.Zero);
-
-                    if (lines.Length > 1)
-                        _dialog.SetLine(3, lines[1], UseCompactPathsForDescription, IntPtr.Zero);
+                    _dialog.SetLine(3, (lines.Length > 1) ? lines[1] : string.Empty, UseCompactPathsForDescription, IntPtr.Zero);
                 }
             }
         }

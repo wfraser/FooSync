@@ -59,14 +59,21 @@ namespace FooSync
 
             if (0 != result)
             {
-                string shError = SHFileOpError(result);
-                if (shError == null)
+                if (result == 1223) // ERROR_CANCELLED; "The operation was canceled by the user."
                 {
-                    throw Marshal.GetExceptionForHR(HResultFromWin32(result));
+                    op.fAnyOperationsAborted = true;
                 }
                 else
                 {
-                    throw new ApplicationException(shError);
+                    string shError = SHFileOpError(result);
+                    if (shError == null)
+                    {
+                        throw Marshal.GetExceptionForHR(HResultFromWin32(result));
+                    }
+                    else
+                    {
+                        throw new ApplicationException(shError);
+                    }
                 }
             }
 
@@ -117,14 +124,21 @@ namespace FooSync
 
             if (0 != result)
             {
-                string shError = SHFileOpError(result);
-                if (shError == null)
+                if (result == 0x4C7) // ERROR_CANCELLED; "The operation was canceled by the user."
                 {
-                    throw Marshal.GetExceptionForHR(HResultFromWin32(result));
+                    op.fAnyOperationsAborted = true;
                 }
                 else
                 {
-                    throw new ApplicationException(shError);
+                    string shError = SHFileOpError(result);
+                    if (shError == null)
+                    {
+                        throw Marshal.GetExceptionForHR(HResultFromWin32(result));
+                    }
+                    else
+                    {
+                        throw new ApplicationException(shError);
+                    }
                 }
             }
 
@@ -138,6 +152,7 @@ namespace FooSync
         [DllImport("Shell32.dll", CharSet=CharSet.Unicode)]
         private static extern int SHFileOperation([In] ref SHFILEOPSTRUCT lpFileOp);
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct SHFILEOPSTRUCT
         {
             public IntPtr hwnd;
@@ -159,24 +174,25 @@ namespace FooSync
             FO_RENAME = 4,
         }
 
-        private enum FILEOP_FLAGS : uint
+        [Flags]
+        private enum FILEOP_FLAGS : ushort
         {
-            FOF_MULTIDESTFILES = 0x0001,
-            FOF_CONFIRMMOUSE = 0x0002,
-            FOF_SILENT = 0x0004,
-            FOF_RENAMEONCOLLISION = 0x0008,
-            FOF_NOCONFIRMATION = 0x0010,
-            FOF_WANTMAPPINGHANDLE = 0x0020,
-            FOF_ALLOWUNDO = 0x0040,
-            FOF_FILESONLY = 0x0080,
-            FOF_SIMPLEPROGRESS = 0x0100,
-            FOF_NOCONFIRMMKDIR = 0x0200,
-            FOF_NOERRORUI = 0x0400,
-            FOF_NOCOPYSECURITYATTRIBS = 0x0800,
-            FOF_NORECURSION = 0x1000,
-            FOF_NO_CONNECTED_ELEMENTS = 0x2000,
-            FOF_WANTNUKEWARNING = 0x4000,
-            FOF_NORECURSEREPARSE = 0x8000,
+            FOF_MULTIDESTFILES          = 0x0001,
+            FOF_CONFIRMMOUSE            = 0x0002,
+            FOF_SILENT                  = 0x0004,
+            FOF_RENAMEONCOLLISION       = 0x0008,
+            FOF_NOCONFIRMATION          = 0x0010,
+            FOF_WANTMAPPINGHANDLE       = 0x0020,
+            FOF_ALLOWUNDO               = 0x0040,
+            FOF_FILESONLY               = 0x0080,
+            FOF_SIMPLEPROGRESS          = 0x0100,
+            FOF_NOCONFIRMMKDIR          = 0x0200,
+            FOF_NOERRORUI               = 0x0400,
+            FOF_NOCOPYSECURITYATTRIBS   = 0x0800,
+            FOF_NORECURSION             = 0x1000,
+            FOF_NO_CONNECTED_ELEMENTS   = 0x2000,
+            FOF_WANTNUKEWARNING         = 0x4000,
+            FOF_NORECURSEREPARSE        = 0x8000,
         }
 
         private static int HResultFromWin32(int result)

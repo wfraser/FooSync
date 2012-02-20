@@ -18,6 +18,40 @@ namespace FooSync
             this.Elems = new Dictionary<string, FooChangeSetElem>();
         }
 
+        public void SetDefaultActions()
+        {
+            foreach (var filename in Elems.Keys)
+            {
+                if (Elems[filename].ConflictStatus == ConflictStatus.NoConflict)
+                {
+                    switch (Elems[filename].ChangeStatus)
+                    {
+                        case ChangeStatus.Newer:
+                        case ChangeStatus.RepoMissing:
+                            Elems[filename].FileOperation = FileOperation.UseSource;
+                            break;
+
+                        case ChangeStatus.Older:
+                        case ChangeStatus.SourceMissing:
+                            Elems[filename].FileOperation = FileOperation.UseRepo;
+                            break;
+
+                        case ChangeStatus.RepoDeleted:
+                            Elems[filename].FileOperation = FileOperation.DeleteSource;
+                            break;
+
+                        case ChangeStatus.SourceDeleted:
+                            Elems[filename].FileOperation = FileOperation.DeleteRepo;
+                            break;
+
+                        default:
+                            System.Diagnostics.Debug.Assert(false, "Invalid change status!");
+                            break;
+                    }
+                }
+            }
+        }
+
         public void Add(string filename, ChangeStatus changeStatus)
         {
             lock (((System.Collections.ICollection)Elems).SyncRoot)

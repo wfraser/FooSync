@@ -240,8 +240,11 @@ namespace FooSync.WPFApp
             EnableControls(FilesPanel, false);
             
             NewFiles.DataContext = null;
+            (NewFiles.Parent as Expander).IsExpanded = false;
             ChangedFiles.DataContext = null;
+            (ChangedFiles.Parent as Expander).IsExpanded = false;
             DeletedFiles.DataContext = null;
+            (DeletedFiles.Parent as Expander).IsExpanded = false;
 
             ProgressDialog dlg = new ProgressDialog();
 
@@ -294,7 +297,7 @@ namespace FooSync.WPFApp
                 }
             });
 
-            dlg.ReportProgress(0, "Loading Repository State...", "");
+            dlg.ReportProgress(0, "Loading Repository State...", string.Empty);
 
             try
             {
@@ -358,8 +361,8 @@ namespace FooSync.WPFApp
                 }
             });
 
-            _foo.GetConflicts(_changeset, _state, _repo, _source);
-            _foo.SetDefaultActions(_changeset);
+            FooSyncEngine.GetConflicts(_changeset, _state, _repo, _source);
+            _changeset.SetDefaultActions();
         }
 
         private void InspectDirectoryCompletedWorker(object sender, RunWorkerCompletedEventArgs e)
@@ -443,15 +446,15 @@ namespace FooSync.WPFApp
                         // The alternative is switching on the Header property...
                         //
 
-                        if (i == 0 || i == 3) // Open file [location] (Repository)
+                        if (i == 0 || i == 3 || i == 6) // Open file [location] / Show properties (Repository)
                         {
                             item.IsEnabled = repoPresent;
                         }
-                        else if (i == 1 || i == 4) // Open file [location] (Source)
+                        else if (i == 1 || i == 4 || i == 7) // Open file [location] / Show properties (Source)
                         {
                             item.IsEnabled = sourcePresent;
                         }
-                        else if (i == 6) // Change action to:
+                        else if (i == 9) // Change action to:
                         {
                             repoPresent = selectedItems != null && selectedItems.All(elem => elem.RepositoryDate.HasValue);
                             sourcePresent = selectedItems != null && selectedItems.All(elem => elem.SourceDate.HasValue);
@@ -487,6 +490,11 @@ namespace FooSync.WPFApp
             var copyDst = new List<string>();
             var deletes = new List<string>();
 
+            InspectButton.IsEnabled = false;
+            DoActionsButton.IsEnabled = false;
+            EnableControls(false);
+            EnableControls(FilesPanel, false);
+
             foreach (var filename in _changeset)
             {
                 var repoFilename = Path.Combine(_repo.Path, filename);
@@ -520,23 +528,62 @@ namespace FooSync.WPFApp
                 MessageBox.Show("No actions to take. Done!", "Nothing to do", MessageBoxButton.OK, MessageBoxImage.Information);
             }
 
+            //
+            // Don't bother with the Progress callback for the CopyEngine calls below.
+            // We're on Windows (this is WPF, which mono doesn't support), so assume these calls are guaranteed
+            // to call into SHFileOperation(), which has its own progress UI.
+            //
+
+            bool allCompleted = true;
+
             if (copySrc.Count > 0)
             {
-                CopyEngine.Copy(copySrc, copyDst, new Progress(delegate(int n, int total, string filename)
-                    {
+                allCompleted = CopyEngine.Copy(copySrc, copyDst);
 
-                    })
-                );
+                if (!allCompleted)
+                {
+                    MessageBox.Show(
+                        "Copy operation interrupted. Some files may have been copied, but not all of them.",
+                        "File Copy Incomplete",
+                        MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                }
             }
 
-            if (deletes.Count > 0)
+            if (allCompleted && deletes.Count > 0)
             {
-                CopyEngine.Delete(deletes, new Progress(delegate(int n, int total, string filename)
-                    {
+                allCompleted = CopyEngine.Delete(deletes);
 
-                    })
-                );
+                if (!allCompleted)
+                {
+                    MessageBox.Show(
+                        "Delete operation interrupted. Some files may have been deleted as requested, but not all of them.",
+                        "File Delete Incomplete",
+                        MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                }
             }
+
+            if (allCompleted)
+            {
+                FooSyncEngine.UpdateRepoState(_state, _changeset, _repo, _source);
+                _state.Write(Path.Combine(_repo.Path, FooSyncEngine.RepoStateFileName));
+
+                NewFiles.DataContext = null;
+                (NewFiles.Parent as Expander).IsExpanded = false;
+                ChangedFiles.DataContext = null;
+                (ChangedFiles.Parent as Expander).IsExpanded = false;
+                DeletedFiles.DataContext = null;
+                (DeletedFiles.Parent as Expander).IsExpanded = false;
+
+                MessageBox.Show(string.Format("{0} files copied and {1} files deleted successfully.", copySrc.Count, deletes.Count), "All Completed Successfully", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                DoActionsButton.IsEnabled = true;
+            }
+
+            InspectButton.IsEnabled = true;
+            EnableControls(true);
+            EnableControls(FilesPanel, true);
         }
 
         private void OpenExplorerAt(string filename)
@@ -547,6 +594,22 @@ namespace FooSync.WPFApp
         private void OpenWithDefaultApplication(string filename)
         {
             System.Diagnostics.Process.Start(filename);
+        }
+
+        private void OpenPropertiesDialog(string filename)
+        {
+            var info = new NativeMethods.SHELLEXECUTEINFO();
+
+            info.fMask = NativeMethods.SEE_MASK.SEE_MASK_INVOKEIDLIST;
+            info.lpVerb = "properties";
+            info.lpFile = filename;
+            info.nShow = NativeMethods.NShowCommand.SW_SHOW;
+            info.cbSize = System.Runtime.InteropServices.Marshal.SizeOf(info);
+
+            //
+            // Don't bother looking up error codes; API shows its own error UI.
+            //
+            NativeMethods.ShellExecuteEx(ref info);
         }
 
         #region Actions
@@ -665,18 +728,54 @@ namespace FooSync.WPFApp
             }
         }
 
+        public static RoutedCommand ShowPropertiesSource = new RoutedCommand("ShowPropertiesSource", typeof(MainWindow));
+        private void OnShowPropertiesSource(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e == null)
+                return;
+
+            var list = (e.Parameter as ListView);
+
+            if (list != null)
+            {
+                if (list.SelectedItems.Count == 1)
+                {
+                    var item = list.SelectedItem as BindableChangeSetElem;
+                    OpenPropertiesDialog(Path.Combine(_source.Path, item.Filename));
+                }
+            }
+        }
+
+        public static RoutedCommand ShowPropertiesRepo = new RoutedCommand("ShowPropertiesRepo", typeof(MainWindow));
+        private void OnShowPropertiesRepo(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e == null)
+                return;
+
+            var list = (e.Parameter as ListView);
+
+            if (list != null)
+            {
+                if (list.SelectedItems.Count == 1)
+                {
+                    var item = list.SelectedItem as BindableChangeSetElem;
+                    OpenPropertiesDialog(Path.Combine(_repo.Path, item.Filename));
+                }
+            }
+        }
+
         public static RoutedCommand ChangeFileOperation = new RoutedCommand("ChangeFileOperation", typeof(MainWindow));
         private void OnChangeFileOperation(object sender, ExecutedRoutedEventArgs e)
         {
             if (e == null)
                 return;
 
-            var args = e.Parameter as Tuple<object, object>;
+            var args = e.Parameter as List<object>;
 
-            if (args != null)
+            if (args != null && args.Count == 2)
             {
-                var list = args.Item1 as ListView;
-                var newOp = (FooSync.FileOperation)Enum.Parse(typeof(FooSync.FileOperation), args.Item2 as string);
+                var list = args[0] as ListView;
+                var newOp = (FooSync.FileOperation)Enum.Parse(typeof(FooSync.FileOperation), args[1] as string);
 
                 if (list != null && list.SelectedItems != null)
                 {

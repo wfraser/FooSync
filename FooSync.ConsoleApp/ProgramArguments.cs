@@ -25,8 +25,8 @@ namespace FooSync.ConsoleApp
                 int index = OPTIONS[i].IndexOf('&');
                 if (index != -1)
                 {
-                    _options.Add(OPTIONS[i].Replace("&", ""));
-                    _shortOptions.Add(OPTIONS[i][index + 1].ToString(), OPTIONS[i].Replace("&", ""));
+                    _options.Add(OPTIONS[i].Replace("&", string.Empty));
+                    _shortOptions.Add(OPTIONS[i][index + 1].ToString(), OPTIONS[i].Replace("&", string.Empty));
                 }
                 else
                 {
@@ -39,8 +39,8 @@ namespace FooSync.ConsoleApp
                 int index = FLAGS[i].IndexOf('&');
                 if (index != -1)
                 {
-                    _flags.Add(FLAGS[i].Replace("&", ""));
-                    _shortFlags.Add(FLAGS[i][index + 1].ToString(), FLAGS[i].Replace("&", ""));
+                    _flags.Add(FLAGS[i].Replace("&", string.Empty));
+                    _shortFlags.Add(FLAGS[i][index + 1].ToString(), FLAGS[i].Replace("&", string.Empty));
                 }
                 else
                 {

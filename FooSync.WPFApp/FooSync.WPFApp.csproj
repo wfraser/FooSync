@@ -59,9 +59,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="BindableChangeSet.cs" />
-    <Compile Include="FileOperationValueConverter.cs" />
-    <Compile Include="MultiBindingAsTuplePairConverter.cs" />
+    <Compile Include="FooSyncEnumValueConverters.cs" />
+    <Compile Include="MultiBindingAsListConverter.cs" />
     <Compile Include="ImageTextButton.cs" />
+    <Compile Include="NativeMethods.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\AnimationResource.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\Interop\COMGuids.cs" />
     <Compile Include="Ooki.Dialogs.Wpf\Interop\ErrorHelper.cs" />

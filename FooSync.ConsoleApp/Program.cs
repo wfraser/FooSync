@@ -195,9 +195,9 @@ namespace FooSync.ConsoleApp
                 // Check against the repository state
                 //
 
-                Foo.GetConflicts(changeset, state, repo, source);
+                FooSyncEngine.GetConflicts(changeset, state, repo, source);
 
-                Foo.SetDefaultActions(changeset);
+                changeset.SetDefaultActions();
 
                 int conflictCount = changeset.Count(e => e.ConflictStatus != ConflictStatus.NoConflict);
                 if (conflictCount > 0) {
@@ -458,44 +458,7 @@ namespace FooSync.ConsoleApp
                 //
 
                 Console.Write("Updating repository state...");
-                foreach (var filename in changeset.Where(e => e.FileOperation != FileOperation.NoOp))
-                {
-                    ChangeStatus cstatus = changeset[filename].ChangeStatus;
-                    FileOperation operation = changeset[filename].FileOperation;
-
-                    if (cstatus == ChangeStatus.SourceDeleted
-                            && operation != FileOperation.UseRepo)
-                    {
-                        state.Source.MTimes.Remove(filename);
-                    }
-
-                    if (cstatus == ChangeStatus.RepoDeleted
-                            && operation != FileOperation.UseSource)
-                    {
-                        state.Repository.MTimes.Remove(filename);
-                    }
-
-                    if (operation == FileOperation.UseSource)
-                    {
-                        state.Repository.MTimes[filename] = source.Files[filename].MTime;
-                        state.Source.MTimes[filename] = source.Files[filename].MTime;
-                        state.Origin[filename] = state.Source.Name;
-                    }
-                    else if (operation == FileOperation.UseRepo)
-                    {
-                        state.Repository.MTimes[filename] = repo.Files[filename].MTime;
-                        state.Source.MTimes[filename] = repo.Files[filename].MTime;
-                    }
-                    else if (operation == FileOperation.DeleteSource)
-                    {
-                        state.Source.MTimes.Remove(filename);
-                    }
-                    else if (operation == FileOperation.DeleteRepo)
-                    {
-                        state.Repository.MTimes.Remove(filename);
-                    }
-                }
-
+                FooSyncEngine.UpdateRepoState(state, changeset, repo, source);
                 state.Write(FooSyncEngine.RepoStateFileName);
                 Console.WriteLine(" done.\n");
             }

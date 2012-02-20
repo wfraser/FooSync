@@ -47,7 +47,7 @@ namespace FooSync
 
             if (dir.IgnoreRegex != null && dir.IgnoreRegex.Patterns != null && dir.IgnoreRegex.Patterns.Length > 0)
             {
-                string pre = "", post = "";
+                string pre = string.Empty, post = string.Empty;
                 if (dir.IgnoreRegex.CaseInsensitive)
                 {
                     pre = "(?i:";
@@ -62,7 +62,7 @@ namespace FooSync
 
             if (dir.IgnoreGlob != null && dir.IgnoreGlob.Patterns != null && dir.IgnoreGlob.Patterns.Length > 0)
             {
-                string pre = "", post = "";
+                string pre = string.Empty, post = string.Empty;
                 if (dir.IgnoreGlob.CaseInsensitive)
                 {
                     pre = "(?i:";
@@ -151,7 +151,7 @@ namespace FooSync
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822: Mark members as static")]
-        public void GetConflicts(FooChangeSet changeset, RepositoryState repoState, FooTree repo, FooTree source)
+        public static void GetConflicts(FooChangeSet changeset, RepositoryState repoState, FooTree repo, FooTree source)
         {
             if (changeset == null)
                 throw new ArgumentNullException("changeset");
@@ -225,36 +225,52 @@ namespace FooSync
             }
         }
 
-        public void SetDefaultActions(FooChangeSet changeset)
+        public static void UpdateRepoState(RepositoryState state, FooChangeSet changeset, FooTree repo, FooTree source)
         {
-            foreach (var filename in changeset)
+            if (state == null)
+                throw new ArgumentNullException("state");
+            if (changeset == null)
+                throw new ArgumentNullException("changeset");
+            if (repo == null)
+                throw new ArgumentNullException("repo");
+            if (source == null)
+                throw new ArgumentNullException("source");
+
+            foreach (var filename in changeset.Where(e => e.FileOperation != FileOperation.NoOp))
             {
-                if (changeset[filename].ConflictStatus == ConflictStatus.NoConflict)
+                ChangeStatus cstatus = changeset[filename].ChangeStatus;
+                FileOperation operation = changeset[filename].FileOperation;
+
+                if (cstatus == ChangeStatus.SourceDeleted
+                        && operation != FileOperation.UseRepo)
                 {
-                    switch (changeset[filename].ChangeStatus)
-                    {
-                        case ChangeStatus.Newer:
-                        case ChangeStatus.RepoMissing:
-                            changeset[filename].FileOperation = FileOperation.UseSource;
-                            break;
+                    state.Source.MTimes.Remove(filename);
+                }
 
-                        case ChangeStatus.Older:
-                        case ChangeStatus.SourceMissing:
-                            changeset[filename].FileOperation = FileOperation.UseRepo;
-                            break;
+                if (cstatus == ChangeStatus.RepoDeleted
+                        && operation != FileOperation.UseSource)
+                {
+                    state.Repository.MTimes.Remove(filename);
+                }
 
-                        case ChangeStatus.RepoDeleted:
-                            changeset[filename].FileOperation = FileOperation.DeleteSource;
-                            break;
-
-                        case ChangeStatus.SourceDeleted:
-                            changeset[filename].FileOperation = FileOperation.DeleteRepo;
-                            break;
-
-                        default:
-                            System.Diagnostics.Debug.Assert(false, "Invalid change status!");
-                            break;
-                    }
+                if (operation == FileOperation.UseSource)
+                {
+                    state.Repository.MTimes[filename] = source.Files[filename].MTime;
+                    state.Source.MTimes[filename] = source.Files[filename].MTime;
+                    state.Origin[filename] = state.Source.Name;
+                }
+                else if (operation == FileOperation.UseRepo)
+                {
+                    state.Repository.MTimes[filename] = repo.Files[filename].MTime;
+                    state.Source.MTimes[filename] = repo.Files[filename].MTime;
+                }
+                else if (operation == FileOperation.DeleteSource)
+                {
+                    state.Source.MTimes.Remove(filename);
+                }
+                else if (operation == FileOperation.DeleteRepo)
+                {
+                    state.Repository.MTimes.Remove(filename);
                 }
             }
         }

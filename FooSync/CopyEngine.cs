@@ -10,12 +10,12 @@ namespace FooSync
     /// </summary>
     public static class CopyEngine
     {
-        public static void Copy(ICollection<string> copyFrom, ICollection<string> copyTo, Progress callback)
+        public static bool Copy(ICollection<string> copyFrom, ICollection<string> copyTo)
         {
-            Copy(copyFrom, copyTo, IntPtr.Zero, callback);
+            return Copy(copyFrom, copyTo, null);
         }
 
-        public static void Copy(ICollection<string> copyFrom, ICollection<string> copyTo, IntPtr hwnd, Progress callback)
+        public static bool Copy(ICollection<string> copyFrom, ICollection<string> copyTo, Progress callback)
         {
             if (copyFrom == null)
                 throw new ArgumentNullException("copyFrom");
@@ -24,7 +24,7 @@ namespace FooSync
             if (copyFrom.Count != copyTo.Count)
                 throw new ArgumentException("Unequal count of source and destination files.");
             if (copyFrom.Count == 0)
-                return;
+                return true;
 
             if (Type.GetType("Mono.Runtime") != null)
             {
@@ -50,31 +50,36 @@ namespace FooSync
                         }
                     }
 
-                    callback(++i, copyFrom.Count, enumFrom.Current);
+                    if (callback != null)
+                    {
+                        callback(++i, copyFrom.Count, enumFrom.Current);
+                    }
+
                     File.Copy(enumFrom.Current, enumTo.Current);
-                    
                 }
 
                 callback(i, copyFrom.Count, string.Empty);
+
+                return true;
             }
             else
             {
-                NativeMethods.CopyOperation(copyFrom, copyTo, hwnd);
+                return NativeMethods.CopyOperation(copyFrom, copyTo, IntPtr.Zero);
             }
         }
 
-        public static void Delete(ICollection<string> files, Progress callback)
+        public static bool Delete(ICollection<string> files)
         {
-            Delete(files, IntPtr.Zero, callback);
+            return Delete(files, null);
         }
 
-        public static void Delete(ICollection<string> files, IntPtr hwnd, Progress callback)
+        public static bool Delete(ICollection<string> files, Progress callback)
         {
             if (files == null)
                 throw new ArgumentNullException("files");
 
             if (files.Count == 0)
-                return;
+                return true;
 
             if (Type.GetType("Mono.Runtime") != null)
             {
@@ -84,12 +89,17 @@ namespace FooSync
                 {
                     File.Delete(file);
 
-                    callback(++i, files.Count, file);
+                    if (callback != null)
+                    {
+                        callback(++i, files.Count, file);
+                    }
                 }
+
+                return true;
             }
             else
             {
-                NativeMethods.DeleteOperation(files, hwnd);
+                return NativeMethods.DeleteOperation(files, IntPtr.Zero);
             }
         }
     }

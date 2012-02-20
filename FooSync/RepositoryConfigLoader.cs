@@ -107,7 +107,7 @@ namespace FooSync
                 }
             }
 
-            failureMessage = Regex.Replace(failureMessage, " in namespace '[^']+'", "");
+            failureMessage = Regex.Replace(failureMessage, " in namespace '[^']+'", string.Empty);
 
             return valid;
         }
