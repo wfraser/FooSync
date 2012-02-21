@@ -155,13 +155,22 @@
         
         <ToolBar Grid.Row="0" Grid.ColumnSpan="3">
             <Button ToolTip="New Repository" Click="NewRepository">
-                <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16"/>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
+                    <TextBlock VerticalAlignment="Center">New Repository</TextBlock>
+                </StackPanel>
             </Button>
             <Button ToolTip="Open Repository" Click="OpenRepository">
-                <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16"/>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
+                    <TextBlock VerticalAlignment="Center">Open Repository</TextBlock>
+                </StackPanel>
             </Button>
             <Button ToolTip="About" ToolBar.OverflowMode="Always" Click="ShowAboutWindow">
-                <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16"/>
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
+                    <TextBlock VerticalAlignment="Center">About</TextBlock>
+                </StackPanel>
             </Button>
         </ToolBar>
         
@@ -183,6 +192,6 @@
             </StackPanel>
         </ScrollViewer>
 
-        <Button x:Name="DoActionsButton" Grid.Row="3" Grid.ColumnSpan="3" Content="Do Actions" VerticalAlignment="Bottom" IsEnabled="False" Click="DoActionsButton_Click"/>
+        <Button x:Name="DoActionsButton" Grid.Row="3" Grid.Column="1" Content="Do Actions" VerticalAlignment="Bottom" IsEnabled="False" Click="DoActionsButton_Click" Margin="7" Padding="3"/>
     </Grid>
 </Window>
