@@ -197,7 +197,9 @@ namespace FooSync.WPFApp
 
         private void ShowAboutWindow(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("[TODO: About Window]", "TODO", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+            var about = new AboutWindow();
+            about.ShowActivated = true;
+            about.ShowDialog();
         }
 
         private void Window_Closed(object sender, EventArgs e)
