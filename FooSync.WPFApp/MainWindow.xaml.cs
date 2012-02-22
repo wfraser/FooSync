@@ -104,6 +104,11 @@ namespace FooSync.WPFApp
 
             if (cancelled)
             {
+                if (_config != null)
+                {
+                    return;
+                }
+
                 ShowStartWindow();
             }
             else
@@ -131,11 +136,12 @@ namespace FooSync.WPFApp
                 }
                 else
                 {
-                    DirectorySelector.ItemsSource = _config.Directories;
+                    DirectorySelector.DataContext = _config.Directories;
+                    DirectorySelector.SelectedIndex = 0;
 
                     if (_config.Directories.Count() == 1)
                     {
-                        DirectorySelector.SelectedIndex = 0;
+                        DirectorySelector.SelectedIndex = 1;
                         InspectButton.IsEnabled = true;
                     }
                 }
@@ -180,6 +186,11 @@ namespace FooSync.WPFApp
 
             if (cancelled)
             {
+                if (_config != null)
+                {
+                    return;
+                }
+
                 ShowStartWindow();
             }
             else
@@ -417,7 +428,7 @@ namespace FooSync.WPFApp
 
         private void DirectorySelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count != 0)
+            if (e.AddedItems.Count != 0 && e.AddedItems[0] is RepositoryDirectory)
             {
                 var dir = e.AddedItems[0] as RepositoryDirectory;
                 InspectButton.IsEnabled = (dir != null);

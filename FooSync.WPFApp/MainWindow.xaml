@@ -13,8 +13,13 @@
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         </Style>
         
+        <Style TargetType="Expander">
+            <Setter Property="Background" Value="{x:Static SystemColors.ControlLightLightBrush}"/>
+            <Setter Property="BorderBrush" Value="{x:Static SystemColors.ActiveBorderBrush}"/>
+        </Style>
+
         <ControlTemplate x:Key="FileGrid" TargetType="{x:Type ListView}">
-            <ListView ItemsSource="{Binding Path=.}" ContextMenuOpening="ContextMenu_ContextMenuOpening">
+            <ListView ItemsSource="{Binding}" ContextMenuOpening="ContextMenu_ContextMenuOpening">
                 <ListView.View>
                     <GridView>
                         
@@ -153,7 +158,7 @@
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         
-        <ToolBar Grid.Row="0" Grid.ColumnSpan="3">
+        <ToolBar Grid.Row="0" Grid.ColumnSpan="3" IsManipulationEnabled="True">
             <Button ToolTip="New Repository" Click="NewRepository">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
@@ -175,10 +180,24 @@
         </ToolBar>
         
         <Label Grid.Row="1" Grid.Column="0" Content="Subirectory: " Margin="7" Padding="3" />
-        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectorySelector" VerticalAlignment="Center" SelectionChanged="DirectorySelector_SelectionChanged" Margin="7" Padding="3" />
-        <Button x:Name="InspectButton" Grid.Row="1" Grid.Column="2" Click="Inspect" Content="Inspect Files" IsEnabled="False" Margin="7" Padding="3" />
         
-        <ScrollViewer Grid.Row="2" Grid.ColumnSpan="3" x:Name="FilesPanel">
+        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectorySelector" VerticalAlignment="Center" SelectionChanged="DirectorySelector_SelectionChanged" Margin="7" Padding="3" SelectedIndex="0">
+            <ComboBox.Resources>
+                <!-- This is a bit of a hack to add an additional item to the set. -->
+                <CompositeCollection x:Key="collection">
+                    <ComboBoxItem IsEnabled="False">Select Directory...</ComboBoxItem>
+                    <CollectionContainer Collection="{Binding DataContext, Source={x:Reference DirectorySelector}}"/>
+                </CompositeCollection>
+            </ComboBox.Resources>
+            
+            <ComboBox.ItemsSource>
+                <Binding Source="{StaticResource collection}"/>
+            </ComboBox.ItemsSource>
+        </ComboBox>
+        
+        <Button x:Name="InspectButton" Grid.Row="1" Grid.Column="2" Click="Inspect" Content="Inspect Files" IsEnabled="False" Margin="7" Padding="3" />
+
+        <ScrollViewer Grid.Row="2" Grid.ColumnSpan="3" x:Name="FilesPanel" Background="{x:Static SystemColors.ControlLightBrush}">
             <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
                 <Expander Header="New Files:" IsExpanded="False">
                     <ListView Template="{StaticResource FileGrid}" x:Name="NewFiles" ItemsSource="{Binding Path=.}"/>
