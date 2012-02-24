@@ -158,7 +158,7 @@
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         
-        <ToolBar Grid.Row="0" Grid.ColumnSpan="3" IsManipulationEnabled="True">
+        <ToolBar Grid.Row="0" Grid.ColumnSpan="3">
             <Button ToolTip="New Repository" Click="NewRepository">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
