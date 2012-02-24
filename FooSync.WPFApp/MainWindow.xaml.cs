@@ -31,8 +31,8 @@ namespace FooSync.WPFApp
             EnableControls(FilesPanel, false);
             this.Show();
 
-            //if (System.Diagnostics.Debugger.IsAttached)
-            if (false)
+#if false
+            if (System.Diagnostics.Debugger.IsAttached)
             {
                 //
                 // WRFDEV: for testing purposes
@@ -44,18 +44,19 @@ namespace FooSync.WPFApp
                 EnableControls(true);
                 DirectorySelector.SelectedIndex = 0;
                 InspectButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+
+                return;
             }
-            else
-            {
-                ShowStartWindow();
-            }
+#endif
+
+            ShowStartWindow();
         }
 
         public void ShowStartWindow()
         {
             _start = new StartWindow();
-            _start.Left = this.Left + (this.Width / 2) - (_start.Width / 2);
-            _start.Top = this.Top + (this.Height / 2) - (_start.Height / 2);
+            _start.Left = Math.Max(this.Left + (this.Width / 2) - (_start.Width / 2), 0);
+            _start.Top = Math.Max(this.Top + (this.Height / 2) - (_start.Height / 2), 0);
             _start.Topmost = true;
             _start.WindowStyle = System.Windows.WindowStyle.None;
             _start.NewButton.Click += new RoutedEventHandler(NewRepository);
@@ -89,6 +90,44 @@ namespace FooSync.WPFApp
             EnableControls(this as DependencyObject, enabled);
         }
 
+        private void LoadRepositoryConfig(string filename)
+        {
+            string errStr = string.Empty;
+            try
+            {
+                _config = RepositoryConfigLoader.GetRepositoryConfig(filename, out errStr);
+            }
+            catch (Exception ex)
+            {
+                errStr = ex.Message;
+            }
+            finally
+            {
+                if (errStr != string.Empty)
+                {
+                    MessageBox.Show("Loading config failed: " + errStr, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+
+            if (_config == null)
+            {
+                ShowStartWindow();
+            }
+            else
+            {
+                DirectorySelector.DataContext = _config.Directories;
+                DirectorySelector.SelectedIndex = 0;
+
+                if (_config.Directories.Count() == 1)
+                {
+                    DirectorySelector.SelectedIndex = 1;
+                    InspectButton.IsEnabled = true;
+                }
+
+                EnableControls(true);
+            }
+        }
+
         private void OpenRepository(object sender, RoutedEventArgs e)
         {
             string filename = null;
@@ -113,48 +152,17 @@ namespace FooSync.WPFApp
             }
             else
             {
-                string errStr = string.Empty;
-                try
-                {
-                    _config = RepositoryConfigLoader.GetRepositoryConfig(filename, out errStr);
-                }
-                catch (Exception ex)
-                {
-                    errStr = ex.Message;
-                }
-                finally
-                {
-                    if (errStr != string.Empty)
-                    {
-                        MessageBox.Show("Loading config failed: " + errStr, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-
-                if (_config == null)
-                {
-                    ShowStartWindow();
-                }
-                else
-                {
-                    DirectorySelector.DataContext = _config.Directories;
-                    DirectorySelector.SelectedIndex = 0;
-
-                    if (_config.Directories.Count() == 1)
-                    {
-                        DirectorySelector.SelectedIndex = 1;
-                        InspectButton.IsEnabled = true;
-                    }
-                }
-
-                EnableControls(true);
+                LoadRepositoryConfig(filename);
             }
         }
 
         private void NewRepository(object sender, RoutedEventArgs e)
         {
-            string filename = null;
-            bool cancelled = false;
+            string repositoryPath = null;
 
+            /*
+            bool cancelled = false;
+            
             if (VistaFolderBrowserDialog.IsVistaFolderDialogSupported)
             {
                 var dlg = new VistaFolderBrowserDialog();
@@ -162,11 +170,10 @@ namespace FooSync.WPFApp
 
                 cancelled = !(dlg.ShowDialog() ?? false);
 
-                filename =
-                    Path.GetFullPath(
-                        Path.Combine(
-                            dlg.SelectedPath,
-                            FooSyncEngine.ConfigFileName));
+                if (!cancelled)
+                {
+                    repositoryPath = Path.GetFullPath(dlg.SelectedPath);
+                }
             }
             else
             {
@@ -177,11 +184,7 @@ namespace FooSync.WPFApp
 
                 cancelled = !(dlg.ShowDialog() ?? false);
 
-                filename =
-                    Path.GetFullPath(
-                        Path.Combine(
-                            Path.GetDirectoryName(dlg.FileName), // Discard whatever filename they chose
-                            FooSyncEngine.ConfigFileName));
+                repositoryPath = Path.GetFullPath(Path.GetDirectoryName(dlg.FileName)); // Discard whatever filename they chose
             }
 
             if (cancelled)
@@ -195,14 +198,22 @@ namespace FooSync.WPFApp
             }
             else
             {
-                MessageBox.Show(
-                    string.Format(
-                        "[TODO: New Repository dialog]\nPath={0}",
-                        filename),
-                    "TODO",
-                    MessageBoxButton.OK, MessageBoxImage.Asterisk);
+             */
 
-                EnableControls(true);
+            var win = new CreateRepositoryWindow();
+            win.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
+
+            win.RepositoryPath = repositoryPath;
+
+            var result = win.ShowDialog();
+
+            if (result.HasValue && result.Value == true)
+            {
+                LoadRepositoryConfig(Path.Combine(repositoryPath, FooSyncEngine.ConfigFileName));
+            }
+            else if (_config == null)
+            {
+                ShowStartWindow();
             }
         }
 
@@ -330,8 +341,13 @@ namespace FooSync.WPFApp
 
         void EnumerateFilesCompletedWorker(object sender, RunWorkerCompletedEventArgs e)
         {
-            if (e.Error != null && e.Error is OperationCanceledException)
+            if (e.Error != null)
             {
+                if (!(e.Error is OperationCanceledException))
+                {
+                    MessageBox.Show(string.Format("An error occured while enumerating files:\n{0}", e.Error.Message), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
                 InspectButton.IsEnabled = true;
                 EnableControls(true);
                 return;
@@ -383,9 +399,12 @@ namespace FooSync.WPFApp
             InspectButton.IsEnabled = true;
             EnableControls(true);
 
-            if (e.Error != null && e.Error is OperationCanceledException)
+            if (e.Error != null)
             {
-
+                if (!(e.Error is OperationCanceledException))
+                {
+                    MessageBox.Show(string.Format("An error occurred while comparing files:\n{0}", e.Error.Message), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
                 return;
             }
 
@@ -428,10 +447,20 @@ namespace FooSync.WPFApp
 
         private void DirectorySelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (e.AddedItems.Count != 0 && e.AddedItems[0] is RepositoryDirectory)
+            if (e.AddedItems.Count == 1)
             {
-                var dir = e.AddedItems[0] as RepositoryDirectory;
-                InspectButton.IsEnabled = (dir != null);
+                if (e.AddedItems[0] is RepositoryDirectory)
+                {
+                    InspectButton.IsEnabled = true;
+                }
+                else if (e.AddedItems[0] is ComboBoxItem)
+                {
+                    if (string.Equals("new", ((ComboBoxItem)e.AddedItems[0]).Tag as string))
+                    {
+                        InspectButton.IsEnabled = false;
+                        MessageBox.Show("[[TODO: Add subdirectory window]]");
+                    }
+                }
             }
         }
 
@@ -539,6 +568,7 @@ namespace FooSync.WPFApp
             if (copySrc.Count + deletes.Count == 0)
             {
                 MessageBox.Show("No actions to take. Done!", "Nothing to do", MessageBoxButton.OK, MessageBoxImage.Information);
+                goto enableControls;
             }
 
             //
@@ -594,6 +624,7 @@ namespace FooSync.WPFApp
                 DoActionsButton.IsEnabled = true;
             }
 
+enableControls:
             InspectButton.IsEnabled = true;
             EnableControls(true);
             EnableControls(FilesPanel, true);

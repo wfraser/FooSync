@@ -1,0 +1,50 @@
+﻿<Window x:Class="FooSync.WPFApp.CreateRepositoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Create Repository" SizeToContent="Height" Width="600">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!--<TextBlock FontSize="20" Text="{Binding Path=RepositoryPath, StringFormat=Path: {0}, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}"/>-->
+        
+        <TextBlock Grid.Row="0" Grid.Column="0" Margin="10">Repository Name:</TextBlock>
+        <TextBox Grid.Row="0" Grid.Column="1" Margin="10,10,0,10" x:Name="RepositoryName"/>
+        <Button Grid.Row="0" Grid.Column="2" Margin="0,10,10,10" Content="Browse"/>
+        
+        <GroupBox Grid.Row="1" Grid.ColumnSpan="3" Header="Repository" Margin="12,5,12,5">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Margin="5">Hello.</TextBlock>
+                <TextBlock Grid.Row="1" Grid.Column="0" Margin="5">Repository Location:</TextBlock>
+                <TextBox Grid.Row="1" Grid.Column="1" Margin="5,5,0,5" x:Name="RepositoryLocation"/>
+                <Button Grid.Row="1" Grid.Column="2" Margin="0,5,5,5" Content="Browse"/>
+            </Grid>
+        </GroupBox>
+        
+        <GroupBox Grid.Row="2" Grid.ColumnSpan="3" Header="Source" Margin="12,5,12,5">
+            
+        </GroupBox>
+        
+        <Button Grid.Row="3" Grid.Column="0" Content="Cancel" Click="Cancel_Click" Margin="10"/>
+        <Button Grid.Row="3" Grid.Column="2" Content="Create" Click="Create_Click" Margin="10"/>
+    </Grid>
+</Window>

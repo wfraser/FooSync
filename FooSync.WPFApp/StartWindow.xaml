@@ -14,17 +14,17 @@
             <ColumnDefinition />
         </Grid.ColumnDefinitions>
         
-        <Label Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Content="Select an action to begin:"/>
+        <Label Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Margin="10,5,10,0" Content="Select an action to begin:"/>
         <foo:ImageTextButton x:Name="NewButton"
                              Grid.Column="0" Grid.Row="1" 
                              Content="New Repository" 
-                             ImageSource="/FooSync;component/Resources/loki_128.png"
+                             ImageSource="/FooSync;component/Resources/newfldr_64x64x32.png"
                              Margin="10"
                              Click="CloseWindow"/>
         <foo:ImageTextButton x:Name="OpenButton"
                              Grid.Column="1" Grid.Row="1" 
                              Content="Open Existing Repository" 
-                             ImageSource="/FooSync;component/Resources/loki_128.png"
+                             ImageSource="/FooSync;component/Resources/folder_open_64x64x32.png"
                              Margin="10"
                              Click="CloseWindow"/>
     </Grid>

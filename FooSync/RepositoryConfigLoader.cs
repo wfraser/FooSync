@@ -55,6 +55,29 @@ namespace FooSync
         }
 
         /// <summary>
+        /// Writes a RepositoryConfig object out to XML.
+        /// </summary>
+        /// <param name="config">RepositoryConfig object to write.</param>
+        /// <param name="configXmlFilename">Path to XML file to write.</param>
+        public static void WriteRepositoryConfig(RepositoryConfig config, string configXmlFilename)
+        {
+            using (var writer = XmlWriter.Create(configXmlFilename))
+            {
+                var serializer = new XmlSerializer(typeof(RepositoryConfig));
+
+                if (System.IO.Path.DirectorySeparatorChar != '/')
+                {
+                    foreach (var directory in config.Directories)
+                    {
+                        directory.Path = directory.Path.Replace(System.IO.Path.DirectorySeparatorChar, '/');
+                    }
+                }
+
+                serializer.Serialize(writer, config);
+            }
+        }
+
+        /// <summary>
         /// Validate a given XML file against a given XSD.
         /// </summary>
         /// <param name="xmlFileName">Path to XML file to validate.</param>

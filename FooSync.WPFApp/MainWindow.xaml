@@ -161,13 +161,13 @@
         <ToolBar Grid.Row="0" Grid.ColumnSpan="3">
             <Button ToolTip="New Repository" Click="NewRepository">
                 <StackPanel Orientation="Horizontal">
-                    <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
+                    <Image Source="/FooSync;component/Resources/newfldr_16x16x32.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
                     <TextBlock VerticalAlignment="Center">New Repository</TextBlock>
                 </StackPanel>
             </Button>
             <Button ToolTip="Open Repository" Click="OpenRepository">
                 <StackPanel Orientation="Horizontal">
-                    <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
+                    <Image Source="/FooSync;component/Resources/folder_open_16x16x32.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
                     <TextBlock VerticalAlignment="Center">Open Repository</TextBlock>
                 </StackPanel>
             </Button>
@@ -187,6 +187,7 @@
                 <CompositeCollection x:Key="collection">
                     <ComboBoxItem IsEnabled="False">Select Directory...</ComboBoxItem>
                     <CollectionContainer Collection="{Binding DataContext, Source={x:Reference DirectorySelector}}"/>
+                    <ComboBoxItem Tag="new">New Subdirectory...</ComboBoxItem>
                 </CompositeCollection>
             </ComboBox.Resources>
             
