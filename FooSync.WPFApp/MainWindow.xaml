@@ -145,20 +145,9 @@
         <CommandBinding Command="foo:MainWindow.ChangeFileOperation" Executed="OnChangeFileOperation"/>
     </Window.CommandBindings>
     
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
+    <DockPanel>
         
-        <ToolBar Grid.Row="0" Grid.ColumnSpan="3">
+        <ToolBar DockPanel.Dock="Top">
             <Button ToolTip="New Repository" Click="NewRepository">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="/FooSync;component/Resources/newfldr_16x16x32.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
@@ -179,26 +168,46 @@
             </Button>
         </ToolBar>
         
-        <Label Grid.Row="1" Grid.Column="0" Content="Subirectory: " Margin="7" Padding="3" />
-        
-        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectorySelector" VerticalAlignment="Center" SelectionChanged="DirectorySelector_SelectionChanged" Margin="7" Padding="3" SelectedIndex="0">
-            <ComboBox.Resources>
-                <!-- This is a bit of a hack to add an additional item to the set. -->
-                <CompositeCollection x:Key="collection">
-                    <ComboBoxItem IsEnabled="False">Select Directory...</ComboBoxItem>
-                    <CollectionContainer Collection="{Binding DataContext, Source={x:Reference DirectorySelector}}"/>
-                    <ComboBoxItem Tag="new">New Subdirectory...</ComboBoxItem>
-                </CompositeCollection>
-            </ComboBox.Resources>
-            
-            <ComboBox.ItemsSource>
-                <Binding Source="{StaticResource collection}"/>
-            </ComboBox.ItemsSource>
-        </ComboBox>
-        
-        <Button x:Name="InspectButton" Grid.Row="1" Grid.Column="2" Click="Inspect" Content="Inspect Files" IsEnabled="False" Margin="7" Padding="3" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <Label Content="Repository Name:" Margin="7" Padding="3"/>
+            <Label Content="{Binding RepositoryName}" FontSize="20" x:Name="RepoNameLabel"/>
+        </StackPanel>
 
-        <ScrollViewer Grid.Row="2" Grid.ColumnSpan="3" x:Name="FilesPanel" Background="{x:Static SystemColors.ControlLightBrush}">
+
+        <DockPanel DockPanel.Dock="Top">
+            <Label DockPanel.Dock="Left" Content="Subirectory: " Margin="7" Padding="3" />
+        
+            <Button DockPanel.Dock="Right" x:Name="InspectButton" HorizontalAlignment="Right" Click="Inspect" Content="Inspect Files" IsEnabled="False" Margin="7" Padding="3" />
+
+            <ComboBox HorizontalAlignment="Stretch" x:Name="DirectorySelector" VerticalAlignment="Center" SelectionChanged="DirectorySelector_SelectionChanged" Margin="7" Padding="3" SelectedIndex="0">
+                <ComboBox.Resources>
+                    <!-- This is a bit of a hack to add additional items to the set. -->
+                    <CompositeCollection x:Key="collection">
+                        <ComboBoxItem IsEnabled="False">Select Directory...</ComboBoxItem>
+                        <CollectionContainer Collection="{Binding DataContext, Source={x:Reference DirectorySelector}}"/>
+                        <ComboBoxItem Tag="new">New Subdirectory...</ComboBoxItem>
+                    </CompositeCollection>
+                </ComboBox.Resources>
+
+                <ComboBox.ItemsSource>
+                    <Binding Source="{StaticResource collection}"/>
+                </ComboBox.ItemsSource>
+            </ComboBox>
+        </DockPanel>
+
+        <Grid DockPanel.Dock="Bottom" >
+            <Grid.ColumnDefinitions>
+                <!-- This is a hack to get the button to be 50% width... -->
+                <ColumnDefinition Width="*"/> <!-- Each is 25% width, the button takes up the middle two. -->
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="DoActionsButton" Content="Do Actions" VerticalAlignment="Bottom" IsEnabled="False" Click="DoActionsButton_Click" Margin="7" Padding="3" Grid.Column="1" Grid.ColumnSpan="2"/>
+        </Grid>
+
+        <!-- Not docked; fill up the remaining space. -->
+        <ScrollViewer x:Name="FilesPanel" Background="{x:Static SystemColors.ControlLightBrush}">
             <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
                 <Expander Header="New Files:" IsExpanded="False">
                     <ListView Template="{StaticResource FileGrid}" x:Name="NewFiles" ItemsSource="{Binding Path=.}"/>
@@ -211,7 +220,5 @@
                 </Expander>
             </StackPanel>
         </ScrollViewer>
-
-        <Button x:Name="DoActionsButton" Grid.Row="3" Grid.Column="1" Content="Do Actions" VerticalAlignment="Bottom" IsEnabled="False" Click="DoActionsButton_Click" Margin="7" Padding="3"/>
-    </Grid>
+    </DockPanel>
 </Window>

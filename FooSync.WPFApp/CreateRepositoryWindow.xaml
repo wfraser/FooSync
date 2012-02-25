@@ -1,50 +1,72 @@
 ﻿<Window x:Class="FooSync.WPFApp.CreateRepositoryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:foo="clr-namespace:FooSync.WPFApp"
         Title="Create Repository" SizeToContent="Height" Width="600">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        
-        <!--<TextBlock FontSize="20" Text="{Binding Path=RepositoryPath, StringFormat=Path: {0}, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}"/>-->
-        
-        <TextBlock Grid.Row="0" Grid.Column="0" Margin="10">Repository Name:</TextBlock>
-        <TextBox Grid.Row="0" Grid.Column="1" Margin="10,10,0,10" x:Name="RepositoryName"/>
-        <Button Grid.Row="0" Grid.Column="2" Margin="0,10,10,10" Content="Browse"/>
-        
-        <GroupBox Grid.Row="1" Grid.ColumnSpan="3" Header="Repository" Margin="12,5,12,5">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                
-                <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Margin="5">Hello.</TextBlock>
-                <TextBlock Grid.Row="1" Grid.Column="0" Margin="5">Repository Location:</TextBlock>
-                <TextBox Grid.Row="1" Grid.Column="1" Margin="5,5,0,5" x:Name="RepositoryLocation"/>
-                <Button Grid.Row="1" Grid.Column="2" Margin="0,5,5,5" Content="Browse"/>
-            </Grid>
+    <StackPanel Orientation="Vertical">        
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Left" Margin="10,10,0,0">Repository Name:</TextBlock>
+            <TextBox Margin="10,10,10,0" x:Name="RepositoryName"/>
+        </DockPanel>
+
+        <GroupBox Header="Repository" Margin="12,5,12,5">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Margin="5" TextAlignment="Justify" TextWrapping="Wrap">
+                    Specify where the repository is to be located.
+                    The repository is considered the "main" copy, and all other sources sync with it.
+                    It is usually on a network share, removable hard drive, or laptop share.                    
+                </TextBlock>
+                <TextBlock DockPanel.Dock="Left" Margin="5">Repository Location:</TextBlock>
+                <Button DockPanel.Dock="Right" Margin="0,5,5,5" Padding="1" Content="Browse" Click="FolderBrowse_Click" Tag="{x:Reference Name=RepositoryLocation}"/>
+                <TextBox Margin="5,5,0,5" x:Name="RepositoryLocation" TextChanged="RepositoryLocation_TextChanged"/>
+            </DockPanel>
         </GroupBox>
         
-        <GroupBox Grid.Row="2" Grid.ColumnSpan="3" Header="Source" Margin="12,5,12,5">
-            
+        <GroupBox Header="Subdirectory" Margin="12,5,12,5">
+            <StackPanel Orientation="Vertical">
+                <TextBlock Margin="5,5,5,0" TextAlignment="Justify" TextWrapping="Wrap">
+                    Subdirectories let you divide your repository into different parts.
+                    The parts can be anywhere on your hard drive, but will all be consolidated inside the repository's location.
+                </TextBlock>
+                <TextBlock Margin="5" TextAlignment="Justify" TextWrapping="Wrap">
+                    Just specify one subdirectory for now; you can add others later.
+                </TextBlock>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <Label Grid.Row="0" Grid.Column="0" Margin="5">Subdirectory Name:</Label>
+                    <ComboBox Grid.Row="0" Grid.Column="1" IsEditable="True" Margin="5,5,0,5" x:Name="SubdirName">
+                        <ComboBox.Resources>
+                            <CompositeCollection x:Key="collection">
+                                <ComboBoxItem IsEnabled="False">Existing Folders in the Repository:</ComboBoxItem>
+                                <CollectionContainer Collection="{Binding DataContext, Source={x:Reference SubdirName}}"/>
+                            </CompositeCollection>
+                        </ComboBox.Resources>
+                        
+                        <ComboBox.ItemsSource>
+                            <Binding Source="{StaticResource collection}"/>
+                        </ComboBox.ItemsSource>
+                    </ComboBox>
+                    
+                    <Label Grid.Row="1" Grid.Column="0" Margin="5">Your Path:</Label>
+                    <TextBox Grid.Row="1" Grid.Column="1" Margin="5,5,0,5" x:Name="SubdirSourcePath"/>
+                    <Button Grid.Row="2" Grid.Column="2" Margin="0,5,5,5" Padding="1" Content="Browse" Click="FolderBrowse_Click" Tag="{x:Reference SubdirSourcePath}"/>
+                </Grid>
+            </StackPanel>
         </GroupBox>
         
-        <Button Grid.Row="3" Grid.Column="0" Content="Cancel" Click="Cancel_Click" Margin="10"/>
-        <Button Grid.Row="3" Grid.Column="2" Content="Create" Click="Create_Click" Margin="10"/>
-    </Grid>
+        <DockPanel>
+            <Button DockPanel.Dock="Left" Content="Cancel" Click="Cancel_Click" Margin="10" Padding="10,5,10,5"/>
+            <Button DockPanel.Dock="Right" Content="Create" Click="Create_Click" Margin="10" Padding="10,5,10,5"/>
+            <Label Content="" Foreground="Crimson" HorizontalContentAlignment="Center" Margin="10" Padding="10,5,10,5" x:Name="ValidationErrors"/>
+        </DockPanel>
+    </StackPanel>
 </Window>

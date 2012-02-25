@@ -115,6 +115,7 @@ namespace FooSync.WPFApp
             }
             else
             {
+                RepoNameLabel.DataContext = _config;
                 DirectorySelector.DataContext = _config.Directories;
                 DirectorySelector.SelectedIndex = 0;
 
@@ -209,7 +210,7 @@ namespace FooSync.WPFApp
 
             if (result.HasValue && result.Value == true)
             {
-                LoadRepositoryConfig(Path.Combine(repositoryPath, FooSyncEngine.ConfigFileName));
+                LoadRepositoryConfig(Path.Combine(win.RepositoryPath, FooSyncEngine.ConfigFileName));
             }
             else if (_config == null)
             {
@@ -417,25 +418,37 @@ namespace FooSync.WPFApp
                 return;
             }
 
-            var newFiles = _changeset.Where(elem => 
+            //
+            // Partitioning predicates
+            //
+
+            Func<FooChangeSetElem, bool> newPred = elem => 
                 (!_state.Repository.MTimes.ContainsKey(elem.Filename) && !_repo.Files.ContainsKey(elem.Filename))
-                    || (!_state.Source.MTimes.ContainsKey(elem.Filename) && !_source.Files.ContainsKey(elem.Filename)));
+                    || (!_state.Source.MTimes.ContainsKey(elem.Filename) && !_source.Files.ContainsKey(elem.Filename));
+
+            Func<FooChangeSetElem, bool> delPred = elem =>
+                (_state.Repository.MTimes.ContainsKey(elem.Filename) && !_repo.Files.ContainsKey(elem.Filename))
+                    || (_state.Source.MTimes.ContainsKey(elem.Filename) && !_source.Files.ContainsKey(elem.Filename));
+
+            //
+            // Partition into 3 classes: new, changed, and deleted.
+            //
+
+            var newFiles = _changeset.Where(newPred);
             NewFiles.DataContext = new BindableChangeSet(_changeset, newFiles, _repo, _source);
             if (newFiles.Count() > 0)
             {
                 (NewFiles.Parent as Expander).IsExpanded = true;
             }
 
-            var deletedFiles = _changeset.Where(elem =>
-                (_state.Repository.MTimes.ContainsKey(elem.Filename) && !_repo.Files.ContainsKey(elem.Filename))
-                    || (_state.Source.MTimes.ContainsKey(elem.Filename) && !_source.Files.ContainsKey(elem.Filename)));
+            var deletedFiles = _changeset.Where(delPred);
             DeletedFiles.DataContext = new BindableChangeSet(_changeset, deletedFiles, _repo, _source);
             if (deletedFiles.Count() > 0)
             {
                 (DeletedFiles.Parent as Expander).IsExpanded = true;
             }
 
-            var changedFiles = _changeset.Where(elem => !deletedFiles.Contains(elem.Filename) && !newFiles.Contains(elem.Filename));
+            var changedFiles = _changeset.Where(elem => !newPred(elem) && !delPred(elem));
             ChangedFiles.DataContext = new BindableChangeSet(_changeset, changedFiles, _repo, _source);
             if (changedFiles.Count() > 0)
             {
