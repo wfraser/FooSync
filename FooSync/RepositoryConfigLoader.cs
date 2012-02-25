@@ -89,6 +89,15 @@ namespace FooSync
             bool valid = true;
             failureMessage = string.Empty;
 
+            if (!System.IO.File.Exists(schemaFileName))
+            {
+                //
+                // Don't fail if we can't validate due to missing XSD.
+                //
+
+                return true;
+            }
+
             var settings = new XmlReaderSettings();
             settings.Schemas.Add(null, schemaFileName);
             settings.ValidationType = ValidationType.Schema;
