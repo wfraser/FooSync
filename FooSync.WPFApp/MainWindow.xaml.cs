@@ -487,7 +487,6 @@ namespace FooSync.WPFApp
 
                 bool repoPresent = (selectedItems != null && selectedItems.Count == 1
                             && selectedItems[0].RepositoryDate.HasValue);
-
                 bool sourcePresent = (selectedItems != null && selectedItems.Count == 1
                             && selectedItems[0].SourceDate.HasValue);
 
@@ -511,8 +510,10 @@ namespace FooSync.WPFApp
                         }
                         else if (i == 9) // Change action to:
                         {
-                            repoPresent = selectedItems != null && selectedItems.All(elem => elem.RepositoryDate.HasValue);
-                            sourcePresent = selectedItems != null && selectedItems.All(elem => elem.SourceDate.HasValue);
+                            repoPresent = selectedItems != null && selectedItems.Count > 0 
+                                    && selectedItems.All(elem => elem.RepositoryDate.HasValue);
+                            sourcePresent = selectedItems != null && selectedItems.Count > 0
+                                    && selectedItems.All(elem => elem.SourceDate.HasValue);
 
                             for (int j = 0; j < item.Items.Count; j++)
                             {
@@ -671,48 +672,6 @@ enableControls:
 
         #region Actions
 
-        public static RoutedCommand ActionClick = new RoutedCommand("ActionClick", typeof(MainWindow));
-        /// <summary>
-        /// Responsible for updating the file operation on a file. Fired when the 'Action' buttons in the file grid are clicked.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e">The parameter contains the filename to be affected.</param>
-        private void OnActionClick(object sender, ExecutedRoutedEventArgs e)
-        {
-            var filename = e.Parameter as string;
-            if (filename == null)
-            {
-                throw new ArgumentException();
-            }
-
-            _changeset[filename].FileOperation++;
-
-            //
-            // Don't let nonsensical file operations be set.
-            // (can't copy or delete a nonexistant file)
-            //
-
-            if (((_changeset[filename].ChangeStatus == ChangeStatus.RepoDeleted 
-                        || _changeset[filename].ChangeStatus == ChangeStatus.RepoMissing)
-                    && (_changeset[filename].FileOperation == FileOperation.UseRepo 
-                        || _changeset[filename].FileOperation == FileOperation.DeleteRepo))
-
-                || (((_changeset[filename].ChangeStatus == ChangeStatus.SourceDeleted 
-                        || _changeset[filename].ChangeStatus == ChangeStatus.SourceMissing)
-                    && (_changeset[filename].FileOperation == FileOperation.UseSource 
-                        || _changeset[filename].FileOperation == FileOperation.DeleteSource))))
-            {
-                _changeset[filename].FileOperation++;
-            }
-
-            if (_changeset[filename].FileOperation == FileOperation.MaxFileOperation)
-            {
-                _changeset[filename].FileOperation = (FileOperation)0;
-            }
-
-            _changeset.AdviseChanged();
-        }
-
         public static RoutedCommand OpenLocationRepo = new RoutedCommand("OpenLocationRepo", typeof(MainWindow));
         private void OnOpenLocationRepo(object sender, ExecutedRoutedEventArgs e)
         {
@@ -838,7 +797,7 @@ enableControls:
                 {
                     foreach (BindableChangeSetElem item in list.SelectedItems)
                     {
-                        _changeset[item.Filename].FileOperation = newOp;
+                        item.Action = newOp;
                     }
                 }
 

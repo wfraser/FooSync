@@ -55,14 +55,12 @@ namespace FooSync.WPFApp
             {
                 get
                 {
-                    return new BindableChangeSetElem
-                    { 
-                        Filename = _changeset[_key.Current].Filename,
-                        RepositoryDate = (_repo.Files.ContainsKey(_key.Current)) ? (DateTime?)_repo.Files[_key.Current].MTime : null,
-                        SourceDate = (_source.Files.ContainsKey(_key.Current)) ? (DateTime?)_source.Files[_key.Current].MTime : null,
-                        Action = _changeset[_key.Current].FileOperation,
-                        ConflictStatus = _changeset[_key.Current].ConflictStatus,
-                    };
+                    return new BindableChangeSetElem(
+                        _changeset,
+                        _changeset[_key.Current].Filename,
+                        _repo.Files.ContainsKey(_key.Current) ? (DateTime?)_repo.Files[_key.Current].MTime : null,
+                        _source.Files.ContainsKey(_key.Current) ? (DateTime?)_source.Files[_key.Current].MTime : null
+                        );
                 }
             }
 
@@ -95,10 +93,45 @@ namespace FooSync.WPFApp
 
     public class BindableChangeSetElem
     {
-        public string Filename { get; set; }
-        public DateTime? RepositoryDate { get; set; }
-        public DateTime? SourceDate { get; set; }
-        public FileOperation Action { get; set; }
-        public ConflictStatus ConflictStatus { get; set; }
+        public BindableChangeSetElem(FooChangeSet changeset, string filename, DateTime? repoDate, DateTime? sourceDate)
+        {
+            _changeset  = changeset;
+            _filename   = filename;
+            _repoDate   = repoDate;
+            _sourceDate = sourceDate;
+        }
+
+        public string    Filename       { get { return _filename; } }
+        public DateTime? RepositoryDate { get { return _repoDate; } }
+        public DateTime? SourceDate     { get { return _sourceDate; } }
+
+        public FileOperation Action
+        {
+            get
+            {
+                return _changeset[_filename].FileOperation;
+            }
+            set
+            {
+                _changeset[_filename].FileOperation = value;
+            }
+        }
+
+        public ConflictStatus ConflictStatus
+        {
+            get
+            {
+                return _changeset[_filename].ConflictStatus;
+            }
+            set
+            {
+                _changeset[_filename].ConflictStatus = value;
+            }
+        }
+
+        private FooChangeSet _changeset;
+        private string       _filename;
+        private DateTime?    _repoDate;
+        private DateTime?    _sourceDate;
     }
 }

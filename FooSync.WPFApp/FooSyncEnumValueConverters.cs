@@ -8,35 +8,29 @@ namespace FooSync.WPFApp
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
+            if (targetType != typeof(int))
+            {
+                throw new ArgumentException("Can only convert FileOperation to int", "targetType");
+            }
+
             if (value is FooSync.FileOperation)
             {
-                var v = (FooSync.FileOperation)value;
-
-                switch (v)
-                {
-                    case FileOperation.DeleteRepo:
-                        return "← Delete";
-                    case FileOperation.DeleteSource:
-                        return "Delete →";
-                    case FileOperation.NoOp:
-                        return "Do Nothing";
-                    case FileOperation.UseRepo:
-                        return "← Copy Repository";
-                    case FileOperation.UseSource:
-                        return "Copy Source →";
-                    default:
-                        return "(invalid)";
-                }
+                return (int)value;
             }
             else
             {
-                return "(invalid)";
+                return -1;
             }
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            if (targetType != typeof(FooSync.FileOperation))
+            {
+                throw new ArgumentException("Can only convert to FileOperation", "targetType");
+            }
+
+            return (FooSync.FileOperation)((int)value);
         }
     }
 
@@ -44,36 +38,29 @@ namespace FooSync.WPFApp
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
+            if (targetType != typeof(int))
+            {
+                throw new ArgumentException("Can only convert ConflictStatus to int", "targetType");
+            }
+
             if (value is FooSync.ConflictStatus)
             {
-                var v = (FooSync.ConflictStatus)value;
-
-                switch (v)
-                {
-                    case ConflictStatus.NoConflict:
-                        return "(no conflict)";
-                    case ConflictStatus.RepoChanged:
-                    case ConflictStatus.SourceChanged:
-                        return "Both Changed";
-                    case ConflictStatus.ChangedInRepoDeletedInSource:
-                        return "Changed in Repository and Deleted in Source";
-                    case ConflictStatus.ChangedInSourceDeletedInRepo:
-                        return "Changed in Source and Deleted in Repository";
-                    case ConflictStatus.Undetermined:
-                        return "???";
-                    default:
-                        return "(invalid)";
-                }
+                return (int)value;
             }
             else
             {
-                return "(invalid)";
+                return -1;
             }
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            if (targetType != typeof(FooSync.ConflictStatus))
+            {
+                throw new ArgumentException("Can only convert to ConflictStatus", "targetType");
+            }
+
+            return (FooSync.ConflictStatus)value;
         }
     }
 }

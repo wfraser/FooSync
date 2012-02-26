@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:foo="clr-namespace:FooSync.WPFApp"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         Title="FooSync" Height="430" Width="700" Icon="/FooSync;component/Resources/loki_128.png"
         Closed="Window_Closed">
     <Window.Resources>
@@ -45,9 +46,14 @@
                         <GridViewColumn Header="Action">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="{Binding Action, Converter={StaticResource FileOperationValueConverter}}"
-                                            Command="foo:MainWindow.ActionClick" CommandParameter="{Binding Filename}"
-                                            HorizontalAlignment="Center"/>
+                                    <ComboBox HorizontalContentAlignment="Center" HorizontalAlignment="Center" SelectedIndex="{Binding Action, Converter={StaticResource FileOperationValueConverter}}">
+                                        <!-- these need to be in the same order as the FileOperation enum -->
+                                        <ComboBoxItem>Do Nothing</ComboBoxItem>
+                                        <ComboBoxItem IsEnabled="{Binding RepositoryDate, TargetNullValue=False}">← Copy Repository</ComboBoxItem>
+                                        <ComboBoxItem IsEnabled="{Binding SourceDate, TargetNullValue=False}">Copy Source →</ComboBoxItem>
+                                        <ComboBoxItem IsEnabled="{Binding RepositoryDate, TargetNullValue=False}">← Delete</ComboBoxItem>
+                                        <ComboBoxItem IsEnabled="{Binding SourceDate, TargetNullValue=False}">Delete →</ComboBoxItem>
+                                    </ComboBox>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -65,8 +71,28 @@
                         <GridViewColumn Header="Conflict Status">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding ConflictStatus, Converter={StaticResource ConflictStatusValueConverter}}"
-                                               HorizontalAlignment="Center"/>
+                                    <!-- A "ComboBox" where the control is just a text block taking the value of one of the items  -->
+                                    <ComboBox HorizontalAlignment="Center" SelectedIndex="{Binding ConflictStatus, Converter={StaticResource ConflictStatusValueConverter}}">
+                                        <ComboBox.Template>
+                                            <ControlTemplate TargetType="ComboBox">
+                                                <TextBlock Text="{TemplateBinding SelectedItem}"
+                                                           Background="Transparent"
+                                                           HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+                                                           Width="{TemplateBinding Width}"/>
+                                            </ControlTemplate>
+                                        </ComboBox.Template>
+                                        <ComboBox.ItemsSource>
+                                            <x:Array Type="sys:String">
+                                                <!-- these need to be in the same order as the ConflictStatus enum -->
+                                                <sys:String>Undetermined</sys:String>
+                                                <sys:String>(no conflict)</sys:String>
+                                                <sys:String>Changed in Repository and Deleted in Source</sys:String>
+                                                <sys:String>Changed in Source and Deleted in Repository</sys:String>
+                                                <sys:String>Both changed</sys:String>
+                                                <sys:String>Both changed</sys:String>
+                                            </x:Array>
+                                        </ComboBox.ItemsSource>
+                                    </ComboBox>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -85,7 +111,7 @@
                         <MenuItem Header="Open properties (Repository)" Command="foo:MainWindow.ShowPropertiesRepo" CommandParameter="{Binding}"/>
                         <MenuItem Header="Open properties (Source)" Command="foo:MainWindow.ShowPropertiesSource" CommandParameter="{Binding}"/>
                         <Separator/>
-                        <MenuItem Header="Change action to:">
+                        <MenuItem Header="Change action of all selected to:">
                             <!-- keep the index the same as in the FileOperation enum -->
                             <MenuItem Header="Do nothing" Command="foo:MainWindow.ChangeFileOperation">
                                 <MenuItem.CommandParameter>
@@ -135,7 +161,6 @@
     </Window.Resources>
     
     <Window.CommandBindings>
-        <CommandBinding Command="foo:MainWindow.ActionClick" Executed="OnActionClick"/>
         <CommandBinding Command="foo:MainWindow.OpenLocationRepo" Executed="OnOpenLocationRepo"/>
         <CommandBinding Command="foo:MainWindow.OpenLocationSource" Executed="OnOpenLocationSource"/>
         <CommandBinding Command="foo:MainWindow.OpenFileRepo" Executed="OnOpenFileRepo"/>
