@@ -175,7 +175,7 @@
 
 
         <DockPanel DockPanel.Dock="Top">
-            <Label DockPanel.Dock="Left" Content="Subirectory: " Margin="7" Padding="3" />
+            <Label DockPanel.Dock="Left" Content="Subdirectory: " Margin="7" Padding="3" />
         
             <Button DockPanel.Dock="Right" x:Name="InspectButton" HorizontalAlignment="Right" Click="Inspect" Content="Inspect Files" IsEnabled="False" Margin="7" Padding="3" />
 
