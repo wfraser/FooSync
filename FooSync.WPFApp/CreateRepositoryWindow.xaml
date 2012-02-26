@@ -10,15 +10,15 @@
         </DockPanel>
 
         <GroupBox Header="Repository" Margin="12,5,12,5">
-            <DockPanel>
+            <DockPanel KeyboardNavigation.TabNavigation="Local">
                 <TextBlock DockPanel.Dock="Top" Margin="5" TextAlignment="Justify" TextWrapping="Wrap">
                     Specify where the repository is to be located.
                     The repository is considered the "main" copy, and all other sources sync with it.
                     It is usually on a network share, removable hard drive, or laptop share.                    
                 </TextBlock>
                 <TextBlock DockPanel.Dock="Left" Margin="5">Repository Location:</TextBlock>
-                <Button DockPanel.Dock="Right" Margin="0,5,5,5" Padding="1" Content="Browse" Click="FolderBrowse_Click" Tag="{x:Reference Name=RepositoryLocation}"/>
-                <TextBox Margin="5,5,0,5" x:Name="RepositoryLocation" TextChanged="RepositoryLocation_TextChanged"/>
+                <Button DockPanel.Dock="Right" Margin="0,5,5,5" Padding="1" Content="Browse" Click="FolderBrowse_Click" Tag="{x:Reference Name=RepositoryLocation}" TabIndex="2"/>
+                <TextBox Margin="5,5,0,5" x:Name="RepositoryLocation" TextChanged="RepositoryLocation_TextChanged" TabIndex="1"/>
             </DockPanel>
         </GroupBox>
         
@@ -46,7 +46,24 @@
                     <ComboBox Grid.Row="0" Grid.Column="1" IsEditable="True" Margin="5,5,0,5" x:Name="SubdirName">
                         <ComboBox.Resources>
                             <CompositeCollection x:Key="collection">
-                                <ComboBoxItem IsEnabled="False">Existing Folders in the Repository:</ComboBoxItem>
+                                <!-- The two fake items are only shown when the datacontext is non-null. -->
+                                
+                                <ComboBoxItem IsEnabled="False">
+                                    <ComboBoxItem.Visibility>
+                                        <Binding Source="{x:Reference SubdirName}" Path="DataContext" TargetNullValue="Hidden" StringFormat="Visible"/>
+                                    </ComboBoxItem.Visibility>
+                                    <ComboBoxItem.Content>Existing Folders in the Repository:</ComboBoxItem.Content>
+                                </ComboBoxItem>
+                                
+                                <ComboBoxItem IsEnabled="True">
+                                    <ComboBoxItem.Visibility>
+                                        <Binding Source="{x:Reference SubdirName}" Path="DataContext" TargetNullValue="Hidden" StringFormat="Visible"/>
+                                    </ComboBoxItem.Visibility>
+                                    <ComboBoxItem.Content>(The folder itself)</ComboBoxItem.Content>
+                                    <!-- This tag causes the Create_Click handler to treat it specially, replacing whatever the content is with "." -->
+                                    <ComboBoxItem.Tag>MainDirectory</ComboBoxItem.Tag>
+                                </ComboBoxItem>
+                                
                                 <CollectionContainer Collection="{Binding DataContext, Source={x:Reference SubdirName}}"/>
                             </CompositeCollection>
                         </ComboBox.Resources>

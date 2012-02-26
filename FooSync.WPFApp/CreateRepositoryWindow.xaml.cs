@@ -85,14 +85,20 @@ namespace FooSync.WPFApp
             // caller needs this
             RepositoryPath = RepositoryLocation.Text;
 
+            var subdir = SubdirName.Text;
+            if (SubdirName.SelectedItem is ComboBoxItem && ((ComboBoxItem)SubdirName.SelectedItem).Tag.ToString().Equals("MainDirectory"))
+            {
+                subdir = ".";
+            }
+
             var config = new RepositoryConfig();
             config.RepositoryName = RepositoryName.Text;
             config.Filename = Path.Combine(RepositoryPath, FooSyncEngine.ConfigFileName);
             config.Directories = new RepositoryDirectory[] 
             { 
                 new RepositoryDirectory() 
-                { 
-                    Path = Path.GetFileName(SubdirName.Text),
+                {
+                    Path = subdir,
 
                     Sources = new RepositorySource[]
                     {
@@ -194,6 +200,10 @@ namespace FooSync.WPFApp
             {
                 SubdirName.DataContext = (from subdir in Directory.EnumerateDirectories(dir, "*", SearchOption.TopDirectoryOnly)
                                           select Path.GetFileName(subdir));
+            }
+            else
+            {
+                SubdirName.DataContext = null;
             }
         }
 
