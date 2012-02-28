@@ -27,8 +27,8 @@ namespace FooSync.WPFApp
             _foo = new FooSyncEngine();
 
             InitializeComponent();
+
             EnableControls(false);
-            EnableControls(FilesPanel, false);
             this.Show();
 
 #if false
@@ -77,10 +77,7 @@ namespace FooSync.WPFApp
                 }
                 else if (obj is DependencyObject)
                 {
-                    if (obj != FilesPanel)
-                    {
-                        EnableControls(obj as DependencyObject, enabled);
-                    }
+                    EnableControls(obj as DependencyObject, enabled);
                 }
             }
         }
@@ -161,46 +158,6 @@ namespace FooSync.WPFApp
         {
             string repositoryPath = null;
 
-            /*
-            bool cancelled = false;
-            
-            if (VistaFolderBrowserDialog.IsVistaFolderDialogSupported)
-            {
-                var dlg = new VistaFolderBrowserDialog();
-                dlg.Description = "Select the location for the new repository.";
-
-                cancelled = !(dlg.ShowDialog() ?? false);
-
-                if (!cancelled)
-                {
-                    repositoryPath = Path.GetFullPath(dlg.SelectedPath);
-                }
-            }
-            else
-            {
-                var dlg = new Microsoft.Win32.SaveFileDialog();
-                dlg.FileName = FooSyncEngine.ConfigFileName;
-                dlg.Filter = "FooSync Repository Config|" + FooSyncEngine.ConfigFileName;
-                dlg.FilterIndex = 1;
-
-                cancelled = !(dlg.ShowDialog() ?? false);
-
-                repositoryPath = Path.GetFullPath(Path.GetDirectoryName(dlg.FileName)); // Discard whatever filename they chose
-            }
-
-            if (cancelled)
-            {
-                if (_config != null)
-                {
-                    return;
-                }
-
-                ShowStartWindow();
-            }
-            else
-            {
-             */
-
             var win = new CreateRepositoryWindow();
             win.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
 
@@ -262,8 +219,7 @@ namespace FooSync.WPFApp
 
             InspectButton.IsEnabled = false;
             EnableControls(false);
-            EnableControls(FilesPanel, false);
-            
+
             NewFiles.DataContext = null;
             (NewFiles.Parent as Expander).IsExpanded = false;
             ChangedFiles.DataContext = null;
@@ -409,7 +365,6 @@ namespace FooSync.WPFApp
                 return;
             }
 
-            EnableControls(FilesPanel, true);
             DoActionsButton.IsEnabled = true;
 
             if (_changeset.Count() == 0)
@@ -434,26 +389,30 @@ namespace FooSync.WPFApp
             // Partition into 3 classes: new, changed, and deleted.
             //
 
-            var newFiles = _changeset.Where(newPred);
-            NewFiles.DataContext = new BindableChangeSet(_changeset, newFiles, _repo, _source);
-            if (newFiles.Count() > 0)
+            NewFiles.DataContext = new BindableChangeSet(_changeset, newPred, _repo, _source);
+            if ((NewFiles.DataContext as BindableChangeSet).Count() > 0)
             {
                 (NewFiles.Parent as Expander).IsExpanded = true;
             }
 
-            var deletedFiles = _changeset.Where(delPred);
-            DeletedFiles.DataContext = new BindableChangeSet(_changeset, deletedFiles, _repo, _source);
-            if (deletedFiles.Count() > 0)
+            DeletedFiles.DataContext = new BindableChangeSet(_changeset, delPred, _repo, _source);
+            if ((DeletedFiles.DataContext as BindableChangeSet).Count() > 0)
             {
                 (DeletedFiles.Parent as Expander).IsExpanded = true;
             }
 
-            var changedFiles = _changeset.Where(elem => !newPred(elem) && !delPred(elem));
-            ChangedFiles.DataContext = new BindableChangeSet(_changeset, changedFiles, _repo, _source);
-            if (changedFiles.Count() > 0)
+            ChangedFiles.DataContext = new BindableChangeSet(_changeset, elem => !newPred(elem) && !delPred(elem), _repo, _source);
+            if ((ChangedFiles.DataContext as BindableChangeSet).Count() > 0)
             {
                 (ChangedFiles.Parent as Expander).IsExpanded = true;
             }
+
+            StatsCopyRepo.DataContext = new BindableChangeSet(_changeset, elem => elem.FileOperation == FileOperation.UseRepo, _repo, _source);
+            StatsCopySource.DataContext = new BindableChangeSet(_changeset, elem => elem.FileOperation == FileOperation.UseSource, _repo, _source);
+            StatsDelRepo.DataContext = new BindableChangeSet(_changeset, elem => elem.FileOperation == FileOperation.DeleteRepo, _repo, _source);
+            StatsDelSource.DataContext = new BindableChangeSet(_changeset, elem => elem.FileOperation == FileOperation.DeleteSource, _repo, _source);
+            StatsConflict.DataContext = new BindableChangeSet(_changeset, elem => elem.ConflictStatus != ConflictStatus.NoConflict, _repo, _source);
+            StatsNoOp.DataContext = new BindableChangeSet(_changeset, elem => elem.FileOperation == FileOperation.NoOp, _repo, _source);
         }
 
         #endregion
@@ -549,7 +508,6 @@ namespace FooSync.WPFApp
             InspectButton.IsEnabled = false;
             DoActionsButton.IsEnabled = false;
             EnableControls(false);
-            EnableControls(FilesPanel, false);
 
             foreach (var filename in _changeset)
             {
@@ -641,7 +599,6 @@ namespace FooSync.WPFApp
 enableControls:
             InspectButton.IsEnabled = true;
             EnableControls(true);
-            EnableControls(FilesPanel, true);
         }
 
         private void OpenExplorerAt(string filename)
@@ -797,7 +754,7 @@ enableControls:
                 {
                     foreach (BindableChangeSetElem item in list.SelectedItems)
                     {
-                        item.Action = newOp;
+                        _changeset[item.Filename].FileOperation = newOp;
                     }
                 }
 

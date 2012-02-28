@@ -41,7 +41,7 @@
                                                HorizontalAlignment="Center"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
-                        </GridViewColumn>   
+                        </GridViewColumn>
                         
                         <GridViewColumn Header="Action">
                             <GridViewColumn.CellTemplate>
@@ -170,7 +170,7 @@
         <CommandBinding Command="foo:MainWindow.ChangeFileOperation" Executed="OnChangeFileOperation"/>
     </Window.CommandBindings>
     
-    <DockPanel>
+    <DockPanel >
         
         <ToolBar DockPanel.Dock="Top">
             <Button ToolTip="New Repository" Click="NewRepository">
@@ -198,7 +198,6 @@
             <Label Content="{Binding RepositoryName}" FontSize="20" x:Name="RepoNameLabel"/>
         </StackPanel>
 
-
         <DockPanel DockPanel.Dock="Top">
             <Label DockPanel.Dock="Left" Content="Subdirectory: " Margin="7" Padding="3" />
         
@@ -220,30 +219,72 @@
             </ComboBox>
         </DockPanel>
 
-        <Grid DockPanel.Dock="Bottom" >
+        <Grid DockPanel.Dock="Bottom" Margin="7">
             <Grid.ColumnDefinitions>
                 <!-- This is a hack to get the button to be 50% width... -->
-                <ColumnDefinition Width="*"/> <!-- Each is 25% width, the button takes up the middle two. -->
+                <ColumnDefinition Width="Auto"/> <!-- Each is 25% width, the button takes up the middle two. -->
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button x:Name="DoActionsButton" Content="Do Actions" VerticalAlignment="Bottom" IsEnabled="False" Click="DoActionsButton_Click" Margin="7" Padding="3" Grid.Column="1" Grid.ColumnSpan="2"/>
-        </Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            
+            <TextBlock x:Name="StatsCopyRepo" Grid.Row="0" Grid.Column="0" TextWrapping="Wrap"
+                       Text="{Binding Summary, Mode=OneWay, StringFormat=Copy from Repository: {0}}"/>
+            
+            <TextBlock x:Name="StatsCopySource" Grid.Row="1" Grid.Column="0" TextWrapping="Wrap"
+                       Text="{Binding Summary, Mode=OneWay, StringFormat=Copy from Source: {0}}"/>
+            
+            <TextBlock x:Name="StatsDelRepo" Grid.Row="0" Grid.Column="1" TextWrapping="Wrap"
+                       Text="{Binding Summary, Mode=OneWay, StringFormat=Delete from Repository: {0}}"/>
+            
+            <TextBlock x:Name="StatsDelSource" Grid.Row="1" Grid.Column="1" TextWrapping="Wrap"
+                       Text="{Binding Summary, Mode=OneWay, StringFormat=Delete from Source: {0}}"/>
+            
+            <TextBlock x:Name="StatsConflict" Grid.Row="0" Grid.Column="2" TextWrapping="Wrap" Binding.SourceUpdated="StatsConflict_SourceUpdated"
+                       Text="{Binding Summary, Mode=OneWay, StringFormat=Conflicts: {0}}"/>
+            <x:Code><![CDATA[
+                private void StatsConflict_SourceUpdated(object sender, DataTransferEventArgs e)
+                {
+                    var tb = sender as TextBlock;
+                    if (tb != null)
+                    {
+                        if (tb.DataContext != null && tb.DataContext is BindableChangeSet && ((BindableChangeSet)tb.DataContext).Count > 0)
+                        {
+                            tb.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Crimson);
+                            tb.FontWeight = System.Windows.FontWeights.Bold;
+                        }
+                        else
+                        {
+                            tb.Foreground = System.Windows.SystemColors.WindowTextBrush;
+                            tb.FontWeight = System.Windows.FontWeights.Normal;
+                        }
+                    }
+                }
+            ]]></x:Code>
+            
+            <TextBlock x:Name="StatsNoOp" Grid.Row="1" Grid.Column="2" TextWrapping="Wrap"
+                       Text="{Binding Summary, Mode=OneWay, StringFormat=Do Nothing: {0}}"/>
 
-        <!-- Not docked; fill up the remaining space. -->
-        <ScrollViewer x:Name="FilesPanel" Background="{x:Static SystemColors.ControlLightBrush}">
-            <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
-                <Expander Header="New Files:" IsExpanded="False">
-                    <ListView Template="{StaticResource FileGrid}" x:Name="NewFiles" ItemsSource="{Binding Path=.}"/>
-                </Expander>
-                <Expander Header="Changed Files:" IsExpanded="False">
-                    <ListView Template="{StaticResource FileGrid}" x:Name="ChangedFiles" ItemsSource="{Binding Path=.}"/>
-                </Expander>
-                <Expander Header="Deleted Files:" IsExpanded="False">
-                    <ListView Template="{StaticResource FileGrid}" x:Name="DeletedFiles" ItemsSource="{Binding Path=.}"/>
-                </Expander>
-            </StackPanel>
-        </ScrollViewer>
+            <Button x:Name="DoActionsButton" Content="Do Actions" IsEnabled="False" Click="DoActionsButton_Click"
+                    VerticalAlignment="Bottom" Margin="7" Padding="3" Grid.Row="0" Grid.Column="4" Grid.RowSpan="2"/>
+        </Grid>
+        
+        <Expander Header="New Files:" IsExpanded="False" DockPanel.Dock="Top">
+            <ListView Template="{StaticResource FileGrid}" x:Name="NewFiles" ItemsSource="{Binding Path=.}"/>
+        </Expander>
+        
+        <Expander Header="Changed Files:" IsExpanded="False" DockPanel.Dock="Top">
+            <ListView Template="{StaticResource FileGrid}" x:Name="ChangedFiles" ItemsSource="{Binding Path=.}"/>
+        </Expander>
+        
+        <Expander Header="Deleted Files:" IsExpanded="False" DockPanel.Dock="Top">
+            <ListView Template="{StaticResource FileGrid}" x:Name="DeletedFiles" ItemsSource="{Binding Path=.}"/>
+        </Expander>
+        
     </DockPanel>
 </Window>
