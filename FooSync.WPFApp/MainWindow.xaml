@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:foo="clr-namespace:FooSync.WPFApp"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        Title="FooSync" Height="430" Width="700" Icon="/FooSync;component/Resources/loki_128.png"
+        Title="FooSync" Height="430" Width="700" Icon="/FooSync;component/Resources/FSLogo128glow.png"
         Closed="Window_Closed">
     <Window.Resources>
         <foo:FileOperationValueConverter x:Key="FileOperationValueConverter"/>
@@ -187,7 +187,7 @@
             </Button>
             <Button ToolTip="About" ToolBar.OverflowMode="Always" Click="ShowAboutWindow">
                 <StackPanel Orientation="Horizontal">
-                    <Image Source="/FooSync;component/Resources/loki_128.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
+                    <Image Source="/FooSync;component/Resources/FSLogo16glow.png" Width="16" Height="16" Margin="2" VerticalAlignment="Center"/>
                     <TextBlock VerticalAlignment="Center">About</TextBlock>
                 </StackPanel>
             </Button>
@@ -246,26 +246,7 @@
                        Text="{Binding Summary, Mode=OneWay, StringFormat=Delete from Source: {0}}"/>
             
             <TextBlock x:Name="StatsConflict" Grid.Row="0" Grid.Column="2" TextWrapping="Wrap" Binding.SourceUpdated="StatsConflict_SourceUpdated"
-                       Text="{Binding Summary, Mode=OneWay, StringFormat=Conflicts: {0}}"/>
-            <x:Code><![CDATA[
-                private void StatsConflict_SourceUpdated(object sender, DataTransferEventArgs e)
-                {
-                    var tb = sender as TextBlock;
-                    if (tb != null)
-                    {
-                        if (tb.DataContext != null && tb.DataContext is BindableChangeSet && ((BindableChangeSet)tb.DataContext).Count > 0)
-                        {
-                            tb.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Crimson);
-                            tb.FontWeight = System.Windows.FontWeights.Bold;
-                        }
-                        else
-                        {
-                            tb.Foreground = System.Windows.SystemColors.WindowTextBrush;
-                            tb.FontWeight = System.Windows.FontWeights.Normal;
-                        }
-                    }
-                }
-            ]]></x:Code>
+                       Text="{Binding Summary, Mode=OneWay, StringFormat=Conflicts: {0}, NotifyOnSourceUpdated=True}"/>
             
             <TextBlock x:Name="StatsNoOp" Grid.Row="1" Grid.Column="2" TextWrapping="Wrap"
                        Text="{Binding Summary, Mode=OneWay, StringFormat=Do Nothing: {0}}"/>

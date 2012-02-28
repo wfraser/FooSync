@@ -601,6 +601,24 @@ enableControls:
             EnableControls(true);
         }
 
+        private void StatsConflict_SourceUpdated(object sender, DataTransferEventArgs e)
+        {
+            var tb = sender as TextBlock;
+            if (tb != null)
+            {
+                if (tb.DataContext != null && tb.DataContext is BindableChangeSet && ((BindableChangeSet)tb.DataContext).Count > 0)
+                {
+                    tb.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Crimson);
+                    tb.FontWeight = System.Windows.FontWeights.Bold;
+                }
+                else
+                {
+                    tb.Foreground = System.Windows.SystemColors.WindowTextBrush;
+                    tb.FontWeight = System.Windows.FontWeights.Normal;
+                }
+            }
+        }
+
         private void OpenExplorerAt(string filename)
         {
             System.Diagnostics.Process.Start("explorer.exe", "/select," + filename);

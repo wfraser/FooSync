@@ -36,6 +36,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>FSLogo128glow.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -62,6 +65,7 @@
       <DependentUpon>AboutWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="BindableChangeSet.cs" />
+    <Compile Include="VersionToDateTimeConverter.cs" />
     <Compile Include="CreateRepositoryWindow.xaml.cs">
       <DependentUpon>CreateRepositoryWindow.xaml</DependentUpon>
     </Compile>
@@ -167,6 +171,21 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\folder_open_16x16x32.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="FSLogo128glow.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\FSLogo32glow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\FSLogo128glow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\FSLogo16glow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\FSLogo200glow.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

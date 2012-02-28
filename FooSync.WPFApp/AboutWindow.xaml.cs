@@ -22,7 +22,8 @@ namespace FooSync.WPFApp
         public AboutWindow()
         {
             InitializeComponent();
-            VersionText.DataContext = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            WPFAppVersionText.DataContext = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            FooSyncEngineVersionText.DataContext = typeof(FooSyncEngine).Assembly.GetName().Version;
         }
 
         private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
