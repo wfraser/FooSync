@@ -48,7 +48,24 @@ namespace FooSync
                 bool failsRegex = false;
                 foreach (string ex in exceptions)
                 {
-                    if (Regex.Match(System.IO.Path.GetFileName(file), ex, Foo.Options.CaseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.None).Success)
+                    string regex;
+                    string searchAgainst;
+
+                    if (ex.EndsWith("/$"))
+                    {
+                        searchAgainst = System.IO.Path.GetDirectoryName(file) + System.IO.Path.DirectorySeparatorChar;
+                        regex = ex.Substring(0, ex.Length - 2) + System.IO.Path.DirectorySeparatorChar;
+
+                        if (regex.EndsWith(@"\"))   // can't end with a single backslash
+                            regex += @"\";
+                    }
+                    else
+                    {
+                        searchAgainst = System.IO.Path.GetFileName(file);
+                        regex = ex;
+                    }
+                    
+                    if (Regex.Match(searchAgainst, regex, Foo.Options.CaseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.None).Success)
                     {
                         failsRegex = true;
                         break;
