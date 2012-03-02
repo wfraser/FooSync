@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
+using IOPath = System.IO.Path;
 
 namespace FooSync
 {
@@ -15,8 +17,8 @@ namespace FooSync
 
         internal FooTree(FooSyncEngine foo, string path, IEnumerable<string> exceptions, Progress callback = null)
         {
-            System.Diagnostics.Debug.Assert(
-                (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSyncEngine"),
+            Debug.Assert(
+                (new StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSyncEngine"),
                 "Don't directly instantiate FooClasses");
 
             this.Foo   = foo;
@@ -28,41 +30,44 @@ namespace FooSync
 
         private void Walk(string path, string basePath, IEnumerable<string> exceptions, Progress callback)
         {
-            int n = 0;
-            foreach (string file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+            foreach (string entry in Directory.EnumerateFileSystemEntries(path))
             {
-                System.Diagnostics.Debug.Assert(file.StartsWith(basePath), "file is supposed to start with basePath");
+                Debug.Assert(entry.StartsWith(basePath), "file is supposed to start with basePath");
 
-                string trimmedName = file.Substring(basePath.Length + 1);
-
+                string trimmedName = entry.Substring(basePath.Length + 1);
                 if (trimmedName == FooSyncEngine.ConfigFileName || trimmedName == FooSyncEngine.RepoStateFileName)
                 {
                     continue;
                 }
 
+                bool isDirectory = (File.GetAttributes(entry) & FileAttributes.Directory) == FileAttributes.Directory;
+
                 if (callback != null)
                 {
-                    callback(++n, -1, System.IO.Path.GetDirectoryName(file));
+                    callback(Files.Count + 1, -1, path);
                 }
 
                 bool failsRegex = false;
                 foreach (string ex in exceptions)
                 {
-                    string regex;
-                    string searchAgainst;
+                    string regex = ex;
+                    string searchAgainst = IOPath.GetFileName(entry);
 
                     if (ex.EndsWith("/$"))
                     {
-                        searchAgainst = System.IO.Path.GetDirectoryName(file) + System.IO.Path.DirectorySeparatorChar;
-                        regex = ex.Substring(0, ex.Length - 2) + System.IO.Path.DirectorySeparatorChar;
+                        if (!isDirectory)
+                        {
+                            continue;
+                        }
 
-                        if (regex.EndsWith(@"\"))   // can't end with a single backslash
-                            regex += @"\";
+                        //
+                        // Don't use Path.DirectorySeparatorChar here because the regex ends with slash, not system dependent.
+                        //
+                        searchAgainst += "/";
                     }
-                    else
+                    else if (isDirectory)
                     {
-                        searchAgainst = System.IO.Path.GetFileName(file);
-                        regex = ex;
+                        continue;
                     }
                     
                     if (Regex.Match(searchAgainst, regex, Foo.Options.CaseInsensitive ? RegexOptions.IgnoreCase : RegexOptions.None).Success)
@@ -74,7 +79,14 @@ namespace FooSync
 
                 if (!failsRegex)
                 {
-                    Files[trimmedName] = Foo.FileInfo(file);
+                    if (isDirectory)
+                    {
+                        Walk(entry, basePath, exceptions, callback);
+                    }
+                    else
+                    {
+                        Files[trimmedName] = Foo.FileInfo(entry);
+                    }
                 }
             }
         }
