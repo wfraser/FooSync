@@ -449,6 +449,11 @@ namespace FooSync.ConsoleApp
                     });
                     Console.Write("\r{0," + width + "}\r", string.Empty);
                     Console.WriteLine("Done.");
+                    Console.WriteLine("Removing newly empty directories...");
+                    CopyEngine.RemoveEmptyDirectories(delFiles, delegate(int completed, int total, string directory)
+                    {
+                        Console.WriteLine("-> {0}", directory);
+                    });
                 }
 
                 //TODO: check whether the file copy succeeded and all files were copied

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace FooSync
@@ -101,6 +102,59 @@ namespace FooSync
             {
                 return NativeMethods.DeleteOperation(files, IntPtr.Zero);
             }
+        }
+
+        public static bool RemoveEmptyDirectories(ICollection<string> deletedFiles)
+        {
+            return RemoveEmptyDirectories(deletedFiles, null);
+        }
+
+        public static bool RemoveEmptyDirectories(ICollection<string> deletedFiles, Progress callback)
+        {
+            if (deletedFiles == null)
+                throw new ArgumentNullException("deletedFiles");
+
+            if (deletedFiles.Count == 0)
+                return true;
+
+            bool allSuccessful = true;
+            var directories = new List<string>();
+
+            foreach (var file in deletedFiles)
+            {
+                var dir = Path.GetDirectoryName(file);
+
+                if (!directories.Contains(dir))
+                {
+                    directories.Add(dir);
+                }
+            }
+
+            directories.Sort();
+            directories.Reverse();
+
+            int n = 0;
+            foreach (var dir in directories)
+            {
+                if (Directory.GetFileSystemEntries(dir).Length == 0)
+                {
+                    try
+                    {
+                        if (callback != null)
+                        {
+                            callback(++n, -1, dir);
+                        }
+
+                        Directory.Delete(dir);
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        allSuccessful = false;
+                    }
+                }
+            }
+
+            return allSuccessful;
         }
     }
 }

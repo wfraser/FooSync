@@ -575,6 +575,18 @@ namespace FooSync.WPFApp
                         "File Delete Incomplete",
                         MessageBoxButton.OK, MessageBoxImage.Exclamation);
                 }
+                else
+                {
+                    var allEmptiesRemoved = CopyEngine.RemoveEmptyDirectories(deletes);
+
+                    if (!allEmptiesRemoved)
+                    {
+                        MessageBox.Show(
+                            "Some empty directories could not be removed.",
+                            "File Delete Incomplete",
+                            MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                    }
+                }
             }
 
             if (allCompleted)
