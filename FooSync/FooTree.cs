@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using IOPath = System.IO.Path;
 
@@ -48,7 +49,7 @@ namespace FooSync
                 }
 
                 bool failsRegex = false;
-                foreach (string ex in exceptions)
+                foreach (string ex in exceptions ?? Enumerable.Empty<string>())
                 {
                     string regex = ex;
                     string searchAgainst = IOPath.GetFileName(entry);

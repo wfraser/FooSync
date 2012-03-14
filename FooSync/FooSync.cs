@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace FooSync
 {
@@ -23,7 +22,17 @@ namespace FooSync
             this.Options = options;
         }
 
-        public FooTree Tree(string path, IEnumerable<string> exceptions, Progress callback = null)
+        /// <summary>
+        /// Creates a new FooTree, fully populated with files.
+        /// </summary>
+        /// <param name="path">Directory the FooTree is rooted at.</param>
+        /// <param name="exceptions">Regular expressions to exclude from the tree.
+        ///     If the regex ends with '/$', it applies to directories, otherwise it applies to files.
+        ///     Pass 'null' to not use any exceptions.</param>
+        /// <param name="callback">Progress callback, invoked once per file found.
+        ///     The 'total' parameter passed in is always -1, and the 'item' is the directory currently being enumerated.
+        ///     Pass 'null' if no callback is desired.</param>
+        public FooTree Tree(string path, IEnumerable<string> exceptions = null, Progress callback = null)
         {
             return new FooTree(this, path, exceptions, callback);
         }
