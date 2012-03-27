@@ -1,4 +1,14 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/WPFApp/MainWindow.xaml.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -12,10 +22,10 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using FooSync;
+using Codewise.FooSync;
 using Ookii.Dialogs.Wpf;
 
-namespace FooSync.WPFApp
+namespace Codewise.FooSync.WPFApp
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

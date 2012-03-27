@@ -1,4 +1,14 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/WPFApp/ImageTextButton.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,7 +20,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace FooSync.WPFApp
+namespace Codewise.FooSync.WPFApp
 {
     /// <summary>
     /// A button with an image and text below it.

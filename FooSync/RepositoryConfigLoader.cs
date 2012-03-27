@@ -1,10 +1,20 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/RepositoryConfigLoader.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
 
-namespace FooSync
+namespace Codewise.FooSync
 {
     /// <summary>
     /// Responsible for loading FooSync repository configuration data from XML files.

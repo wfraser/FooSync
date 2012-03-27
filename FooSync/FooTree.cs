@@ -1,4 +1,14 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/FooTree.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,7 +16,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using IOPath = System.IO.Path;
 
-namespace FooSync
+namespace Codewise.FooSync
 {
     public class FooTree
     {
@@ -19,7 +29,7 @@ namespace FooSync
         internal FooTree(FooSyncEngine foo, string path, IEnumerable<string> exceptions, Progress callback = null)
         {
             Debug.Assert(
-                (new StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSyncEngine"),
+                (new StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("Codewise.FooSync.FooSyncEngine"),
                 "Don't directly instantiate FooClasses");
 
             this.Foo   = foo;

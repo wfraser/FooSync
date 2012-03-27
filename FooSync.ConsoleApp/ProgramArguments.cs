@@ -1,36 +1,77 @@
-﻿using System;
+﻿///
+/// Codewise/ArgumentParser/ProgramArguments.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 
-namespace FooSync.ConsoleApp
+namespace Codewise.ArgumentParser
 {
     /// <summary>
     /// Command-Line Argument Parser.
-    /// Set the static members OPTIONS and FLAGS to specify the options and flags supported.
-    /// Prefix any letter with an ampersand to denote the following letter as a short form.
+    /// 
+    /// Parses a command line into options, flags, and ordinal values, based on switches it is
+    /// configured to recognize.
+    /// Switches can start with "/" (Win32 style), "-" for single letter switches (Unix style), 
+    /// or "--" for multi-letter switches (GNU style).
     /// </summary>
     class ProgramArguments
     {
+        /// <summary>
+        /// These arrays configure what switches the parser will recognize.
+        /// Prefix any letter with an ampersand to denote that letter as a short form.
+        /// </summary>
         private static readonly string[] OPTIONS = { "&directory" };
         private static readonly string[] FLAGS = { "&help", "hash", "casesensitive" };
 
+        /// <summary>
+        /// Collects arguments like "--foo=bar", "--foo:bar", "--foo bar", or "-f bar"
+        /// </summary>
+        public Dictionary<string, string> Options { get; private set; }
+
+        /// <summary>
+        /// Collects arguments like "--banana", "--nobanana", or "-b"
+        /// </summary>
+        public Dictionary<string, bool> Flags { get; private set; }
+
+        /// <summary>
+        /// Collects any remaining arguments that are referenced by position
+        /// instead of switches.
+        /// </summary>
+        public List<string> Ordinals { get; private set; }
+
+        private static HashSet<string>            _optionSwitches      = null;
+        private static Dictionary<string, string> _shortOptionSwitches = null;
+        private static HashSet<string>            _flagSwitches        = null;
+        private static Dictionary<string, string> _shortFlagSwitches   = null;
+
+        /// <summary>
+        /// Configure the parser.
+        /// </summary>
         static ProgramArguments()
         {
-            _options = new HashSet<string>();
-            _shortOptions = new Dictionary<string, string>();
-            _flags = new HashSet<string>();
-            _shortFlags = new Dictionary<string, string>();
+            _optionSwitches      = new HashSet<string>();
+            _shortOptionSwitches = new Dictionary<string, string>();
+            _flagSwitches        = new HashSet<string>();
+            _shortFlagSwitches   = new Dictionary<string, string>();
 
             for (int i = 0; i < OPTIONS.Length; i++)
             {
                 int index = OPTIONS[i].IndexOf('&');
                 if (index != -1)
                 {
-                    _options.Add(OPTIONS[i].Replace("&", string.Empty));
-                    _shortOptions.Add(OPTIONS[i][index + 1].ToString(), OPTIONS[i].Replace("&", string.Empty));
+                    _optionSwitches.Add(OPTIONS[i].Replace("&", string.Empty));
+                    _shortOptionSwitches.Add(OPTIONS[i][index + 1].ToString(), OPTIONS[i].Replace("&", string.Empty));
                 }
                 else
                 {
-                    _options.Add(OPTIONS[i]);
+                    _optionSwitches.Add(OPTIONS[i]);
                 }
             }
 
@@ -39,31 +80,48 @@ namespace FooSync.ConsoleApp
                 int index = FLAGS[i].IndexOf('&');
                 if (index != -1)
                 {
-                    _flags.Add(FLAGS[i].Replace("&", string.Empty));
-                    _shortFlags.Add(FLAGS[i][index + 1].ToString(), FLAGS[i].Replace("&", string.Empty));
+                    _flagSwitches.Add(FLAGS[i].Replace("&", string.Empty));
+                    _shortFlagSwitches.Add(FLAGS[i][index + 1].ToString(), FLAGS[i].Replace("&", string.Empty));
                 }
                 else
                 {
-                    _flags.Add(FLAGS[i]);
+                    _flagSwitches.Add(FLAGS[i]);
                 }
             }
         }
 
+        /// <summary>
+        /// Create an empty ProgramArguments instance.
+        /// </summary>
         public ProgramArguments()
         {
             Options = new Dictionary<string, string>();
             Flags = new Dictionary<string, bool>();
-            Values = new List<string>();
+            Ordinals = new List<string>();
         }
 
+        /// <summary>
+        /// Create an initialized ProgramArguments instance by parsing the given command line.
+        /// </summary>
+        /// <param name="args">Array of command-line arguments to parse.</param>
         public ProgramArguments(string[] args)
         {
             Options = new Dictionary<string, string>();
             Flags = new Dictionary<string, bool>();
-            Values = new List<string>();
-            
+            Ordinals = new List<string>();
+
+            Parse(args);
+        }
+
+        /// <summary>
+        /// Parse the given command line arguments into the Options, Flags, and Ordinals
+        /// properties.
+        /// </summary>
+        /// <param name="args">List of command-line arguments to parse.</param>
+        public void Parse(IList<string> args)
+        {            
             bool parsingFlags = true;
-            for (int i = 0; i < args.Length; i++)
+            for (int i = 0; i < args.Count; i++)
             {
                 if (parsingFlags)
                 {
@@ -81,11 +139,11 @@ namespace FooSync.ConsoleApp
                     else
                     {
                         parsingFlags = false;
-                        Values.Add(args[i]);
+                        Ordinals.Add(args[i]);
                         continue;
                     }
 
-                    if (a.StartsWith("no") && _flags.Contains(a.Substring(2)))
+                    if (a.StartsWith("no") && _flagSwitches.Contains(a.Substring(2)))
                     {
                         flagSet = false;
                         a = a.Substring(2);
@@ -101,7 +159,7 @@ namespace FooSync.ConsoleApp
                     }
                     else
                     {
-                        if (args.Length > i + 1)
+                        if (args.Count > i + 1)
                         {
                             val = args[i + 1];
                         }
@@ -112,15 +170,15 @@ namespace FooSync.ConsoleApp
                         valueFromArgs = true;
                     }
 
-                    if (_flags.Contains(a))
+                    if (_flagSwitches.Contains(a))
                     {
                         Flags.Add(a, flagSet);
                     }
-                    else if (_shortFlags.ContainsKey(a))
+                    else if (_shortFlagSwitches.ContainsKey(a))
                     {
-                        Flags.Add(_shortFlags[a], flagSet);
+                        Flags.Add(_shortFlagSwitches[a], flagSet);
                     }
-                    else if (_options.Contains(a))
+                    else if (_optionSwitches.Contains(a))
                     {
                         Options.Add(a, val);
                         if (valueFromArgs)
@@ -128,9 +186,9 @@ namespace FooSync.ConsoleApp
                             i++;
                         }
                     }
-                    else if (_shortOptions.ContainsKey(a))
+                    else if (_shortOptionSwitches.ContainsKey(a))
                     {
-                        Options.Add(_shortOptions[a], val);
+                        Options.Add(_shortOptionSwitches[a], val);
                         if (valueFromArgs)
                         {
                             i++;
@@ -139,23 +197,15 @@ namespace FooSync.ConsoleApp
                     else
                     {
                         parsingFlags = false;
-                        Values.Add(args[i]);
+                        Ordinals.Add(args[i]);
                     }
                 }
                 else
                 {
-                    Values.Add(args[i]);
+                    Ordinals.Add(args[i]);
                 }
             }
-        }
+        } // public void Parse(IList<string> args)
 
-        public Dictionary<string, string> Options { get; private set; }
-        public Dictionary<string, bool> Flags { get; private set; }
-        public List<string> Values { get; private set; }
-
-        private static HashSet<string> _options = null;
-        private static Dictionary<string, string> _shortOptions = null;
-        private static HashSet<string> _flags = null;
-        private static Dictionary<string, string> _shortFlags = null;
     }
 }

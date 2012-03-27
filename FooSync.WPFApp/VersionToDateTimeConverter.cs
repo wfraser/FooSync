@@ -1,8 +1,18 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/WPFApp/VersionToDateTimeConverter.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace FooSync.WPFApp
+namespace Codewise.FooSync.WPFApp
 {
     public class VersionToDateTimeConverter : IValueConverter
     {

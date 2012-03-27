@@ -1,4 +1,14 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/WPFApp/CreateRepositoryWindow.xaml.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -8,7 +18,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using Ookii.Dialogs.Wpf;
 
-namespace FooSync.WPFApp
+namespace Codewise.FooSync.WPFApp
 {
     /// <summary>
     /// Interaction logic for CreateRepositoryWindow.xaml

@@ -1,7 +1,16 @@
-﻿<Window x:Class="FooSync.WPFApp.AboutWindow"
+﻿<!--
+    Codewise/FooSync/WPFApp/AboutWindow.xaml
+    
+    by William R. Fraser:
+        http://www.codewise.org/
+        https://github.com/wfraser/FooSync
+    
+    Copyright (c) 2012
+-->
+<Window x:Class="Codewise.FooSync.WPFApp.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:foo="clr-namespace:FooSync.WPFApp"
+        xmlns:foo="clr-namespace:Codewise.FooSync.WPFApp"
         Title="About FooSync" Height="500" Width="370"
     >
     <Window.Resources>

@@ -1,10 +1,20 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/FooSync.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace FooSync
+namespace Codewise.FooSync
 {
     public class FooSyncEngine
     {

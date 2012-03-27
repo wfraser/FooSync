@@ -1,7 +1,17 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/RepositoryConfig.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Xml.Serialization;
 
-namespace FooSync
+namespace Codewise.FooSync
 {
     [Serializable]
     [XmlType(Namespace="http://www.codewise.org/schema/foosync/RepositoryConfig.xsd")]
@@ -104,13 +114,5 @@ namespace FooSync
 
         [XmlAttribute]
         public bool CaseInsensitive { get; set; }
-    }
-
-    [Serializable]
-    public enum MergeStrategy
-    {
-        Synchronize,
-        Theirs,
-        Ours
     }
 }

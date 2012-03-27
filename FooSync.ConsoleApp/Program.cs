@@ -1,11 +1,22 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/ConsoleApp/Program.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
-using FooSync;
+using Codewise.ArgumentParser;
+using Codewise.FooSync;
 
-namespace FooSync.ConsoleApp
+namespace Codewise.FooSync.ConsoleApp
 {
     class Program
     {
@@ -55,9 +66,9 @@ namespace FooSync.ConsoleApp
                 return;
             }
 
-            if (programArgs.Values.Count == 1)
+            if (programArgs.Ordinals.Count == 1)
             {
-                Directory.SetCurrentDirectory(programArgs.Values[0]);
+                Directory.SetCurrentDirectory(programArgs.Ordinals[0]);
             }
 
             var program = new Program(foo);
@@ -134,7 +145,6 @@ namespace FooSync.ConsoleApp
                     continue;
 
                 Console.Write(" done.\n");
-
 
                 //
                 // Load / generate the repository state

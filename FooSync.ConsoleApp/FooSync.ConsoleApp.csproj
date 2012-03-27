@@ -8,7 +8,7 @@
     <ProjectGuid>{3A7B58E5-EFA8-4BDE-8117-644648488293}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FooSync.ConsoleApp</RootNamespace>
+    <RootNamespace>Codewise.FooSync.ConsoleApp</RootNamespace>
     <AssemblyName>fs</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>

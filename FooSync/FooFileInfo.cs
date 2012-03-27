@@ -1,8 +1,18 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/FooFileInfo.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.IO;
 using System.Security.Cryptography;
 
-namespace FooSync
+namespace Codewise.FooSync
 {
     public class FooFileInfo
     {
@@ -11,7 +21,7 @@ namespace FooSync
         internal FooFileInfo(FooSyncEngine foo, string path)
         {
             System.Diagnostics.Debug.Assert(
-                (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSyncEngine"),
+                (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("Codewise.FooSync.FooSyncEngine"),
                 "Don't directly instantiate FooClasses");
             
             this.Foo = foo;

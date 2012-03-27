@@ -1,8 +1,17 @@
-﻿<Window x:Class="FooSync.WPFApp.StartWindow"
+﻿<!--
+    Codewise/FooSync/WPFApp/StartWindow.xaml
+    
+    by William R. Fraser:
+        http://www.codewise.org/
+        https://github.com/wfraser/FooSync
+    
+    Copyright (c) 2012
+-->
+<Window x:Class="Codewise.FooSync.WPFApp.StartWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:resx="clr-namespace:FooSync.WPFApp.Properties"
-        xmlns:foo="clr-namespace:FooSync.WPFApp"
+        xmlns:resx="clr-namespace:Codewise.FooSync.WPFApp.Properties"
+        xmlns:foo="clr-namespace:Codewise.FooSync.WPFApp"
         Title="StartWindow" Height="170" Width="359">
     <Grid>
         <Grid.RowDefinitions>

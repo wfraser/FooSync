@@ -1,7 +1,17 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/WPFApp/NativeMethods.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Runtime.InteropServices;
 
-namespace FooSync.WPFApp
+namespace Codewise.FooSync.WPFApp
 {
     internal static class NativeMethods
     {

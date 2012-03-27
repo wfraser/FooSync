@@ -1,17 +1,27 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/FooChangeSet.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 
-namespace FooSync
+namespace Codewise.FooSync
 {
     public class FooChangeSet : INotifyCollectionChanged
     {
         public FooChangeSet(FooSyncEngine foo)
         {
             System.Diagnostics.Debug.Assert(
-                (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("FooSync.FooSyncEngine"),
+                (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("Codewise.FooSync.FooSyncEngine"),
                 "Don't directly instantiate FooClasses");
 
             this.Foo = foo;

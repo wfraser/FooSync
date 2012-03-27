@@ -1,8 +1,18 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/NativeMethods.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace FooSync
+namespace Codewise.FooSync
 {
     public static class NativeMethods
     {

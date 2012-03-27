@@ -8,7 +8,7 @@
     <ProjectGuid>{94CE44D4-502A-4335-B28F-6E111FE867AA}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FooSync.WPFApp</RootNamespace>
+    <RootNamespace>Codewise.FooSync.WPFApp</RootNamespace>
     <AssemblyName>FooSync</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>

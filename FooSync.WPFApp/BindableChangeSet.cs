@@ -1,9 +1,19 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/WPFApp/BindableChangeSet.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 
-namespace FooSync.WPFApp
+namespace Codewise.FooSync.WPFApp
 {
     /// <summary>
     /// BindableChangeSet

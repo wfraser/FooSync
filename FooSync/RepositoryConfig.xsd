@@ -1,4 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Codewise/FooSync/RepositoryConfig.xsd
+    
+    by William R. Fraser:
+        http://www.codewise.org/
+        https://github.com/wfraser/FooSync
+    
+    Copyright (c) 2012
+-->
 <xs:schema targetNamespace="http://www.codewise.org/schema/foosync/RepositoryConfig.xsd"
     elementFormDefault="qualified"
     xmlns="http://www.codewise.org/schema/foosync/RepositoryConfig.xsd"
@@ -24,15 +33,6 @@
   <xs:complexType name="RepositorySource">
     <xs:all>
       <xs:element name="Path" type="xs:string" minOccurs="1" maxOccurs="1"/>
-      <!--
-      <xs:element name="MergeStrategy" minOccurs="1" maxOccurs="1">
-        <xs:simpleType>
-          <xs:restriction base="xs:string">
-            <xs:pattern value="Synchronize|Ours|Theirs"/>
-          </xs:restriction>
-        </xs:simpleType>
-      </xs:element>
-      -->
     </xs:all>
     
     <xs:attribute name="Name" type="xs:string"/>

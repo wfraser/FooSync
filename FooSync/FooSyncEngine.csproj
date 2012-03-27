@@ -8,7 +8,7 @@
     <ProjectGuid>{9DD175E1-7392-4A9E-A4DB-22F9EE18D916}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FooSync</RootNamespace>
+    <RootNamespace>Codewise.FooSync</RootNamespace>
     <AssemblyName>FooSyncEngine</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

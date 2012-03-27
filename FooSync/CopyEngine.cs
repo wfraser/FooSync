@@ -1,10 +1,20 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/CopyEngine.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-namespace FooSync
+namespace Codewise.FooSync
 {
     /// <summary>
     /// Copies files using the system's native file copy dialog, if possible.

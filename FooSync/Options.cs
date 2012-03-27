@@ -1,6 +1,16 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/Options.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
 
-namespace FooSync
+using System;
+
+namespace Codewise.FooSync
 {
     public class Options
     {
