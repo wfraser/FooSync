@@ -12,4 +12,5 @@ mkdir -p $PREFIX/bin
 
 cp -v lib/* $PREFIX/lib/foosync
 cp -v fs.sh $PREFIX/bin/fs
+cp -v foosyncd.sh $PREFIX/bin/foosyncd
 

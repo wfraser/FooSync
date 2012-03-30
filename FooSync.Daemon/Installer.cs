@@ -12,7 +12,10 @@ using System;
 using System.ComponentModel;
 using System.Configuration.Install;
 using System.ServiceProcess;
+
+#if !__MonoCS__
 using NetFwTypeLib;
+#endif
 
 namespace Codewise.FooSync.Daemon
 {
