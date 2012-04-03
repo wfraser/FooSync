@@ -25,13 +25,17 @@ using Codewise.FooSync;
 
 namespace Codewise.FooSync.Daemon
 {
-    public partial class FooSyncService : ServiceBase
+    [System.ComponentModel.DesignerCategory("Code")] // suppress annoying VS behavior
+    public class FooSyncService : ServiceBase
     {
-        static readonly int DefaultPort = 22022;
+        public static readonly int DefaultPort = 22022;
+        public static readonly string Name = "FooSyncService";
+        public static readonly string DisplayName = "FooSync Daemon";
+        public static readonly string Description = "Serves FooSync repositories across the network.";
 
         public FooSyncService()
         {
-            InitializeComponent();
+            ServiceName = Name;
             _shuttingDown = false;
         }
 
@@ -130,13 +134,13 @@ namespace Codewise.FooSync.Daemon
             {
                 try
                 {
-                    var client = listener.AcceptSocket();
+                    var client = listener.AcceptTcpClient();
 
-                    client.Send(
+                    client.Client.Send(
                         Encoding.ASCII.GetBytes(
                             string.Format(
                                 "Codewise.FooSync.Daemon says hi {0}\r\n",
-                                (client.RemoteEndPoint as IPEndPoint).Address.ToString()
+                                (client.Client.RemoteEndPoint as IPEndPoint).Address.ToString()
                     )));
 
                     //

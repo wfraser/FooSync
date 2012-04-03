@@ -26,6 +26,7 @@ namespace Codewise.FooSync.Daemon
     ///     %windir%\Microsoft.NET\Framework\[version]\InstallUtil.exe FooSync.Daemon.exe
     /// </summary>
     [RunInstaller(true)]
+    [System.ComponentModel.DesignerCategory("Code")] // suppress annoying VS behavior
     public class FooSyncServiceInstaller : Installer
     {
         public FooSyncServiceInstaller()
@@ -37,9 +38,9 @@ namespace Codewise.FooSync.Daemon
             var serviceAdmin = new ServiceInstaller();
 
             serviceAdmin.StartType = ServiceStartMode.Manual;
-            serviceAdmin.ServiceName = "FooSyncService";
-            serviceAdmin.DisplayName = "FooSync Daemon";
-            serviceAdmin.Description = "Serves FooSync repositories across the network.";
+            serviceAdmin.ServiceName = FooSyncService.Name;
+            serviceAdmin.DisplayName = FooSyncService.DisplayName;
+            serviceAdmin.Description = FooSyncService.Description;
 
             Installers.Add(process);
             Installers.Add(serviceAdmin);
@@ -47,11 +48,9 @@ namespace Codewise.FooSync.Daemon
 
 #if !__MonoCS__
         /// <summary>
-        /// This region is specific to WinNT, namely the Windows Firewall with Advanced Security
+        /// This region is specific to WinNT, namely the Windows Firewall with Advanced Security.
         /// This code probably will also not work prior to Windows Vista, but this is untested.
         /// </summary>
-
-        static readonly string FirewallRuleName = "FooSync Daemon";
 
         protected override void OnAfterInstall(System.Collections.IDictionary savedState)
         {
@@ -74,7 +73,7 @@ namespace Codewise.FooSync.Daemon
 
             foreach (INetFwRule r in policy.Rules)
             {
-                if (r != null && r.Name != null && r.Name.Equals(FirewallRuleName))
+                if (r != null && r.Name != null && r.Name.Equals(FooSyncService.Name))
                 {
                     Console.WriteLine("Not adding FW rule; it already exists.");
                     return;
@@ -94,7 +93,7 @@ namespace Codewise.FooSync.Daemon
             rule.Direction = NET_FW_RULE_DIRECTION_.NET_FW_RULE_DIR_IN;
             rule.Enabled = true;
             rule.InterfaceTypes = "All";
-            rule.Name = FirewallRuleName;
+            rule.Name = FooSyncService.Name;
             rule.ApplicationName = System.Reflection.Assembly.GetExecutingAssembly().Location;
 
             policy.Rules.Add(rule);
@@ -118,7 +117,7 @@ namespace Codewise.FooSync.Daemon
             }
 
             var policy = (INetFwPolicy2)Activator.CreateInstance(NetFwPolicy2Type);
-            policy.Rules.Remove(FirewallRuleName);
+            policy.Rules.Remove(FooSyncService.Name);
         }
 #endif // !__MonoCS__
     }
