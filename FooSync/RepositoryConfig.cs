@@ -35,7 +35,7 @@ namespace Codewise.FooSync
     }
 
     [Serializable]
-    [XmlType(Namespace = "http://www.codewise.org/schema/foosync/RepositoryConfig.xsd")]
+    [XmlType(Namespace="http://www.codewise.org/schema/foosync/RepositoryConfig.xsd")]
     public class RepositoryDirectory
     {
         public override string ToString()

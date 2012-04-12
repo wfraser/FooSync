@@ -63,11 +63,16 @@
     <Compile Include="ProgramArguments.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerRepositoryConfig.cs" />
+    <Compile Include="ServerRepositoryConfigLoader.cs" />
     <Compile Include="Service.cs" />
     <Compile Include="Session.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="ServerRepositoryConfig.xsd">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FooSync\FooSyncEngine.csproj">

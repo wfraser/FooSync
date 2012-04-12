@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Codewise/FooSync/Daemon/ServerRepositoryConfig.xsd
+    
+    by William R. Fraser:
+        http://www.codewise.org/
+        https://github.com/wfraser/FooSync
+        
+    Copyright (c) 2012
+-->
+<xs:schema targetNamespace="http://www.codewise.org/schema/foosync/ServerRepositoryConfig.xsd"
+    elementFormDefault="qualified"
+    xmlns="http://www.codewise.org/schema/foosync/ServerRepositoryConfig.xsd"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+>
+  <xs:complexType name="ServerRepositoryConfig">
+    <xs:sequence>
+      <xs:element name="ServerName" type="xs:string"/>
+      <xs:element name="ServerDescription" type="xs:string"/>
+      <xs:element name="Repository" type="ServerRepositoryDirectory" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="Version" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="ServerRepositoryDirectory">
+    <xs:sequence>
+      <xs:element name="Path" type="xs:string"/>
+      <xs:element name="AllowedClientKeys" type="AllowedClientKeys"/>
+      <xs:element name="IgnoreGlob" type="IgnorePatterns" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="IgnoreRegex" type="IgnorePatterns" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="IgnorePatterns">
+    <xs:sequence>
+      <xs:element name="Pattern" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="CaseInsensitive" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <xs:complexType name="AllowedClientKeys">
+    <xs:choice>
+      <xs:element name="Any" minOccurs="1" maxOccurs="1"/>
+      <xs:element name="Path" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:choice>
+  </xs:complexType>
+
+  <xs:element name="FooSync.ServerRepositoryConfig" type="ServerRepositoryConfig"/>
+</xs:schema>
