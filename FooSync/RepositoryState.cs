@@ -58,51 +58,56 @@ namespace Codewise.FooSync
 
             using (var r = new StreamReader(stateFilename, System.Text.Encoding.UTF8))
             {
-                var current = new RepositorySourceState();
-                string source, filename, origin = null;
-                DateTime mtime;
+                Read(r);
+            }
+        }
 
-                while (!r.EndOfStream)
+        public void Read(StreamReader r)
+        {
+            var current = new RepositorySourceState();
+            string source, filename, origin = null;
+            DateTime mtime;
+
+            while (!r.EndOfStream)
+            {
+                source = ReadString(r);
+                while (r.Peek() != 0)
                 {
-                    source = ReadString(r);
-                    while (r.Peek() != 0)
+                    filename = ReadString(r);
+
+                    //
+                    // Normalize the path to use forward slashes instead of whatever
+                    //  the system normally uses.
+                    // Rationale: Unix filenames can contain backslashes, but
+                    //  Windows filenames can't contain forward slashes, so
+                    //  forward slashes win.
+                    //
+                    if (Path.DirectorySeparatorChar != '/')
                     {
-                        filename = ReadString(r);
-
-                        //
-                        // Normalize the path to use forward slashes instead of whatever
-                        //  the system normally uses.
-                        // Rationale: Unix filenames can contain backslashes, but
-                        //  Windows filenames can't contain forward slashes, so
-                        //  forward slashes win.
-                        //
-                        if (Path.DirectorySeparatorChar != '/')
-                        {
-                            filename = filename.Replace('/', Path.DirectorySeparatorChar);
-                        }
-
-                        if (source == RepositoryState.RepoSourceName)
-                        {
-                            origin = ReadString(r);
-                        }
-
-                        mtime = DateTime.FromFileTimeUtc(long.Parse(ReadString(r)));
-
-                        current.MTimes.Add(filename, mtime);
-
-                        if (origin != null)
-                        {
-                            Origin.Add(filename, origin);
-                            origin = null;
-                        }
+                        filename = filename.Replace('/', Path.DirectorySeparatorChar);
                     }
 
-                    current.Name = source;
-                    Sources.Add(source, current);
-                    current = new RepositorySourceState();
+                    if (source == RepositoryState.RepoSourceName)
+                    {
+                        origin = ReadString(r);
+                    }
 
-                    r.Read();
+                    mtime = DateTime.FromFileTimeUtc(long.Parse(ReadString(r)));
+
+                    current.MTimes.Add(filename, mtime);
+
+                    if (origin != null)
+                    {
+                        Origin.Add(filename, origin);
+                        origin = null;
+                    }
                 }
+
+                current.Name = source;
+                Sources.Add(source, current);
+                current = new RepositorySourceState();
+
+                r.Read();
             }
         }
 
@@ -110,38 +115,43 @@ namespace Codewise.FooSync
         {
             using (var w = new StreamWriter(sourceFilename, false, System.Text.Encoding.UTF8))
             {
-                foreach (var source in Sources.Values)
+                Write(w);
+            }
+        }
+
+        public void Write(StreamWriter w)
+        {
+            foreach (var source in Sources.Values)
+            {
+                w.Write(source.Name);
+                w.Write('\0');
+
+                foreach (var mtime in source.MTimes)
                 {
-                    w.Write(source.Name);
+                    string filename = mtime.Key;
+
+                    //
+                    // Convert normalized path back to system directory separators.
+                    //
+                    if (Path.DirectorySeparatorChar != '/')
+                    {
+                        filename = filename.Replace(Path.DirectorySeparatorChar, '/');
+                    }
+
+                    w.Write(filename);
                     w.Write('\0');
 
-                    foreach (var mtime in source.MTimes)
+                    if (source.Name == RepositoryState.RepoSourceName)
                     {
-                        string filename = mtime.Key;
-
-                        //
-                        // Convert normalized path back to system directory separators.
-                        //
-                        if (Path.DirectorySeparatorChar != '/')
-                        {
-                            filename = filename.Replace(Path.DirectorySeparatorChar, '/');
-                        }
-
-                        w.Write(filename);
-                        w.Write('\0');
-
-                        if (source.Name == RepositoryState.RepoSourceName)
-                        {
-                            w.Write(Origin.ContainsKey(mtime.Key) ? Origin[mtime.Key] : RepositoryState.RepoSourceName);
-                            w.Write('\0');
-                        }
-
-                        w.Write(mtime.Value.ToFileTimeUtc());
+                        w.Write(Origin.ContainsKey(mtime.Key) ? Origin[mtime.Key] : RepositoryState.RepoSourceName);
                         w.Write('\0');
                     }
 
+                    w.Write(mtime.Value.ToFileTimeUtc());
                     w.Write('\0');
                 }
+
+                w.Write('\0');
             }
         }
 

@@ -18,6 +18,10 @@ namespace Codewise.FooSync
     {
         static MD5 Hasher = MD5.Create();
 
+        internal FooFileInfo()
+        {
+        }
+
         internal FooFileInfo(FooSyncEngine foo, string path)
         {
             System.Diagnostics.Debug.Assert(
@@ -134,5 +138,22 @@ namespace Codewise.FooSync
         private string _hash;
 
         #endregion
+    }
+
+    /// <summary>
+    /// A FooFileInfo that is not backed by a file, but instead by explicitly set properties.
+    /// For use by FooTree.Unserialize()
+    /// </summary>
+    internal class FooFileInfoStatic : FooFileInfo
+    {
+        internal FooFileInfoStatic()
+        {
+        }
+
+        public new string Path { get; internal set; }
+        public new string Source { get; internal set; }
+        public new DateTime MTime { get; internal set; }
+        public new long Size { get; internal set; }
+        public new string Hash { get { throw new NotImplementedException("Can't get hash from a FooFileInfoStatic"); } }
     }
 }

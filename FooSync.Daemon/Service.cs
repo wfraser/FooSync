@@ -33,10 +33,13 @@ namespace Codewise.FooSync.Daemon
         public static readonly string DisplayName = "FooSync Daemon";
         public static readonly string Description = "Serves FooSync repositories across the network.";
 
+        private List<Thread> _threads;
+
         public FooSyncService()
         {
             ServiceName = Name;
             _shuttingDown = false;
+            _threads = new List<Thread>();
         }
 
         internal void Start(string[] args)
@@ -135,19 +138,10 @@ namespace Codewise.FooSync.Daemon
                 try
                 {
                     var client = listener.AcceptTcpClient();
-
-                    client.Client.Send(
-                        Encoding.ASCII.GetBytes(
-                            string.Format(
-                                "Codewise.FooSync.Daemon says hi {0}\r\n",
-                                (client.Client.RemoteEndPoint as IPEndPoint).Address.ToString()
-                    )));
-
-                    //
-                    // TODO: This is where we'll fork off a new thread to service the client.
-                    //
-
-                    client.Close();
+                    var session = new Session(client, _foo);
+                    var thread = new Thread(session.Run);
+                    thread.Name = "client " + ((IPEndPoint)client.Client.RemoteEndPoint).ToString();
+                    thread.Start();
                 }
                 catch (SocketException ex)
                 {
@@ -159,9 +153,9 @@ namespace Codewise.FooSync.Daemon
             }
         }
 
-        private FooSyncEngine    _foo;
         private ProgramArguments _args;
         private int              _listenPort;
+        private FooSyncEngine    _foo;
 
         //
         // In Linux, it seems an IPv6 socket can accept IPv4 connections.

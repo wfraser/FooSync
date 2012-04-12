@@ -26,6 +26,11 @@ namespace Codewise.FooSync
 
         private FooSyncEngine Foo { get; set; }
 
+        private FooTree()
+        {
+            Files = new Dictionary<string, FooFileInfo>();
+        }
+
         internal FooTree(FooSyncEngine foo, string path, IEnumerable<string> exceptions, Progress callback = null)
         {
             Debug.Assert(
@@ -37,6 +42,44 @@ namespace Codewise.FooSync
             this.Files = new Dictionary<string, FooFileInfo>();
 
             Walk(path, path, exceptions, callback);
+        }
+
+        public void Serialize(Stream output)
+        {
+            NetUtil.WriteInt(output, Files.Count);
+
+            foreach (FooFileInfo info in Files.Values)
+            {
+                NetUtil.WriteString(output, info.Path);
+                NetUtil.WriteString(output, info.Source);
+                NetUtil.WriteLong(output, info.MTime.Ticks);
+                NetUtil.WriteLong(output, info.Size);
+            }
+        }
+
+        public static FooTree Unserialize(Stream input)
+        {
+            var tree = new FooTree();
+
+            int numFiles = NetUtil.GetInt(input);
+
+            for (int i = 0; i < numFiles; i++)
+            {
+                var path = NetUtil.GetString(input);
+                var source = NetUtil.GetString(input);
+                var mTimeTicks = NetUtil.GetLong(input);
+                var size = NetUtil.GetLong(input);
+
+                var info = new FooFileInfoStatic();
+                info.Path = path;
+                info.Source = source;
+                info.MTime = new DateTime(mTimeTicks);
+                info.Size = size;
+
+                tree.Files.Add(path, info);
+            }
+
+            return tree;
         }
 
         private void Walk(string path, string basePath, IEnumerable<string> exceptions, Progress callback)
