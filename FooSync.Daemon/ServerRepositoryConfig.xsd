@@ -24,8 +24,10 @@
 
   <xs:complexType name="ServerRepositoryDirectory">
     <xs:sequence>
+      <xs:element name="Name" type="xs:string"/>
       <xs:element name="Path" type="xs:string"/>
-      <xs:element name="AllowedClientKeys" type="AllowedClientKeys"/>
+      <xs:element name="AllowedClientKeys" type="AllowedClientKeys" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="AllowAllClients" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
       <xs:element name="IgnoreGlob" type="IgnorePatterns" minOccurs="0" maxOccurs="1"/>
       <xs:element name="IgnoreRegex" type="IgnorePatterns" minOccurs="0" maxOccurs="1"/>
     </xs:sequence>
@@ -39,10 +41,9 @@
   </xs:complexType>
 
   <xs:complexType name="AllowedClientKeys">
-    <xs:choice>
-      <xs:element name="Any" minOccurs="1" maxOccurs="1"/>
+    <xs:sequence>
       <xs:element name="Path" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
-    </xs:choice>
+    </xs:sequence>
   </xs:complexType>
 
   <xs:element name="FooSync.ServerRepositoryConfig" type="ServerRepositoryConfig"/>

@@ -27,7 +27,7 @@ namespace Codewise.ArgumentParser
         /// These arrays configure what switches the parser will recognize.
         /// Prefix any letter with an ampersand to denote that letter as a short form.
         /// </summary>
-        private static readonly string[] OPTIONS = { "&directory", "&port" };
+        private static readonly string[] OPTIONS = { "&config", "&port" };
         private static readonly string[] FLAGS = { "&help", "casesensitive" };
 
         /// <summary>

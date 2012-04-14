@@ -22,13 +22,13 @@ namespace Codewise.FooSync
     {
         public string Path { get; private set; }
 
-        public Dictionary<string, FooFileInfo> Files { get; private set; }
+        public Dictionary<string, FooFileInfoBase> Files { get; private set; }
 
         private FooSyncEngine Foo { get; set; }
 
         private FooTree()
         {
-            Files = new Dictionary<string, FooFileInfo>();
+            Files = new Dictionary<string, FooFileInfoBase>();
         }
 
         internal FooTree(FooSyncEngine foo, string path, IEnumerable<string> exceptions, Progress callback = null)
@@ -39,7 +39,7 @@ namespace Codewise.FooSync
 
             this.Foo   = foo;
             this.Path  = path;
-            this.Files = new Dictionary<string, FooFileInfo>();
+            this.Files = new Dictionary<string, FooFileInfoBase>();
 
             Walk(path, path, exceptions, callback);
         }
@@ -70,7 +70,7 @@ namespace Codewise.FooSync
                 var mTimeTicks = NetUtil.GetLong(input);
                 var size = NetUtil.GetLong(input);
 
-                var info = new FooFileInfoStatic();
+                var info = new FooFileInfoBase();
                 info.Path = path;
                 info.Source = source;
                 info.MTime = new DateTime(mTimeTicks);

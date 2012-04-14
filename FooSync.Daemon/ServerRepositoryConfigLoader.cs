@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
@@ -28,6 +28,12 @@ namespace Codewise.FooSync.Daemon
 
                 var config = (ServerRepositoryConfig)serializer.Deserialize(reader);
 
+                config.Repositories = new System.Collections.Generic.Dictionary<string, ServerRepositoryDirectory>();
+                foreach (var repo in config.RepositoriesArray)
+                {
+                    config.Repositories.Add(repo.Name, repo);
+                }
+
                 return config;
             }
         }
@@ -37,6 +43,9 @@ namespace Codewise.FooSync.Daemon
             using (var writer = XmlWriter.Create(configXmlFilename))
             {
                 var serializer = new XmlSerializer(typeof(ServerRepositoryConfig));
+
+                config.RepositoriesArray = new ServerRepositoryDirectory[config.Repositories.Count];
+                config.Repositories.Values.CopyTo(config.RepositoriesArray, 0);
 
                 serializer.Serialize(writer, config);
             }

@@ -33,6 +33,8 @@ namespace Codewise.FooSync.Daemon
         public static readonly string DisplayName = "FooSync Daemon";
         public static readonly string Description = "Serves FooSync repositories across the network.";
 
+        private static readonly string DefaultConfig = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "foosyncd_config.xml");
+        
         private List<Thread> _threads;
 
         public FooSyncService()
@@ -113,6 +115,29 @@ namespace Codewise.FooSync.Daemon
                 }
             }
 
+            var configPath = DefaultConfig;
+            if (_args.Options.ContainsKey("config"))
+            {
+                configPath = _args.Options["config"];
+            }
+
+            try
+            {
+                string err = string.Empty;
+                _config = ServerRepositoryConfigLoader.GetConfig(configPath, out err);
+
+                if (_config == null)
+                {
+                    Trace.TraceError("Error loading FooSync daemon config: {0}", err);
+                    throw new Exception(string.Format("Error loading FooSync daemon config: {0}", err));
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError("Error loading FooSync daemon config: {0}: {1}{2}", ex.GetType().Name, ex.Message, ex.StackTrace);
+                throw;
+            }
+
             _foo = new FooSyncEngine(fooOptions);
         }
 
@@ -138,7 +163,7 @@ namespace Codewise.FooSync.Daemon
                 try
                 {
                     var client = listener.AcceptTcpClient();
-                    var session = new Session(client, _foo);
+                    var session = new Session(client, _foo, _config);
                     var thread = new Thread(session.Run);
                     thread.Name = "client " + ((IPEndPoint)client.Client.RemoteEndPoint).ToString();
                     thread.Start();
@@ -156,6 +181,7 @@ namespace Codewise.FooSync.Daemon
         private ProgramArguments _args;
         private int              _listenPort;
         private FooSyncEngine    _foo;
+        private ServerRepositoryConfig _config;
 
         //
         // In Linux, it seems an IPv6 socket can accept IPv4 connections.

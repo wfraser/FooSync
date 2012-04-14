@@ -14,7 +14,7 @@ using System.Security.Cryptography;
 
 namespace Codewise.FooSync
 {
-    public class FooFileInfo
+    public class FooFileInfo : FooFileInfoBase
     {
         static MD5 Hasher = MD5.Create();
 
@@ -27,41 +27,15 @@ namespace Codewise.FooSync
             System.Diagnostics.Debug.Assert(
                 (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("Codewise.FooSync.FooSyncEngine"),
                 "Don't directly instantiate FooClasses");
-            
+
             this.Foo = foo;
             this.Path = path;
             this.Source = string.Empty;
         }
 
-        #region public methods 
-
-        public int CompareTo(FooFileInfo other)
-        {
-            if (other == null)
-                throw new ArgumentNullException("other");
-
-            if (this.MTime != other.MTime)
-            {
-                if (Foo.Options.ComputeHashes && (this.Hash == other.Hash))
-                {
-                    return 0;
-                }
-                else
-                {
-                    return this.MTime.CompareTo(other.MTime);
-                }
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
-        #endregion
-
         #region public properties
 
-        public string Hash
+        public override string Hash
         {
             get
             {
@@ -82,7 +56,7 @@ namespace Codewise.FooSync
             }
         }
 
-        public DateTime MTime
+        public override DateTime MTime
         {
             get
             {
@@ -91,7 +65,7 @@ namespace Codewise.FooSync
             }
         }
 
-        public long Size
+        public override long Size
         {
             get
             {
@@ -107,9 +81,6 @@ namespace Codewise.FooSync
                 return Info.FullName;
             }
         }
-
-        public string         Source         { get; set; }
-        public string         Path           { get; private set; }
 
         #endregion
 
@@ -128,8 +99,6 @@ namespace Codewise.FooSync
             }
         }
 
-        private FooSyncEngine Foo { get; set; }
-
         #endregion
 
         #region private members
@@ -144,16 +113,46 @@ namespace Codewise.FooSync
     /// A FooFileInfo that is not backed by a file, but instead by explicitly set properties.
     /// For use by FooTree.Unserialize()
     /// </summary>
-    internal class FooFileInfoStatic : FooFileInfo
+    public class FooFileInfoBase
     {
-        internal FooFileInfoStatic()
+        public FooFileInfoBase()
         {
+            Foo = null;
         }
 
-        public new string Path { get; internal set; }
-        public new string Source { get; internal set; }
-        public new DateTime MTime { get; internal set; }
-        public new long Size { get; internal set; }
-        public new string Hash { get { throw new NotImplementedException("Can't get hash from a FooFileInfoStatic"); } }
+        public FooFileInfoBase(FooSyncEngine foo)
+        {
+            Foo = foo;
+        }
+
+        public int CompareTo(FooFileInfoBase other)
+        {
+            if (other == null)
+                throw new ArgumentNullException("other");
+
+            if (this.MTime != other.MTime)
+            {
+                if (Foo != null && Foo.Options.ComputeHashes && (this.Hash == other.Hash))
+                {
+                    return 0;
+                }
+                else
+                {
+                    return this.MTime.CompareTo(other.MTime);
+                }
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        public string Path { get; internal set; }
+        public string Source { get; internal set; }
+        public virtual DateTime MTime { get; internal set; }
+        public virtual long Size { get; internal set; }
+        public virtual string Hash { get { throw new NotImplementedException("Can't get hash from a FooFileInfoBase"); } }
+
+        protected FooSyncEngine Foo { get; set; }
     }
 }

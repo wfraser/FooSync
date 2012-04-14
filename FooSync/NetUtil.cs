@@ -27,10 +27,6 @@ namespace Codewise.FooSync
             var buf = new byte[4];
             s.Read(buf, 0, 4);
 
-            // WRFDEV
-            if (buf[0] == 48 && buf[1] == 0 && buf[2] == 0 && buf[3] == 0)
-                return 0;
-
             return IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buf, 0));
         }
 

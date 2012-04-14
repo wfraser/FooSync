@@ -9,6 +9,7 @@
 /// 
 
 using System;
+using System.Collections.Generic;
 using System.Xml.Serialization;
 using Codewise.FooSync;
 
@@ -29,7 +30,10 @@ namespace Codewise.FooSync.Daemon
         public string ServerDescription { get; set; }
 
         [XmlElement("Repository")]
-        public ServerRepositoryDirectory[] Repositories { get; set; }
+        public ServerRepositoryDirectory[] RepositoriesArray { get; set; }
+
+        [XmlIgnore]
+        public Dictionary<String, ServerRepositoryDirectory> Repositories { get; set; }
     }
 
     [Serializable]
@@ -42,6 +46,9 @@ namespace Codewise.FooSync.Daemon
         }
 
         [XmlElement]
+        public string Name { get; set; }
+
+        [XmlElement]
         public string Path { get; set; }
 
         [XmlElement]
@@ -50,7 +57,16 @@ namespace Codewise.FooSync.Daemon
         [XmlElement]
         public IgnorePatterns IgnoreRegex { get; set; }
 
-        [XmlElement("AllowedClientKeys")]
-        public string[] AllowedClientKeyPaths { get; set; }
+        [XmlElement]
+        public ServerRepositoryDirectoryAllowedClientKeys AllowedClientKeys { get; set; }
+
+        [XmlElement]
+        public bool AllowAllClients { get; set; }
+    }
+
+    public class ServerRepositoryDirectoryAllowedClientKeys
+    {
+        [XmlElement("Path")]
+        public string[] Paths { get; set; }
     }
 }
