@@ -11,6 +11,8 @@ SOURCES=\
     Program.cs \
     ProgramArguments.cs \
     Properties/AssemblyInfo.cs \
+    ServerRepositoryConfig.cs \
+    ServerRepositoryConfigLoader.cs \
     Service.cs \
     Session.cs
 

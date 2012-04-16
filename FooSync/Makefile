@@ -13,6 +13,7 @@ SOURCES=\
     FooSync.cs \
     FooTree.cs \
     NativeMethods.cs \
+    NetUtil.cs \
     Options.cs \
     RepositoryConfig.cs \
     RepositoryConfigLoader.cs \
