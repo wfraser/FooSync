@@ -28,14 +28,19 @@ namespace Codewise.FooSync.Daemon
 #if DEBUG
             if (Debugger.IsAttached)
             {
+#endif //DEBUG
+
+//
+// mono-service2 is really buggy and unreliable.
+// Run as an ordinary foreground process instead.
+//
+#if DEBUG || __MonoCS__
                 var svc = new FooSyncService();
-                svc.Start(new string[]{
-                    "/config",
-                    System.IO.Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.Personal), // "My Documents"
-                        "foosyncd_config.xml"
-                    )
-                });
+                var args = Environment.GetCommandLineArgs();
+                svc.Start(args.Where((arg, index) => index > 0).ToArray());
+#endif //DEBUG or MonoCS
+
+#if DEBUG
 
                 //
                 // test code
@@ -103,6 +108,7 @@ namespace Codewise.FooSync.Daemon
             }
             else
 #endif //DEBUG
+#if !__MonoCS__
             {
                 ServiceBase[] ServicesToRun;
                 ServicesToRun = new ServiceBase[] 
@@ -111,6 +117,7 @@ namespace Codewise.FooSync.Daemon
                 };
                 ServiceBase.Run(ServicesToRun);
             }
+#endif // !MonoCS
         }
     }
 }

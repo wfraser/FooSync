@@ -64,6 +64,19 @@ namespace Codewise.FooSync.Daemon
         public bool AllowAllClients { get; set; }
     }
 
+    [Serializable]
+    [XmlType(Namespace = "http://www.codewise.org/schema/foosync/ServerRepositoryConfig.xsd")]
+    public class IgnorePatterns
+    {
+        [XmlElement("Pattern")]
+        public string[] Patterns { get; set; }
+
+        [XmlAttribute]
+        public bool CaseInsensitive { get; set; }
+    }
+
+    [Serializable]
+    [XmlType(Namespace = "http://www.codewise.org/schema/foosync/ServerRepositoryConfig.xsd")]
     public class ServerRepositoryDirectoryAllowedClientKeys
     {
         [XmlElement("Path")]

@@ -34,14 +34,11 @@ namespace Codewise.FooSync.Daemon
         public static readonly string Description = "Serves FooSync repositories across the network.";
 
         private static readonly string DefaultConfig = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "foosyncd_config.xml");
-        
-        private List<Thread> _threads;
 
         public FooSyncService()
         {
             ServiceName = Name;
             _shuttingDown = false;
-            _threads = new List<Thread>();
         }
 
         internal void Start(string[] args)
