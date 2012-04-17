@@ -50,10 +50,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FooSync.Daemon\FooSync.Daemon.csproj">
-      <Project>{a1f44a91-fcd2-486b-8b3b-7f71c25da40b}</Project>
-      <Name>FooSync.Daemon</Name>
-    </ProjectReference>
     <ProjectReference Include="..\FooSync\FooSyncEngine.csproj">
       <Project>{9dd175e1-7392-4a9e-a4db-22f9ee18d916}</Project>
       <Name>FooSyncEngine</Name>

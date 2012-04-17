@@ -311,4 +311,23 @@ namespace Codewise.FooSync
         DeleteSource,
         MaxFileOperation
     }
+
+    public enum OpCode : int
+    {
+        Hello = 0,
+        Auth,
+        Tree,
+        State,
+        File
+    }
+
+    public enum RetCode : int
+    {
+        Success,
+        UnknownError,
+        BadAuth,
+        BadRepo,
+        BadPath,
+        BadOp
+    }
 }

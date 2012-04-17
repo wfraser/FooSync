@@ -15,7 +15,6 @@ using System.IO;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Codewise.FooSync;
-using Codewise.FooSync.Daemon;
 
 namespace Codewise.FooSync.NetworkTest
 {
@@ -53,18 +52,18 @@ namespace Codewise.FooSync.NetworkTest
             var client = new TcpClient(hostname, port);
             var stream = client.GetStream();
 
-            NetUtil.WriteInt(stream, (int)Session.OpCode.Auth);
+            NetUtil.WriteInt(stream, (int)OpCode.Auth);
             NetUtil.WriteString(stream, repo);
             var i = NetUtil.GetInt(stream);
 
             Console.WriteLine("auth returned {0}", i);
 
-            NetUtil.WriteInt(stream, (int)Session.OpCode.Hello);
+            NetUtil.WriteInt(stream, (int)OpCode.Hello);
             var s = NetUtil.GetString(stream);
 
             Console.WriteLine("hello replied {0}", s);
 
-            NetUtil.WriteInt(stream, (int)Session.OpCode.Tree);
+            NetUtil.WriteInt(stream, (int)OpCode.Tree);
             i = NetUtil.GetInt(stream);
 
             Console.WriteLine("tree returned {0}", i);
