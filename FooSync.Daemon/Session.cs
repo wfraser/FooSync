@@ -29,15 +29,17 @@ namespace Codewise.FooSync.Daemon
         private Stream                 _stream;
         private FooSyncEngine          _foo;
         private ServerRepositoryConfig _config;
+        private Dictionary<string, ICollection<string>> _exceptions;
         private bool                   _authenticated = false;
         private string                 _repoName = string.Empty;
 
-        public Session(TcpClient client, FooSyncEngine foo, ServerRepositoryConfig config)
+        public Session(TcpClient client, FooSyncEngine foo, ServerRepositoryConfig config, Dictionary<string, ICollection<string>> exceptions)
         {
             UseSSL = false; // default to false until this functionality actually works
             _client = client;
             _foo = foo;
             _config = config;
+            _exceptions = exceptions;
         }
 
         /// <summary>
@@ -107,6 +109,15 @@ namespace Codewise.FooSync.Daemon
             }
             catch (Exception ex)
             {
+                if (ex is IOException)
+                {
+                    var se = ex.InnerException as SocketException;
+                    if (se != null && se.ErrorCode == 10053) // remote endpoint disconnected
+                    {
+                        return;
+                    }
+                }
+
                 UnhandledException(ex);
                 _client.Close();
             }
@@ -168,17 +179,15 @@ namespace Codewise.FooSync.Daemon
         /// </summary>
         private void HandleTreeRequest()
         {
-            try
-            {
-                var tree = _foo.Tree(_config.Repositories[_repoName].Path);
-
-                NetUtil.WriteInt(_stream, (int)RetCode.Success);
-                tree.Serialize(_stream);
-            }
-            catch (FileNotFoundException)
+            if (!Directory.Exists(_config.Repositories[_repoName].Path))
             {
                 NetUtil.WriteInt(_stream, (int)RetCode.BadPath);
+                return;
             }
+
+            NetUtil.WriteInt(_stream, (int)RetCode.Success);
+
+            FooTree.ToStream(_foo, _config.Repositories[_repoName].Path, _exceptions[_repoName], _stream);
         }
 
         /// <summary>
@@ -197,7 +206,7 @@ namespace Codewise.FooSync.Daemon
             if (!File.Exists(stateFile))
             {
                 var state = new RepositoryState();
-                state.AddSource(_foo.Tree(_config.Repositories[_repoName].Path), RepositoryState.RepoSourceName);
+                state.AddSource(new FooTree(_foo, _config.Repositories[_repoName].Path), RepositoryState.RepoSourceName);
                 state.Write(stateFile);
             }
 

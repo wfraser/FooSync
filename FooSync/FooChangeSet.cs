@@ -18,13 +18,8 @@ namespace Codewise.FooSync
 {
     public class FooChangeSet : INotifyCollectionChanged
     {
-        public FooChangeSet(FooSyncEngine foo)
+        public FooChangeSet()
         {
-            System.Diagnostics.Debug.Assert(
-                (new System.Diagnostics.StackTrace()).GetFrame(1).GetMethod().DeclaringType.FullName.Equals("Codewise.FooSync.FooSyncEngine"),
-                "Don't directly instantiate FooClasses");
-
-            this.Foo = foo;
             this.Elems = new Dictionary<string, FooChangeSetElem>();
         }
 
@@ -136,7 +131,6 @@ namespace Codewise.FooSync
 
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
-        private FooSyncEngine Foo;
         private Dictionary<string, FooChangeSetElem> Elems;
     }
 

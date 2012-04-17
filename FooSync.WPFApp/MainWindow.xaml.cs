@@ -255,10 +255,10 @@ namespace Codewise.FooSync.WPFApp
             var dir = e.Argument as RepositoryDirectory;
             var dlg = sender as ProgressDialog;
 
-            var exceptions = FooSyncEngine.PrepareExceptions(dir);
+            var exceptions = FooSyncEngine.PrepareExceptions(dir.IgnoreRegex, dir.IgnoreGlob);
 
             DateTime last = DateTime.Now;
-            _repo = _foo.Tree(Path.Combine(_config.RepositoryPath, dir.Path), exceptions,
+            _repo = new FooTree(_foo, Path.Combine(_config.RepositoryPath, dir.Path), exceptions,
             (Progress)delegate(int n, int total, string d)
             {
                 if ((DateTime.Now - last).TotalMilliseconds > 100)
@@ -273,7 +273,7 @@ namespace Codewise.FooSync.WPFApp
                 }
             });
 
-            _source = _foo.Tree(dir.Source.Path, exceptions,
+            _source = new FooTree(_foo, dir.Source.Path, exceptions,
             (Progress)delegate(int n, int total, string d)
             {
                 if ((DateTime.Now - last).TotalMilliseconds > 100)

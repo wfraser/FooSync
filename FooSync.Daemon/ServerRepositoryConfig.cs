@@ -66,13 +66,17 @@ namespace Codewise.FooSync.Daemon
 
     [Serializable]
     [XmlType(Namespace = "http://www.codewise.org/schema/foosync/ServerRepositoryConfig.xsd")]
-    public class IgnorePatterns
+    public class IgnorePatterns : FooSync.IgnorePatterns
     {
+        /*
+         * Inherited (just changing the XmlType Namespace):
+        
         [XmlElement("Pattern")]
         public string[] Patterns { get; set; }
 
         [XmlAttribute]
         public bool CaseInsensitive { get; set; }
+         */
     }
 
     [Serializable]

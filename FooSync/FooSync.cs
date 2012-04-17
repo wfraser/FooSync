@@ -32,63 +32,36 @@ namespace Codewise.FooSync
             this.Options = options;
         }
 
-        /// <summary>
-        /// Creates a new FooTree, fully populated with files.
-        /// </summary>
-        /// <param name="path">Directory the FooTree is rooted at.</param>
-        /// <param name="exceptions">Regular expressions to exclude from the tree.
-        ///     If the regex ends with '/$', it applies to directories, otherwise it applies to files.
-        ///     Pass 'null' to not use any exceptions.</param>
-        /// <param name="callback">Progress callback, invoked once per file found.
-        ///     The 'total' parameter passed in is always -1, and the 'item' is the directory currently being enumerated.
-        ///     Pass 'null' if no callback is desired.</param>
-        public FooTree Tree(string path, IEnumerable<string> exceptions = null, Progress callback = null)
+        //public static ICollection<string> PrepareExceptions(RepositoryDirectory dir)
+        public static ICollection<string> PrepareExceptions(IgnorePatterns ignoreRegex, IgnorePatterns ignoreGlob)
         {
-            return new FooTree(this, path, exceptions, callback);
-        }
-
-        public FooFileInfo FileInfo(string path)
-        {
-            return new FooFileInfo(this, path);
-        }
-
-        public FooChangeSet ChangeSet()
-        {
-            return new FooChangeSet(this);
-        }
-
-        public static ICollection<string> PrepareExceptions(RepositoryDirectory dir)
-        {
-            if (dir == null)
-                throw new ArgumentNullException("dir");
-
             var exceptions = new List<string>();
 
-            if (dir.IgnoreRegex != null && dir.IgnoreRegex.Patterns != null && dir.IgnoreRegex.Patterns.Length > 0)
+            if (ignoreRegex != null && ignoreRegex.Patterns != null && ignoreRegex.Patterns.Length > 0)
             {
                 string pre = string.Empty, post = string.Empty;
-                if (dir.IgnoreRegex.CaseInsensitive)
+                if (ignoreRegex.CaseInsensitive)
                 {
                     pre = "(?i:";
                     post = ")";
                 }
 
-                foreach (var regex in dir.IgnoreRegex.Patterns)
+                foreach (var regex in ignoreRegex.Patterns)
                 {
                     exceptions.Add(pre + regex + post);
                 }
             }
 
-            if (dir.IgnoreGlob != null && dir.IgnoreGlob.Patterns != null && dir.IgnoreGlob.Patterns.Length > 0)
+            if (ignoreGlob != null && ignoreGlob.Patterns != null && ignoreGlob.Patterns.Length > 0)
             {
                 string pre = string.Empty, post = string.Empty;
-                if (dir.IgnoreGlob.CaseInsensitive)
+                if (ignoreGlob.CaseInsensitive)
                 {
                     pre = "(?i:";
                     post = ")";
                 }
 
-                foreach (var glob in dir.IgnoreGlob.Patterns)
+                foreach (var glob in ignoreGlob.Patterns)
                 {
                     exceptions.Add(pre + "^" + (Regex.Escape(glob).Replace(@"\*", ".*").Replace("?", ".")) + "$" + post);
                 }
@@ -107,7 +80,7 @@ namespace Codewise.FooSync
             if (state == null)
                 throw new ArgumentNullException("state");
 
-            var changeset = this.ChangeSet();
+            var changeset = new FooChangeSet();
             var repoMissingFiles = new HashSet<string>(source.Files.Keys);
 
             int n = 0;

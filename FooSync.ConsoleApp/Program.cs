@@ -127,7 +127,7 @@ namespace Codewise.FooSync.ConsoleApp
                     continue;
                 }
 
-                var exceptions = FooSyncEngine.PrepareExceptions(dir);
+                var exceptions = FooSyncEngine.PrepareExceptions(dir.IgnoreRegex, dir.IgnoreGlob);
 
                 //
                 // Enumerate files in the source and repository trees
@@ -484,7 +484,7 @@ namespace Codewise.FooSync.ConsoleApp
             FooTree ret = null;
             try
             {
-                ret = Foo.Tree(path, exceptions);
+                ret = new FooTree(Foo, path, exceptions);
             }
             catch (DirectoryNotFoundException)
             {

@@ -135,6 +135,13 @@ namespace Codewise.FooSync.Daemon
                 throw;
             }
 
+            _exceptions = new Dictionary<string, ICollection<string>>();
+
+            foreach (var repo in _config.Repositories)
+            {
+                _exceptions.Add(repo.Key, FooSyncEngine.PrepareExceptions(repo.Value.IgnoreRegex, repo.Value.IgnoreGlob));
+            }
+
             _foo = new FooSyncEngine(fooOptions);
         }
 
@@ -160,7 +167,7 @@ namespace Codewise.FooSync.Daemon
                 try
                 {
                     var client = listener.AcceptTcpClient();
-                    var session = new Session(client, _foo, _config);
+                    var session = new Session(client, _foo, _config, _exceptions);
                     var thread = new Thread(session.Run);
                     thread.Name = "client " + ((IPEndPoint)client.Client.RemoteEndPoint).ToString();
                     thread.Start();
@@ -179,6 +186,7 @@ namespace Codewise.FooSync.Daemon
         private int              _listenPort;
         private FooSyncEngine    _foo;
         private ServerRepositoryConfig _config;
+        private Dictionary<string, ICollection<string>> _exceptions;
 
         //
         // In Linux, it seems an IPv6 socket can accept IPv4 connections.
