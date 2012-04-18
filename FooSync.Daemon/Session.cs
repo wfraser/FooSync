@@ -85,7 +85,13 @@ namespace Codewise.FooSync.Daemon
                         break;
                     }
 
-                    if (!_authenticated && opCode != OpCode.Auth && opCode != OpCode.HttpGet)
+                    if (opCode == OpCode.ListRepos)
+                    {
+                        HandleListRepos();
+                        continue;
+                    }
+
+                    if (!_authenticated && opCode != OpCode.Auth)
                     {
                         NetUtil.WriteInt(_stream, (int)RetCode.BadAuth);
                         _client.Close();
@@ -110,7 +116,7 @@ namespace Codewise.FooSync.Daemon
                             HandleStateRequest();
                             break;
 
-                        case OpCode.File:
+                        case OpCode.GetFile:
                             HandleFileRequest();
                             break;
 
@@ -182,6 +188,33 @@ namespace Codewise.FooSync.Daemon
             NetUtil.WriteInt(_stream, (int)RetCode.BadAuth);
 
             return false;
+        }
+
+        /// <summary>
+        /// List the repositories the user has access to.
+        /// Writes return code 0 (success), the number of repos, and their names.
+        /// </summary>
+        private void HandleListRepos()
+        {
+            var repos = new List<string>();
+
+            foreach (var repo in _config.Repositories)
+            {
+                if (repo.Value.AllowAllClients)
+                {
+                    repos.Add(repo.Key);
+                }
+                // TODO else: check client key
+            }
+
+            repos.Sort();
+
+            NetUtil.WriteInt(_stream, (int)RetCode.Success);
+            NetUtil.WriteInt(_stream, repos.Count);
+            foreach (var repoName in repos)
+            {
+                NetUtil.WriteString(_stream, repoName);
+            }
         }
 
         /// <summary>
