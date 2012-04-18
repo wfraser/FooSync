@@ -71,7 +71,21 @@ namespace Codewise.FooSync.Daemon
 
                     var opCode = (OpCode)NetUtil.GetInt(_stream);
 
-                    if (!_authenticated && opCode != OpCode.Auth)
+                    if (opCode == OpCode.HttpGet)
+                    {
+                        HandleHttpGet();
+                        _stream.Close();
+                        break;
+                    }
+
+                    if (opCode == OpCode.HttpPost)
+                    {
+                        HandleHttpPost();
+                        _stream.Close();
+                        break;
+                    }
+
+                    if (!_authenticated && opCode != OpCode.Auth && opCode != OpCode.HttpGet)
                     {
                         NetUtil.WriteInt(_stream, (int)RetCode.BadAuth);
                         _client.Close();
@@ -144,7 +158,7 @@ namespace Codewise.FooSync.Daemon
         /// <summary>
         /// Handle an authentication request. This must be the first request of a connection.
         /// 
-        /// Currently just says hello, and returns success.
+        /// Currently just returns success.
         /// </summary>
         /// <returns>true if the user is authenticated; false otherwise</returns>
         private bool HandleAuthRequest()
@@ -250,6 +264,60 @@ namespace Codewise.FooSync.Daemon
             {
                 NetUtil.WriteInt(_stream, (int)RetCode.BadPath);
             }
+        }
+
+        /// <summary>
+        /// Handles a HTTP GET request.
+        /// TODO: this is just demo code
+        /// </summary>
+        private void HandleHttpGet()
+        {
+            var requestBytes = new List<byte>();
+            while (requestBytes.Count < 2
+                || !(    requestBytes[requestBytes.Count - 2] == '\r' 
+                      && requestBytes[requestBytes.Count - 1] == '\n'))
+            {
+                requestBytes.Add((byte)_stream.ReadByte());
+            }
+            var request = Encoding.UTF8.GetString(requestBytes.ToArray());
+            request = request.Substring(0, request.Length - (" HTTP/1.1\r\n".Length));
+
+            string page, response, headers;
+
+            if (request == "/")
+            {
+                page = "<html><body><h1>Hello!</h1></body></html>";
+                response = "HTTP/1.0 200 OK\r\n";
+                headers = "Content-Type: text/html\r\nContent-Length {0}\r\n\r\n";
+            }
+            else
+            {
+                page = "Bad path.";
+                response = "HTTP/1.0 404 Not Found\r\n";
+                headers = "Content-Type: text/plain\r\nContent-Length: {0}\r\n\r\n";
+            }
+
+            var buf = Encoding.UTF8.GetBytes(response);
+            _stream.Write(buf, 0, buf.Length);
+
+            var pageBytes = Encoding.UTF8.GetBytes(page);
+
+            buf = Encoding.UTF8.GetBytes(
+                string.Format(headers, pageBytes.Length));
+            _stream.Write(buf, 0, buf.Length);
+
+            _stream.Write(pageBytes, 0, pageBytes.Length);
+        }
+
+        private void HandleHttpPost()
+        {
+            //
+            // until this is actually implemented...
+            //
+
+            _stream.ReadByte(); // consume the space after POST
+
+            HandleHttpGet();
         }
     }
 }

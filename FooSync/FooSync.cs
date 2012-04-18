@@ -318,7 +318,9 @@ namespace Codewise.FooSync
         Auth,
         Tree,
         State,
-        File
+        File,
+        HttpGet = 0x47455420,  // == "GET "
+        HttpPost = 0x504F5354, // == "POST"
     }
 
     public enum RetCode : int
