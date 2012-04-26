@@ -316,10 +316,13 @@ namespace Codewise.FooSync
     {
         Hello = 0,
         Auth,
+        ListRepos,
         Tree,
         State,
-        File,
-        HttpGet = 0x47455420,  // == "GET "
+        GetFile,
+        PutFile,
+        DelFile,
+        HttpGet =  0x47455420, // == "GET "
         HttpPost = 0x504F5354, // == "POST"
     }
 

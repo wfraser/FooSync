@@ -47,6 +47,7 @@
     <Compile Include="FooSync.cs" />
     <Compile Include="FooTree.cs" />
     <Compile Include="NativeMethods.cs" />
+    <Compile Include="NetClient.cs" />
     <Compile Include="NetUtil.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

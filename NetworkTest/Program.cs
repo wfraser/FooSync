@@ -52,9 +52,17 @@ namespace Codewise.FooSync.NetworkTest
             var client = new TcpClient(hostname, port);
             var stream = client.GetStream();
 
+            NetUtil.WriteInt(stream, (int)OpCode.ListRepos);
+            var i = NetUtil.GetInt(stream);
+            var count = NetUtil.GetInt(stream);
+            for (int x = 0; x < count; x++)
+            {
+                var repoName = NetUtil.GetString(stream);
+            }
+
             NetUtil.WriteInt(stream, (int)OpCode.Auth);
             NetUtil.WriteString(stream, repo);
-            var i = NetUtil.GetInt(stream);
+            i = NetUtil.GetInt(stream);
 
             Console.WriteLine("auth returned {0}", i);
 

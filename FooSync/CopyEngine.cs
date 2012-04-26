@@ -11,6 +11,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -66,6 +68,44 @@ namespace Codewise.FooSync
                         callback(++i, copyFrom.Count, enumFrom.Current);
                     }
 
+                    /*
+                    Stream source = null, dest = null;
+
+                    if (enumFrom.Current.StartsWith("fs://"))
+                    {
+                    }
+
+                    if (enumTo.Current.StartsWith("fs://"))
+                    {
+                    }
+
+                    if (source == null && dest == null)
+                    {
+                        //
+                        // Simple local file-to-file copy.
+                        //
+                        File.Copy(enumFrom.Current, enumTo.Current);
+                    }
+                    else
+                    {
+                        //
+                        // Either the source or destination (or both) are foreign streams.
+                        //
+
+                        if (source == null)
+                        {
+                            source = new FileStream(enumFrom.Current, FileMode.Open, FileAccess.Read, FileShare.Read);
+                        }
+
+                        if (dest == null)
+                        {
+                            dest = new FileStream(enumTo.Current, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
+                        }
+
+                        source.CopyTo(dest);
+                    }
+                     */
+
                     File.Copy(enumFrom.Current, enumTo.Current);
                 }
 
@@ -77,6 +117,26 @@ namespace Codewise.FooSync
             {
                 return NativeMethods.CopyOperation(copyFrom, copyTo, IntPtr.Zero);
             }
+        }
+
+        static Tuple<string, int, string> SplitUrl(string url)
+        {
+            if (!url.StartsWith("fs://"))
+                return null;
+
+            string hostname = null, port = null, path = null;
+
+            var trimmed = url.Substring("fs://".Length);
+            var parts = trimmed.Split(new char[] { ':' }, 2);
+
+            hostname = parts[0];
+
+            parts = parts[1].Split(new char[] { '/' }, 2);
+
+            port = parts[0];
+            path = parts[1];
+
+            return new Tuple<string, int, string>(hostname, int.Parse(port), path);
         }
 
         public static bool Delete(ICollection<string> files)

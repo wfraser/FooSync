@@ -53,10 +53,10 @@ namespace Codewise.FooSync.WPFApp
 
             if (SetupTabs.SelectedItem == SimpleSetupTab)
             {
-                if (string.IsNullOrEmpty(SimpleRepositoryPath.Text) || !Directory.Exists(SimpleRepositoryPath.Text))
+                if (string.IsNullOrEmpty(SimpleRepositoryPath.Text) || (!SimpleRepositoryPath.Text.StartsWith("fs://") && !Directory.Exists(SimpleRepositoryPath.Text)))
                     errorElements.Add(SimpleRepositoryPath);
 
-                if (string.IsNullOrEmpty(SimpleSourcePath.Text) || !Directory.Exists(SimpleSourcePath.Text))
+                if (string.IsNullOrEmpty(SimpleSourcePath.Text) || (!SimpleSourcePath.Text.StartsWith("fs://") && !Directory.Exists(SimpleSourcePath.Text)))
                     errorElements.Add(SimpleSourcePath);
             }
             else if (SetupTabs.SelectedItem == AdvancedSetupTab)
