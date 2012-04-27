@@ -192,7 +192,8 @@ namespace Codewise.FooSync
                         //
                         // Check if repository file's mtime differs from state
                         //
-                        if (!DateTimesWithinPrecision(repo.Files[filename].MTime, repoState.Repository.MTimes[filename], MTimePrecision))
+                        if (!repoState.Repository.MTimes.ContainsKey(filename)
+                                || !DateTimesWithinPrecision(repo.Files[filename].MTime, repoState.Repository.MTimes[filename], MTimePrecision))
                         {
                             changeset[filename].ConflictStatus = ConflictStatus.ChangedInRepoDeletedInSource;
                         }
@@ -203,7 +204,8 @@ namespace Codewise.FooSync
                         // Check if the file is new in source,
                         //  or source file's mtime differs from state
                         //
-                        if (!DateTimesWithinPrecision(source.Files[filename].MTime, repoState.Source.MTimes[filename], MTimePrecision))
+                        if (!repoState.Source.MTimes.ContainsKey(filename)
+                                || !DateTimesWithinPrecision(source.Files[filename].MTime, repoState.Source.MTimes[filename], MTimePrecision))
                         {
                             changeset[filename].ConflictStatus = ConflictStatus.ChangedInSourceDeletedInRepo;
                         }
