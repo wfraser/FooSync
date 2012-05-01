@@ -7,12 +7,12 @@ using System.Windows;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("FooSync.WPFApp2")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Codewise.FooSync.WPFApp2")]
+[assembly: AssemblyDescription("FooSync Windows Application")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Microsoft")]
-[assembly: AssemblyProduct("FooSync.WPFApp2")]
-[assembly: AssemblyCopyright("Copyright © Microsoft 2012")]
+[assembly: AssemblyCompany("William R. Fraser / Codewise.org")]
+[assembly: AssemblyProduct("FooSync")]
+[assembly: AssemblyCopyright("Copyright © William R. Fraser 2012")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
