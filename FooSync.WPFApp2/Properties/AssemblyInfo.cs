@@ -10,7 +10,7 @@ using System.Windows;
 [assembly: AssemblyTitle("Codewise.FooSync.WPFApp2")]
 [assembly: AssemblyDescription("FooSync Windows Application")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("William R. Fraser / Codewise.org")]
+[assembly: AssemblyCompany("Codewise.org")]
 [assembly: AssemblyProduct("FooSync")]
 [assembly: AssemblyCopyright("Copyright © William R. Fraser 2012")]
 [assembly: AssemblyTrademark("")]

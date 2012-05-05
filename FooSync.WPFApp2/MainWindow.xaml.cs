@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -39,13 +40,33 @@ namespace Codewise.FooSync.WPFApp2
         {
             InitializeComponent();
 
-            _settingsPath = Path.Combine(Environment.GetEnvironmentVariable("LOCALAPPDATA"), this.GetType().Assembly.GetName().Name);
+            if (Properties.Settings.Default.IsFirstRun)
+            {
+                Properties.Settings.Default.Upgrade();
+                Properties.Settings.Default.IsFirstRun = false;
+                Properties.Settings.Default.Save();
+            }
+
+            _settingsPath = Path.Combine(
+                                Environment.GetEnvironmentVariable("LOCALAPPDATA"),
+                                GetAssemblyAttribute<AssemblyCompanyAttribute>().Company,
+                                this.GetType().Assembly.GetName().Name);
 
             if (!Directory.Exists(_settingsPath))
                 Directory.CreateDirectory(_settingsPath);
 
             if (!LoadRepoList())
                 Application.Current.Shutdown();
+        }
+
+        private T GetAssemblyAttribute<T>()
+        {
+            object[] attrs = Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false);
+
+            if (attrs == null || attrs.Length == 0)
+                throw new InvalidOperationException();
+
+            return (T)attrs[0];
         }
 
         private bool LoadRepoList()
