@@ -40,17 +40,54 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
         
-            <TreeView Grid.Column="0">
-                <TreeViewItem Header="Local Directories"
-                              IsExpanded="True">
-                    <Button Margin="0,5,5,5"
-                            Content="(add new pair)"
-                            Click="NewLocalPair"/>
-                </TreeViewItem>
-            
-                <Button Margin="0,5,5,5" 
-                        Content="(add a server)" 
-                        Click="NewRemoteServer"/>
+            <TreeView Grid.Column="0" x:Name="RepoListTree">
+                <TreeView.Resources>
+                    <HierarchicalDataTemplate DataType="{x:Type foo:ServerRepositoryList}"
+                                              ItemsSource="{Binding Repositories}">
+                        <TextBlock Text="{Binding HostName}"
+                                   Margin="0,3,3,3"/>
+                    </HierarchicalDataTemplate>
+                    
+                    <DataTemplate DataType="{x:Type foo:ServerRepositoryPair}">
+                        <TextBlock Text="{Binding RepositoryName}"
+                                   Margin="0,3,3,3"/>
+                    </DataTemplate>
+                    
+                    <DataTemplate DataType="{x:Type foo:LocalRepositoryPair}">
+                        <TextBlock Text="{Binding RepositoryPath}"
+                                   Margin="0,3,3,3">
+                            <TextBlock.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="{Binding SourcePath}" IsEnabled="False">
+                                        <MenuItem.Icon>
+                                            →
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </TextBlock.ContextMenu>
+                        </TextBlock>
+                    </DataTemplate>
+
+                    <CompositeCollection x:Key="collection">
+                        <TreeViewItem Header="Local Directories"
+                                      IsExpanded="True">
+                            <TreeViewItem.ItemsSource>
+                                <CompositeCollection>
+                                    <CollectionContainer Collection="{Binding DataContext.LocalPaths, Source={x:Reference RepoListTree}}"/>
+                                    <Button Margin="0,3,3,3"
+                                            Click="NewLocalPair">add a folder</Button>
+                                </CompositeCollection>
+                            </TreeViewItem.ItemsSource>
+                        </TreeViewItem>
+                        <CollectionContainer Collection="{Binding DataContext.Servers, Source={x:Reference RepoListTree}}"/>
+                        <Button Margin="0,3,3,3"
+                                Click="NewRemoteServer">add a server</Button>
+                    </CompositeCollection>
+                </TreeView.Resources>
+                
+                <TreeView.ItemsSource>
+                    <StaticResource ResourceKey="collection"/>
+                </TreeView.ItemsSource>
             </TreeView>
             
             <GridSplitter Grid.Column="1"
@@ -59,9 +96,7 @@
                           ShowsPreview="True"
                           Width="3"/>
 
-            <TextBlock Grid.Column="2" TextAlignment="Center">
-                Content goes here!
-            </TextBlock>
+            <TextBlock Grid.Column="2" TextAlignment="Center" Text="{Binding Source={x:Reference RepoListTree}, Path=SelectedItem.RepositoryURL}"/>
 
         </Grid>
 

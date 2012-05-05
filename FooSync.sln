@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FooSync.Daemon", "FooSync.D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkTest", "NetworkTest\NetworkTest.csproj", "{0B535A74-7F7F-4C12-86B4-78D69FC8FB42}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FooSync.WPFApp2", "FooSync.WPFApp2\FooSync.WPFApp2.csproj", "{B4C8D2D1-5A98-4216-996F-CB9553A7EA0B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -76,6 +78,16 @@ Global
 		{A1F44A91-FCD2-486B-8B3B-7F71C25DA40B}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{A1F44A91-FCD2-486B-8B3B-7F71C25DA40B}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{A1F44A91-FCD2-486B-8B3B-7F71C25DA40B}.Release|x86.ActiveCfg = Release|Any CPU
+		{B4C8D2D1-5A98-4216-996F-CB9553A7EA0B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4C8D2D1-5A98-4216-996F-CB9553A7EA0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4C8D2D1-5A98-4216-996F-CB9553A7EA0B}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{B4C8D2D1-5A98-4216-996F-CB9553A7EA0B}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{B4C8D2D1-5A98-4216-996F-CB9553A7EA0B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B4C8D2D1-5A98-4216-996F-CB9553A7EA0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4C8D2D1-5A98-4216-996F-CB9553A7EA0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4C8D2D1-5A98-4216-996F-CB9553A7EA0B}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{B4C8D2D1-5A98-4216-996F-CB9553A7EA0B}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{B4C8D2D1-5A98-4216-996F-CB9553A7EA0B}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
