@@ -30,9 +30,12 @@ namespace Codewise.FooSync.WPFApp2
 
             var v = (Version)value;
 
-            if (v.Build != 0 && v.Revision != 0)
+            if (v.Build != 0)
             {
-                return new DateTime(2000, 1, 1).AddDays(v.Build).AddSeconds(v.Revision * 2);
+                var time = new DateTime(2000, 1, 1).AddDays(v.Build).AddSeconds(v.Revision * 2);
+                if (time.IsDaylightSavingTime())
+                    time = time.AddHours(1);
+                return time;
             }
             else
             {
