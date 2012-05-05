@@ -11,13 +11,11 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:foo="clr-namespace:Codewise.FooSync.WPFApp2"
-        xmlns:properties="clr-namespace:Codewise.FooSync.WPFApp2.Properties"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         Title="FooSync" Height="430" Width="700"
         Icon="/FooSync.WPFApp2;component/Resources/FSLogo128glow.png"
         >
     <Window.Resources>
-         
     </Window.Resources>
     <DockPanel>
         
@@ -36,7 +34,7 @@
         
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="{Binding RepoListWidth, Source={x:Static properties:Settings.Default}, Mode=TwoWay}"/>
+                <ColumnDefinition Width="{Binding Default.RepoListWidth, Source={StaticResource Settings}, Mode=TwoWay}"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
