@@ -74,13 +74,20 @@
                                 <CompositeCollection>
                                     <CollectionContainer Collection="{Binding DataContext.LocalPaths, Source={x:Reference RepoListTree}}"/>
                                     <Button Margin="0,3,3,3"
-                                            Click="NewLocalPair">add a folder</Button>
+                                            Padding="5,0,5,0"
+                                            Click="NewLocalPair">
+                                        ...
+                                    </Button>
                                 </CompositeCollection>
                             </TreeViewItem.ItemsSource>
                         </TreeViewItem>
                         <CollectionContainer Collection="{Binding DataContext.Servers, Source={x:Reference RepoListTree}}"/>
                         <Button Margin="0,3,3,3"
-                                Click="NewRemoteServer">add a server</Button>
+                                Padding="5,0,5,0"
+                                Focusable="True"
+                                Click="NewRemoteServer">
+                            ...
+                        </Button>
                     </CompositeCollection>
                 </TreeView.Resources>
                 

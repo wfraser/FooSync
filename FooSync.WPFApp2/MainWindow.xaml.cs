@@ -123,6 +123,21 @@ namespace Codewise.FooSync.WPFApp2
 
         private void NewRemoteServer(object sender, RoutedEventArgs e)
         {
+            var serverEntryWindow = new ServerEntryWindow();
+            serverEntryWindow.ShowInTaskbar = false;
+            serverEntryWindow.ShowActivated = true;
+            serverEntryWindow.Topmost = true;
+            var result = serverEntryWindow.ShowDialog();
+            if (result.HasValue && result.Value)
+            {
+                var serverUri = new Uri(serverEntryWindow.ServerUri.Text);
+                _repoList.Servers.Add(
+                    new ServerRepositoryList() {
+                        HostName = serverUri.Host,
+                        Port     = serverUri.IsDefaultPort ? 22022 : serverUri.Port
+                    }
+                );
+            }
         }
 
         private void NewRemotePair(object sender, RoutedEventArgs e)

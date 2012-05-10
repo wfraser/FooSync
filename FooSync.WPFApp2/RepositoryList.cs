@@ -10,6 +10,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -20,20 +22,33 @@ using System.Xml.Serialization;
 namespace Codewise.FooSync.WPFApp2
 {
     [Serializable]
-    public class RepositoryList
+    public class RepositoryList : INotifyCollectionChanged
     {
         public RepositoryList()
         {
-            LocalPaths = new List<LocalRepositoryPair>();
-            Servers    = new List<ServerRepositoryList>();
+            LocalPaths = new ObservableCollection<LocalRepositoryPair>();
+            Servers    = new ObservableCollection<ServerRepositoryList>();
+
+            LocalPaths.CollectionChanged += new NotifyCollectionChangedEventHandler(Child_CollectionChanged);
+            Servers.CollectionChanged += new NotifyCollectionChangedEventHandler(Child_CollectionChanged);
         }
+
+        void Child_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (CollectionChanged != null)
+            {
+                CollectionChanged(this, e);
+            }
+        }
+
+        public event NotifyCollectionChangedEventHandler CollectionChanged;
 
         [XmlArray]
         [XmlArrayItem("Path")]
-        public List<LocalRepositoryPair> LocalPaths { get; private set; }
+        public ObservableCollection<LocalRepositoryPair> LocalPaths { get; private set; }
 
         [XmlElement("Server")]
-        public List<ServerRepositoryList> Servers { get; private set; }
+        public ObservableCollection<ServerRepositoryList> Servers { get; private set; }
 
         public static RepositoryList ReadFromFile(FileStream stream)
         {

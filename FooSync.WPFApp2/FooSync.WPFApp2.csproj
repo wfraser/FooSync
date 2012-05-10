@@ -56,6 +56,11 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="RepositoryList.cs" />
+    <Page Include="ServerEntryWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="ServerEntryWindow.xaml.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="VersionToDateTimeConverter.cs" />
     <Page Include="AboutWindow.xaml">
