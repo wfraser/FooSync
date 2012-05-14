@@ -35,12 +35,12 @@ namespace Codewise.FooSync.WPFApp2
             ServerUri.CaretIndex = ServerUri.Text.Length;
         }
 
-        private void Cancel_Click(object sender, RoutedEventArgs e)
+        private void Cancel(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
         }
 
-        private void OK_Click(object sender, RoutedEventArgs e)
+        private void Submit(object sender, RoutedEventArgs e)
         {
             FooSyncUrl url = null;
             try
