@@ -139,7 +139,25 @@
                           ShowsPreview="True"
                           Width="3"/>
 
-            <TextBlock Grid.Column="2" TextAlignment="Center" Text="{Binding Source={x:Reference RepoListTree}, Path=SelectedItem.RepositoryURL}"/>
+            <!-- centered content -->
+            <Grid Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
+
+                    <TextBlock Text="{Binding Source={x:Reference RepoListTree}, Path=SelectedItem.RepositoryURL}"/>
+
+                </StackPanel>
+            </Grid>
 
         </Grid>
 
