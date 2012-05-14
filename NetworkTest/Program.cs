@@ -34,7 +34,7 @@ namespace Codewise.FooSync.NetworkTest
             Console.WriteLine();
 
             var hostname = (args.Length > 0) ? args[0] : "127.0.0.1";
-            var port     = (args.Length > 1) ? int.Parse(args[1]) : 22022;
+            var port     = (args.Length > 1) ? int.Parse(args[1]) : FooSyncUrl.DefaultPort;
             var repo     = (args.Length > 2) ? args[2] : "test";
 
             var program = new Program();

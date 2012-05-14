@@ -37,6 +37,13 @@ namespace Codewise.FooSync
             _stream   = null;
         }
 
+        public static ICollection<string> ListRepositories(string hostname, int port, string repoName)
+        {
+            var list = new List<string>();
+
+            return list;
+        }
+
         public static bool IsDisconnect(Exception ex)
         {
             if (ex is IOException)

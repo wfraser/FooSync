@@ -45,6 +45,7 @@
     <Compile Include="FooChangeSet.cs" />
     <Compile Include="FooFileInfo.cs" />
     <Compile Include="FooSync.cs" />
+    <Compile Include="FooSyncUrl.cs" />
     <Compile Include="FooTree.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="NetClient.cs" />
