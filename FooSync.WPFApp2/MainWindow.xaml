@@ -14,9 +14,23 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         Title="FooSync" Height="430" Width="700"
         Icon="/FooSync.WPFApp2;component/Resources/FSLogo128glow.png"
+        Closing="Window_Closing"
         >
     <Window.Resources>
+        <foo:CollectionItemAdderConverter x:Key="CollectionItemAdderConverter"/>
+        <Style TargetType="Button"
+               BasedOn="{StaticResource {x:Type Button}}"
+               x:Key="AddMoreButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Content" Value="..."/>
+        </Style>
     </Window.Resources>
+    
+    <Window.CommandBindings>
+        <CommandBinding Command="Delete" CanExecute="CanDelete" Executed="DeleteExecuted"/>
+    </Window.CommandBindings>
+    
     <DockPanel>
         
         <ToolBar DockPanel.Dock="Top">
@@ -41,15 +55,45 @@
         
             <TreeView Grid.Column="0" x:Name="RepoListTree">
                 <TreeView.Resources>
-                    <HierarchicalDataTemplate DataType="{x:Type foo:ServerRepositoryList}"
-                                              ItemsSource="{Binding Repositories}">
+                    
+                    <HierarchicalDataTemplate DataType="{x:Type foo:ServerRepositoryList}">
+                        <HierarchicalDataTemplate.ItemsSource>
+                            <Binding Path="Repositories"
+                                     Converter="{StaticResource CollectionItemAdderConverter}">
+                                <Binding.ConverterParameter>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource AddMoreButton}" Click="NewRemotePair"/>
+                                    </DataTemplate>
+                                </Binding.ConverterParameter>
+                            </Binding>
+                        </HierarchicalDataTemplate.ItemsSource>
                         <TextBlock Text="{Binding HostName}"
-                                   Margin="0,3,3,3"/>
+                                   Margin="0,3,3,3">
+                            <TextBlock.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Command="Delete" CommandParameter="{Binding}">
+                                        <MenuItem.Icon>
+                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </TextBlock.ContextMenu>
+                        </TextBlock>
                     </HierarchicalDataTemplate>
                     
                     <DataTemplate DataType="{x:Type foo:ServerRepositoryPair}">
                         <TextBlock Text="{Binding RepositoryName}"
-                                   Margin="0,3,3,3"/>
+                                   Margin="0,3,3,3">
+                            <TextBlock.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Command="Delete" CommandParameter="{Binding}">
+                                        <MenuItem.Icon>
+                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"/>
+                                        </MenuItem.Icon>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </TextBlock.ContextMenu>
+                        </TextBlock>
                     </DataTemplate>
                     
                     <DataTemplate DataType="{x:Type foo:LocalRepositoryPair}">
@@ -57,9 +101,11 @@
                                    Margin="0,3,3,3">
                             <TextBlock.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="{Binding SourcePath}" IsEnabled="False">
+                                    <MenuItem Header="{Binding SourcePath}" IsEnabled="False" Icon="→"/>
+                                    <Separator/>
+                                    <MenuItem Command="Delete" CommandParameter="{Binding}">
                                         <MenuItem.Icon>
-                                            →
+                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"/>
                                         </MenuItem.Icon>
                                     </MenuItem>
                                 </ContextMenu>
@@ -73,21 +119,12 @@
                             <TreeViewItem.ItemsSource>
                                 <CompositeCollection>
                                     <CollectionContainer Collection="{Binding DataContext.LocalPaths, Source={x:Reference RepoListTree}}"/>
-                                    <Button Margin="0,3,3,3"
-                                            Padding="5,0,5,0"
-                                            Click="NewLocalPair">
-                                        ...
-                                    </Button>
+                                    <Button Style="{StaticResource AddMoreButton}" Click="NewLocalPair"/>
                                 </CompositeCollection>
                             </TreeViewItem.ItemsSource>
                         </TreeViewItem>
                         <CollectionContainer Collection="{Binding DataContext.Servers, Source={x:Reference RepoListTree}}"/>
-                        <Button Margin="0,3,3,3"
-                                Padding="5,0,5,0"
-                                Focusable="True"
-                                Click="NewRemoteServer">
-                            ...
-                        </Button>
+                        <Button Style="{StaticResource AddMoreButton}" Click="NewRemoteServer"/>
                     </CompositeCollection>
                 </TreeView.Resources>
                 

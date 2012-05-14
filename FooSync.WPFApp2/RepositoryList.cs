@@ -86,7 +86,7 @@ namespace Codewise.FooSync.WPFApp2
     {
         public ServerRepositoryList()
         {
-            Port = 22022;
+            Port = FooSyncUrl.DefaultPort;
             Repositories = new List<ServerRepositoryPair>();
         }
 
@@ -98,12 +98,30 @@ namespace Codewise.FooSync.WPFApp2
 
         [XmlElement("Repository")]
         public List<ServerRepositoryPair> Repositories { get; private set; }
+
+        #region equality overrides
+        public override bool Equals(object obj)
+        {
+            if (obj is ServerRepositoryList)
+            {
+                var other = (ServerRepositoryList)obj;
+                return (this.HostName == other.HostName && this.Port == other.Port);
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return HostName.GetHashCode() + Port.GetHashCode();
+        }
+        #endregion
     }
 
     public interface RepositoryPair
     {
-        string RepositoryURL { get; }
-        string SourceURL { get; }
+        Uri RepositoryURL { get; }
+        Uri SourceURL { get; }
     }
 
     [Serializable]
@@ -116,28 +134,48 @@ namespace Codewise.FooSync.WPFApp2
         public string SourcePath { get; set; }
 
         [XmlIgnore]
-        public string RepositoryURL
+        public Uri RepositoryURL
         {
             get
             {
-                return new StringBuilder()
+                return new Uri(
+                    new StringBuilder()
                        .Append("file:///")
                        .Append(RepositoryPath.Replace(Path.DirectorySeparatorChar, '/'))
-                       .ToString();
+                       .ToString());
             }
         }
 
         [XmlIgnore]
-        public string SourceURL
+        public Uri SourceURL
         {
             get
             {
-                return new StringBuilder()
+                return new Uri(
+                    new StringBuilder()
                        .Append("file:///")
                        .Append(SourcePath.Replace(Path.DirectorySeparatorChar, '/'))
-                       .ToString();
+                       .ToString());
             }
         }
+
+        #region equality overrides
+        public override bool Equals(object obj)
+        {
+            if (obj is RepositoryPair)
+            {
+                return this.RepositoryURL == ((RepositoryPair)obj).RepositoryURL
+                    && this.SourceURL == ((RepositoryPair)obj).SourceURL;
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return RepositoryURL.GetHashCode() + SourceURL.GetHashCode();
+        }
+        #endregion
     }
 
     [Serializable]
@@ -153,33 +191,51 @@ namespace Codewise.FooSync.WPFApp2
         public ServerRepositoryList Server { get; set; }
 
         [XmlIgnore]
-        public string RepositoryURL
+        public FooSyncUrl RepositoryURL
         {
             get
             {
-                var sb = new StringBuilder();
-                sb.Append("fs://")
-                  .Append(Server.HostName);
-
-                if (Server.Port != 22022)
-                    sb.Append(":").Append(Server.Port);
-
-                sb.Append("/").Append(RepositoryName);
-
-                return sb.ToString();
+                return new FooSyncUrl(
+                    new StringBuilder()
+                      .Append("fs://")
+                      .Append(Server.HostName)
+                      .Append(":")
+                      .Append(Server.Port)
+                      .Append("/")
+                      .Append(RepositoryName)
+                      .ToString());
             }
         }
 
         [XmlIgnore]
-        public string SourceURL
+        public Uri SourceURL
         {
             get
             {
-                return new StringBuilder()
+                return new Uri(
+                    new StringBuilder()
                        .Append("file:///")
                        .Append(LocalPath.Replace(Path.DirectorySeparatorChar, '/'))
-                       .ToString();
+                       .ToString());
             }
         }
+
+        #region equality overrides
+        public override bool Equals(object obj)
+        {
+            if (obj is RepositoryPair)
+            {
+                return this.RepositoryURL == ((RepositoryPair)obj).RepositoryURL
+                    && this.SourceURL == ((RepositoryPair)obj).SourceURL;
+            }
+
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return RepositoryURL.GetHashCode() + SourceURL.GetHashCode();
+        }
+        #endregion
     }
 }

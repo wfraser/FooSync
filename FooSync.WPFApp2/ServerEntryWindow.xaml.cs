@@ -38,19 +38,16 @@ namespace Codewise.FooSync.WPFApp2
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = false;
-            Close();
         }
 
         private void OK_Click(object sender, RoutedEventArgs e)
         {
-            Uri uri = null;
+            FooSyncUrl url = null;
             try
             {
-                uri = new Uri(ServerUri.Text);
+                url = new FooSyncUrl(ServerUri.Text);
             }
-            catch (FormatException) { }
-
-            if (uri == null || uri.Scheme != "fs")
+            catch (FormatException)
             {
                 ErrorText.Text = "Invalid URL; it must be of the form \"fs://hostname\"";
                 ErrorText.Visibility = System.Windows.Visibility.Visible;
@@ -58,7 +55,6 @@ namespace Codewise.FooSync.WPFApp2
             }
 
             DialogResult = true;
-            Close();
         }
     }
 }

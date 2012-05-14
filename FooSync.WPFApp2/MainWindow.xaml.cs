@@ -119,6 +119,20 @@ namespace Codewise.FooSync.WPFApp2
 
         private void NewLocalPair(object sender, RoutedEventArgs e)
         {
+            var localPairEntryWindow = new LocalPairEntryWindow();
+            localPairEntryWindow.ShowInTaskbar = false;
+            localPairEntryWindow.ShowActivated = true;
+            localPairEntryWindow.Topmost = true;
+            var result = localPairEntryWindow.ShowDialog();
+            if (result.HasValue && result.Value)
+            {
+                _repoList.LocalPaths.Add(
+                    new LocalRepositoryPair() {
+                        RepositoryPath = localPairEntryWindow.RepositoryPath.Text,
+                        SourcePath     = localPairEntryWindow.SourcePath.Text
+                    }
+                );
+            }
         }
 
         private void NewRemoteServer(object sender, RoutedEventArgs e)
@@ -130,11 +144,11 @@ namespace Codewise.FooSync.WPFApp2
             var result = serverEntryWindow.ShowDialog();
             if (result.HasValue && result.Value)
             {
-                var serverUri = new Uri(serverEntryWindow.ServerUri.Text);
+                var serverUrl = new FooSyncUrl(serverEntryWindow.ServerUri.Text);
                 _repoList.Servers.Add(
                     new ServerRepositoryList() {
-                        HostName = serverUri.Host,
-                        Port     = serverUri.IsDefaultPort ? 22022 : serverUri.Port
+                        HostName = serverUrl.Host,
+                        Port     = serverUrl.Port
                     }
                 );
             }
@@ -142,6 +156,46 @@ namespace Codewise.FooSync.WPFApp2
 
         private void NewRemotePair(object sender, RoutedEventArgs e)
         {
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            using (var stream = new FileStream(Path.Combine(_settingsPath, RepoListFilename), FileMode.Truncate, FileAccess.Write, FileShare.None))
+            {
+                _repoList.WriteToFile(stream);
+            }
+        }
+
+        private void DeleteExecuted(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e.Parameter is ServerRepositoryList)
+            {
+                var server = (ServerRepositoryList)e.Parameter;
+                _repoList.Servers.Remove(server);
+            }
+            else if (e.Parameter is ServerRepositoryPair)
+            {
+                var repo = (ServerRepositoryPair)e.Parameter;
+                var server = _repoList.Servers.Where((o) => o == repo.Server).FirstOrDefault();
+                if (server != null)
+                    server.Repositories.Remove(repo);
+            }
+            else if (e.Parameter is LocalRepositoryPair)
+            {
+                var pair = (LocalRepositoryPair)e.Parameter;
+                _repoList.LocalPaths.Remove(pair);
+            }
+        }
+
+        private void CanDelete(object sender, CanExecuteRoutedEventArgs e)
+        {
+            if (e.Parameter != null &&
+                    (e.Parameter is ServerRepositoryList
+                    || e.Parameter is ServerRepositoryPair
+                    || e.Parameter is LocalRepositoryPair))
+                e.CanExecute = true;
+            else
+                e.CanExecute = false;
         }
     }
 }
