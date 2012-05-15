@@ -148,7 +148,9 @@ namespace Codewise.FooSync.WPFApp2
                 _repoList.Servers.Add(
                     new ServerRepositoryList() {
                         HostName = serverUrl.Host,
-                        Port     = serverUrl.Port
+                        Port     = serverUrl.Port,
+                        Username = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Username.Text : "",
+                        Password = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Password.Password : ""
                     }
                 );
             }

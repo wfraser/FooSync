@@ -13,20 +13,75 @@
         Title="Enter FooSync Server URL"
         SizeToContent="Height" Height="300" Width="500"
         ResizeMode="NoResize">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
     <DockPanel>
         
         <TextBox x:Name="ServerUri"
                  DockPanel.Dock="Top"
                  Padding="5"
-                 Margin="5,15,5,15"
+                 Margin="5,15,5,0"
                  Text="fs://" />
 
         <TextBlock x:Name="ErrorText"
                    DockPanel.Dock="Top"
                    Visibility="Collapsed"
-                   Margin="5,0,5,5"
+                   Margin="5,15,5,5"
                    Padding="5"
                    Foreground="Crimson"/>
+        
+        <Grid DockPanel.Dock="Top" Margin="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <Label Grid.Column="0"
+                   Content="Authentication Mode:"
+                   VerticalAlignment="Center"/>
+            <RadioButton Grid.Column="1"
+                         GroupName="AuthMode"
+                         IsChecked="True"
+                         Content="Anonymous"
+                         VerticalAlignment="Center"/>
+            <RadioButton Grid.Column="2"
+                         x:Name="UsernameAndPassword"
+                         GroupName="AuthMode"
+                         Content="Username &amp; Password"
+                         VerticalAlignment="Center"/>
+        </Grid>
+
+        <GroupBox DockPanel.Dock="Top"
+                  Header="Authentication"
+                  Margin="5,0,5,5"
+                  Visibility="{Binding IsChecked, Source={x:Reference UsernameAndPassword}, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Label Grid.Row="0" Grid.Column="0"
+                       Content="Username:"/>
+                <Label Grid.Row="1" Grid.Column="0"
+                       Content="Password:"/>
+
+                <TextBox x:Name="Username"
+                         Grid.Row="0" Grid.Column="1"
+                         Padding="5"
+                         Margin="5,15,5,15"/>
+                <PasswordBox x:Name="Password"
+                             Grid.Row="1" Grid.Column="1"
+                             Padding="5"
+                             Margin="5,15,5,15"/>
+            </Grid>
+        </GroupBox>
 
         <Grid>
             <Grid.ColumnDefinitions>

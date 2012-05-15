@@ -96,6 +96,12 @@ namespace Codewise.FooSync.WPFApp2
         [XmlAttribute]
         public int Port { get; set; }
 
+        [XmlAttribute]
+        public string Username { get; set; }
+
+        [XmlAttribute]
+        public string Password { get; set; }
+
         [XmlElement("Repository")]
         public List<ServerRepositoryPair> Repositories { get; private set; }
 
