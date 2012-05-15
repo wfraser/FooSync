@@ -29,6 +29,7 @@
                    Visibility="Collapsed"
                    Margin="5,15,5,5"
                    Padding="5"
+                   TextWrapping="Wrap"
                    Foreground="Crimson"/>
         
         <Grid DockPanel.Dock="Top" Margin="5">
@@ -91,12 +92,14 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="1"
+            <Button x:Name="CancelButton"
+                    Grid.Column="1"
                     Padding="5"
                     Margin="10,0,10,10"
                     Click="Cancel"
                     Content="Cancel"/>
-            <Button Grid.Column="2"
+            <Button x:Name="OKButton"
+                    Grid.Column="2"
                     Padding="5"
                     Margin="10,0,10,10"
                     Click="Submit"

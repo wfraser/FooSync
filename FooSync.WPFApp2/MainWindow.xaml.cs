@@ -36,6 +36,8 @@ namespace Codewise.FooSync.WPFApp2
         private string         _settingsPath;
         private RepositoryList _repoList;
 
+        public static FooSyncEngine Foo { get; private set; }
+
         public MainWindow()
         {
             InitializeComponent();
@@ -46,6 +48,10 @@ namespace Codewise.FooSync.WPFApp2
                 Properties.Settings.Default.IsFirstRun = false;
                 Properties.Settings.Default.Save();
             }
+
+            var options = new Options();
+            options.CaseInsensitive = true;
+            Foo = new FooSyncEngine(options);
 
             _settingsPath = Path.Combine(
                                 Environment.GetEnvironmentVariable("LOCALAPPDATA"),

@@ -65,5 +65,10 @@ namespace Codewise.FooSync
             WriteInt(s, bytes.Length);
             s.Write(bytes, 0, bytes.Length);
         }
+
+        public static void WriteOpCode(Stream s, OpCode o)
+        {
+            WriteInt(s, (int)o);
+        }
     }
 }

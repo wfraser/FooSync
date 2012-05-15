@@ -17,6 +17,11 @@ namespace Codewise.FooSync
             {
                 throw new FormatException("Invalid URI schema; must be " + UriSchemeFooSync + ", not " + Scheme);
             }
+
+            if (string.IsNullOrEmpty(Host))
+            {
+                throw new FormatException("Empty hostname");
+            }
         }
 
         public new int Port
