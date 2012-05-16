@@ -25,6 +25,9 @@ namespace Codewise.FooSync.Daemon
             using (var reader = XmlReader.Create(configXmlFilename))
             {
                 var serializer = new XmlSerializer(typeof(ServerRepositoryConfig));
+                serializer.UnknownAttribute += serializer_UnknownAttribute;
+                serializer.UnknownElement += serializer_UnknownElement;
+                serializer.UnknownNode += serializer_UnknownNode;
 
                 var config = (ServerRepositoryConfig)serializer.Deserialize(reader);
 
@@ -35,6 +38,21 @@ namespace Codewise.FooSync.Daemon
 
                 return config;
             }
+        }
+
+        static void serializer_UnknownAttribute(object sender, XmlAttributeEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        static void serializer_UnknownElement(object sender, XmlElementEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        static void serializer_UnknownNode(object sender, XmlNodeEventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         public static void WriteConfig(ServerRepositoryConfig config, string configXmlFilename)

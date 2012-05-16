@@ -17,6 +17,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Net.Security;
 using System.Security;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Text;
 
@@ -80,7 +81,7 @@ namespace Codewise.FooSync.Daemon
                     // comes first and succeeds.
                     //
 
-                    var opCode = (OpCode)_reader.ReadInt32();
+                    var opCode = _reader.ReadOpCode();
 
                     if (opCode == OpCode.HttpGet)
                     {
@@ -146,6 +147,13 @@ namespace Codewise.FooSync.Daemon
                         return;
                     }
                 }
+                else if (ex is EndOfStreamException)
+                {
+                    return;
+                }
+
+                if (_client.Connected)
+                    _writer.Write(RetCode.InternalError);
 
                 UnhandledException(ex);
                 _client.Close();
@@ -163,6 +171,7 @@ namespace Codewise.FooSync.Daemon
 
         private void HandleHelloRequest()
         {
+            _writer.Write(RetCode.Success);
             _writer.Write(
                 "Codewise.FooSync.Daemon says hello "
                     + (_client.Client.RemoteEndPoint as IPEndPoint).Address.ToString()
@@ -178,7 +187,7 @@ namespace Codewise.FooSync.Daemon
         private bool HandleAuthRequest()
         {
             var username = _reader.ReadString();
-            var password = _reader.ReadSecureString();
+            var password = _reader.ReadString();
 
             var userSpec = _config.Users.SingleOrDefault(u => u.Name == username);
             if (userSpec == null || !CheckPassword(userSpec.Password, password))
@@ -194,12 +203,38 @@ namespace Codewise.FooSync.Daemon
             }
         }
 
-        private bool CheckPassword(UserSpec.UserSpecPassword expected, SecureString actual)
+        private bool CheckPassword(UserSpec.UserSpecPassword expected, string actual)
         {
             if (expected == null)
                 return true;
 
-            return true;
+            HashAlgorithm hash;
+
+            switch (expected.Type)
+            {
+                case "":
+                case "SHA-512":
+                    hash = new System.Security.Cryptography.SHA512CryptoServiceProvider();
+                    break;
+
+                default:
+                    throw new InvalidOperationException(string.Format("Unknown hash type {0}; can't check password", expected.Type));
+            }
+
+            byte[] input = Encoding.UTF8.GetBytes(_config.HashSalt + actual);
+            byte[] output = hash.ComputeHash(input);
+
+            return (expected.Value.Trim().ToLower() == BytesToHexString(output));
+        }
+
+        private string BytesToHexString(byte[] bytes)
+        {
+            var result = new StringBuilder();
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                result.AppendFormat("{0:x2}", bytes[i]);
+            }
+            return result.ToString();
         }
 
         /// <summary>
@@ -208,21 +243,17 @@ namespace Codewise.FooSync.Daemon
         /// </summary>
         private void HandleListRepos()
         {
-            var repos = new List<string>();
-
-            foreach (var repo in _config.Repositories)
-            {
-                // TODO check client auth
-                repos.Add(repo.Key);
-            }
-
-            repos.Sort();
+            var repos = _config.Repositories.Values
+                .Where(r => r.Users.Count(u => u.Name == _userName || u.Name == AnonymousUsername) > 0)
+                .OrderBy(r => r.Name)
+                .Distinct()
+                .ToList();
 
             _writer.Write(RetCode.Success);
             _writer.Write(repos.Count);
-            foreach (var repoName in repos)
+            foreach (var repo in repos)
             {
-                _writer.Write(repoName);
+                _writer.Write(repo.Name);
             }
         }
 

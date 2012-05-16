@@ -54,22 +54,18 @@ namespace Codewise.FooSync.NetworkTest
             var writer = new BinaryWriter(stream);
             var reader = new BinaryReader(stream);
 
-            int ret = 0;
+            RetCode ret;
             int count = 0;
 
-            var password = new System.Security.SecureString();
-            foreach (char c in "qwerty")
-                password.AppendChar(c);
-
             writer.Write(OpCode.Auth);
-            writer.Write("anonymous");
-            writer.Write(password);
-            ret = reader.ReadInt32();
+            writer.Write("wfraser");
+            writer.Write("qwerty");
+            ret = reader.ReadRetCode();
 
             Console.WriteLine("auth returned {0}", ret);
 
             writer.Write(OpCode.ListRepos);
-            ret = reader.ReadInt32();
+            ret = reader.ReadRetCode();
             count = reader.ReadInt32();
 
             Console.WriteLine("listrepos returned {0}", ret);
@@ -82,13 +78,14 @@ namespace Codewise.FooSync.NetworkTest
             }
 
             writer.Write(OpCode.Hello);
+            ret = reader.ReadRetCode();
             var s = reader.ReadString();
 
             Console.WriteLine("hello replied {0}", s);
 
             writer.Write(OpCode.Tree);
             writer.Write("test");
-            ret = reader.ReadInt32();
+            ret = reader.ReadRetCode();
 
             Console.WriteLine("tree returned {0}", ret);
 

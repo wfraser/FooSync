@@ -33,7 +33,7 @@ namespace Codewise.FooSync.Daemon
         public string HashSalt { get; set; }
 
         [XmlArray]
-        public List<UserSpec> Users { get; private set;  }
+        public List<UserSpec> Users { get; private set; }
 
         [XmlArray("Repositories")]
         public List<ServerRepositoryDirectory> RepositoriesList { get; private set; }
@@ -59,6 +59,9 @@ namespace Codewise.FooSync.Daemon
         [XmlElement]
         public UserSpecPassword Password { get; set; }
 
+        [XmlElement]
+        public bool Disabled { get; set; }
+
         [Serializable]
         public class UserSpecPassword
         {
@@ -67,13 +70,30 @@ namespace Codewise.FooSync.Daemon
 
             [XmlAttribute]
             public string Type { get; set; }
+
+            public UserSpecPassword()
+            {
+                Type = "SHA-512"; // default
+            }
+        }
+
+        public override string ToString()
+        {
+            return Name;
         }
     }
 
+    [Serializable]
+    [XmlType(TypeName="User", Namespace="Http://www.codewise.org/schema/foosync/ServerRepositoryConfig.xsd")]
     public class UserRef
     {
         [XmlAttribute]
         public string Name { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 
     [Serializable]
@@ -102,7 +122,7 @@ namespace Codewise.FooSync.Daemon
 
         public override string ToString()
         {
-            return Path;
+            return string.Format("{0} ({1})", Name, Path);
         }
     }
 

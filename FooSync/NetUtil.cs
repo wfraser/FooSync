@@ -24,35 +24,14 @@ namespace Codewise.FooSync
     /// </summary>
     public static class NetUtil
     {
-        public static SecureString ReadSecureString(this BinaryReader reader)
+        public static OpCode ReadOpCode(this BinaryReader reader)
         {
-            var secure = new SecureString();
-            int nChars = reader.ReadInt32(); // note, this is NOT the goofy 7-bit thing
-
-            for (int i = 0; i < nChars; i++)
-            {
-                byte low  = reader.ReadByte();
-                byte high = reader.ReadByte();
-                char c = (char)((int)low + ((int)high << 8));
-                secure.AppendChar(c);
-            }
-
-            return secure;
+            return (OpCode)reader.ReadInt32();
         }
 
-        public static void Write(this BinaryWriter writer, SecureString secure)
+        public static RetCode ReadRetCode(this BinaryReader reader)
         {
-            writer.Write(secure.Length); // note, this is NOT the goofy 7-bit thing
-
-            var ptr = Marshal.SecureStringToBSTR(secure);
-            int len = Marshal.ReadInt32(ptr, -4);
-            for (int i = 0; i < len; i++)
-            {
-                byte b = Marshal.ReadByte(ptr, i);
-                writer.Write(b);
-            }
-
-            Marshal.ZeroFreeBSTR(ptr);
+            return (RetCode)reader.ReadInt32();
         }
 
         public static void Write(this BinaryWriter writer, OpCode o)

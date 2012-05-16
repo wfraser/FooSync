@@ -332,6 +332,7 @@ namespace Codewise.FooSync
     {
         Success,
         UnknownError,
+        InternalError,
         BadAuth,
         BadRepo,
         BadPath,
