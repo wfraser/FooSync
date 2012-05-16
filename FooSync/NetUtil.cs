@@ -13,6 +13,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
 
 namespace Codewise.FooSync
@@ -22,53 +24,45 @@ namespace Codewise.FooSync
     /// </summary>
     public static class NetUtil
     {
-        public static int GetInt(Stream s)
+        public static SecureString ReadSecureString(this BinaryReader reader)
         {
-            var buf = new byte[4];
-            s.Read(buf, 0, 4);
+            var secure = new SecureString();
+            int nChars = reader.ReadInt32(); // note, this is NOT the goofy 7-bit thing
 
-            return IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buf, 0));
+            for (int i = 0; i < nChars; i++)
+            {
+                byte low  = reader.ReadByte();
+                byte high = reader.ReadByte();
+                char c = (char)((int)low + ((int)high << 8));
+                secure.AppendChar(c);
+            }
+
+            return secure;
         }
 
-        public static long GetLong(Stream s)
+        public static void Write(this BinaryWriter writer, SecureString secure)
         {
-            var buf = new byte[8];
-            s.Read(buf, 0, 8);
-            return IPAddress.NetworkToHostOrder(BitConverter.ToInt64(buf, 0));
+            writer.Write(secure.Length); // note, this is NOT the goofy 7-bit thing
+
+            var ptr = Marshal.SecureStringToBSTR(secure);
+            int len = Marshal.ReadInt32(ptr, -4);
+            for (int i = 0; i < len; i++)
+            {
+                byte b = Marshal.ReadByte(ptr, i);
+                writer.Write(b);
+            }
+
+            Marshal.ZeroFreeBSTR(ptr);
         }
 
-        public static string GetString(Stream s)
+        public static void Write(this BinaryWriter writer, OpCode o)
         {
-            var buf = new byte[4];
-            s.Read(buf, 0, 4);
-            int strLen = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(buf, 0));
-
-            buf = new byte[strLen];
-            s.Read(buf, 0, strLen);
-            return Encoding.UTF8.GetString(buf);
+            writer.Write((int)o);
         }
 
-        public static void WriteInt(Stream s, int i)
+        public static void Write(this BinaryWriter writer, RetCode r)
         {
-            s.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(i)), 0, 4);
-        }
-
-        public static void WriteLong(Stream s, long l)
-        {
-            s.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(l)), 0, 8);
-        }
-
-        public static void WriteString(Stream s, string str)
-        {
-            byte[] bytes = Encoding.UTF8.GetBytes(str);
-
-            WriteInt(s, bytes.Length);
-            s.Write(bytes, 0, bytes.Length);
-        }
-
-        public static void WriteOpCode(Stream s, OpCode o)
-        {
-            WriteInt(s, (int)o);
+            writer.Write((int)r);
         }
     }
 }

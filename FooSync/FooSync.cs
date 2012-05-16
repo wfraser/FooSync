@@ -324,8 +324,8 @@ namespace Codewise.FooSync
         GetFile,
         PutFile,
         DelFile,
-        HttpGet =  0x47455420, // == "GET "
-        HttpPost = 0x504F5354, // == "POST"
+        HttpGet =  0x20544547, // == "GET "
+        HttpPost = 0x54534F50, // == "POST"
     }
 
     public enum RetCode : int

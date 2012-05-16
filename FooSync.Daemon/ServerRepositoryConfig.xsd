@@ -17,20 +17,63 @@
     <xs:sequence>
       <xs:element name="ServerName" type="xs:string"/>
       <xs:element name="ServerDescription" type="xs:string"/>
-      <xs:element name="Repository" type="ServerRepositoryDirectory" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="HashSalt" type="xs:string"/>
+
+      <xs:element name="Users">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="User" type="User" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      
+      <xs:element name="Repositories">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Repository" type="Repository" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      
     </xs:sequence>
     <xs:attribute name="Version" type="xs:string"/>
   </xs:complexType>
 
-  <xs:complexType name="ServerRepositoryDirectory">
+  <xs:complexType name="User">
     <xs:sequence>
-      <xs:element name="Name" type="xs:string"/>
-      <xs:element name="Path" type="xs:string"/>
-      <xs:element name="AllowedClientKeys" type="AllowedClientKeys" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="AllowAllClients" type="xs:boolean" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="Password" minOccurs="0" maxOccurs="1">
+        <xs:complexType>
+          <xs:simpleContent>
+            <xs:extension base="xs:string">
+              <xs:attribute name="Type" type="xs:string" default="SHA-512"/>
+            </xs:extension>
+          </xs:simpleContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Disabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="UserRef">
+    <xs:attribute name="Name" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="Repository">
+    <xs:sequence>
+      <xs:element name="Users" minOccurs="1" maxOccurs="1">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="User" type="UserRef" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
       <xs:element name="IgnoreGlob" type="IgnorePatterns" minOccurs="0" maxOccurs="1"/>
       <xs:element name="IgnoreRegex" type="IgnorePatterns" minOccurs="0" maxOccurs="1"/>
     </xs:sequence>
+      
+    <xs:attribute name="Name" type="xs:string"/>
+    <xs:attribute name="Path" type="xs:string"/>      
   </xs:complexType>
 
   <xs:complexType name="IgnorePatterns">
@@ -38,12 +81,6 @@
       <xs:element name="Pattern" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
     </xs:sequence>
     <xs:attribute name="CaseInsensitive" type="xs:boolean" default="false"/>
-  </xs:complexType>
-
-  <xs:complexType name="AllowedClientKeys">
-    <xs:sequence>
-      <xs:element name="Path" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
-    </xs:sequence>
   </xs:complexType>
 
   <xs:element name="FooSync.ServerRepositoryConfig" type="ServerRepositoryConfig"/>

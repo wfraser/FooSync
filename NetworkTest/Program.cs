@@ -51,30 +51,46 @@ namespace Codewise.FooSync.NetworkTest
 
             var client = new TcpClient(hostname, port);
             var stream = client.GetStream();
+            var writer = new BinaryWriter(stream);
+            var reader = new BinaryReader(stream);
 
-            NetUtil.WriteInt(stream, (int)OpCode.ListRepos);
-            var i = NetUtil.GetInt(stream);
-            var count = NetUtil.GetInt(stream);
+            int ret = 0;
+            int count = 0;
+
+            var password = new System.Security.SecureString();
+            foreach (char c in "qwerty")
+                password.AppendChar(c);
+
+            writer.Write(OpCode.Auth);
+            writer.Write("anonymous");
+            writer.Write(password);
+            ret = reader.ReadInt32();
+
+            Console.WriteLine("auth returned {0}", ret);
+
+            writer.Write(OpCode.ListRepos);
+            ret = reader.ReadInt32();
+            count = reader.ReadInt32();
+
+            Console.WriteLine("listrepos returned {0}", ret);
+            Console.WriteLine("{0} repositories", count);
+
             for (int x = 0; x < count; x++)
             {
-                var repoName = NetUtil.GetString(stream);
+                var repoName = reader.ReadString();
+                Console.WriteLine("> {0}", repoName);
             }
 
-            NetUtil.WriteInt(stream, (int)OpCode.Auth);
-            NetUtil.WriteString(stream, repo);
-            i = NetUtil.GetInt(stream);
-
-            Console.WriteLine("auth returned {0}", i);
-
-            NetUtil.WriteInt(stream, (int)OpCode.Hello);
-            var s = NetUtil.GetString(stream);
+            writer.Write(OpCode.Hello);
+            var s = reader.ReadString();
 
             Console.WriteLine("hello replied {0}", s);
 
-            NetUtil.WriteInt(stream, (int)OpCode.Tree);
-            i = NetUtil.GetInt(stream);
+            writer.Write(OpCode.Tree);
+            writer.Write("test");
+            ret = reader.ReadInt32();
 
-            Console.WriteLine("tree returned {0}", i);
+            Console.WriteLine("tree returned {0}", ret);
 
             var tree = new FooTree(foo, string.Format("fs://{0}:{1}/{2}", hostname, port, repo), stream,
                 (item, total, path) =>

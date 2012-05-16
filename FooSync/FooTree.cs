@@ -79,12 +79,14 @@ namespace Codewise.FooSync
             long mTime = 0;
             long size = 0;
 
+            var reader = new BinaryReader(input);
+
             while (true)
             {
-                path   = NetUtil.GetString(input);
-                source = NetUtil.GetString(input);
-                mTime  = NetUtil.GetLong(input);
-                size   = NetUtil.GetLong(input);
+                path   = reader.ReadString();
+                source = reader.ReadString();
+                mTime  = reader.ReadInt64();
+                size   = reader.ReadInt64();
 
                 if (path == string.Empty && source == string.Empty && mTime == 0 && size == 0)
                 {
@@ -117,23 +119,24 @@ namespace Codewise.FooSync
         /// <param name="output">Stream to write the data to</param>
         public static void ToStream(FooSyncEngine foo, string path, IEnumerable<string> exceptions, Stream output)
         {
+            var writer = new BinaryWriter(output);
             Walk(foo, path, path, exceptions,
                 (trimmedPath, info) =>
                     {
                         if (info != null)
                         {
-                            NetUtil.WriteString(output, trimmedPath);
-                            NetUtil.WriteString(output, info.Source);
-                            NetUtil.WriteLong(output, info.MTime.Ticks);
-                            NetUtil.WriteLong(output, info.Size);
+                            writer.Write(trimmedPath);
+                            writer.Write(info.Source);
+                            writer.Write(info.MTime.Ticks);
+                            writer.Write(info.Size);
                         }
                     }
             );
 
-            NetUtil.WriteString(output, string.Empty);
-            NetUtil.WriteString(output, string.Empty);
-            NetUtil.WriteLong(output, 0);
-            NetUtil.WriteLong(output, 0);
+            writer.Write(string.Empty);
+            writer.Write(string.Empty);
+            writer.Write(0L);
+            writer.Write(0L);
         }
 
         private static void Walk(FooSyncEngine foo, string path, string basePath, IEnumerable<string> exceptions, Action<string, FooFileInfoBase> OnItem)

@@ -28,8 +28,7 @@ namespace Codewise.FooSync.Daemon
 
                 var config = (ServerRepositoryConfig)serializer.Deserialize(reader);
 
-                config.Repositories = new System.Collections.Generic.Dictionary<string, ServerRepositoryDirectory>();
-                foreach (var repo in config.RepositoriesArray)
+                foreach (var repo in config.RepositoriesList)
                 {
                     config.Repositories.Add(repo.Name, repo);
                 }
@@ -44,8 +43,8 @@ namespace Codewise.FooSync.Daemon
             {
                 var serializer = new XmlSerializer(typeof(ServerRepositoryConfig));
 
-                config.RepositoriesArray = new ServerRepositoryDirectory[config.Repositories.Count];
-                config.Repositories.Values.CopyTo(config.RepositoriesArray, 0);
+                config.RepositoriesList.Clear();
+                config.RepositoriesList.AddRange(config.Repositories.Values);
 
                 serializer.Serialize(writer, config);
             }

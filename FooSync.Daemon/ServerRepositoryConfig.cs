@@ -29,26 +29,61 @@ namespace Codewise.FooSync.Daemon
         [XmlElement]
         public string ServerDescription { get; set; }
 
-        [XmlElement("Repository")]
-        public ServerRepositoryDirectory[] RepositoriesArray { get; set; }
+        [XmlElement]
+        public string HashSalt { get; set; }
+
+        [XmlArray]
+        public List<UserSpec> Users { get; private set;  }
+
+        [XmlArray("Repositories")]
+        public List<ServerRepositoryDirectory> RepositoriesList { get; private set; }
 
         [XmlIgnore]
-        public Dictionary<String, ServerRepositoryDirectory> Repositories { get; set; }
+        public Dictionary<string, ServerRepositoryDirectory> Repositories { get; private set; }
+
+        public ServerRepositoryConfig()
+        {
+            Users = new List<UserSpec>();
+            RepositoriesList = new List<ServerRepositoryDirectory>();
+            Repositories = new Dictionary<string, ServerRepositoryDirectory>();
+        }
     }
 
     [Serializable]
-    [XmlType(Namespace="http://www.codewise.org/schema/foosync/ServerRepositoryConfig.xsd")]
-    public class ServerRepositoryDirectory
+    [XmlType(TypeName="User", Namespace="http://www.codewise.org/schema/foosync/ServerRepositoryConfig.xsd")]
+    public class UserSpec
     {
-        public override string ToString()
-        {
-            return Path;
-        }
-
-        [XmlElement]
+        [XmlAttribute]
         public string Name { get; set; }
 
         [XmlElement]
+        public UserSpecPassword Password { get; set; }
+
+        [Serializable]
+        public class UserSpecPassword
+        {
+            [XmlText]
+            public string Value { get; set; }
+
+            [XmlAttribute]
+            public string Type { get; set; }
+        }
+    }
+
+    public class UserRef
+    {
+        [XmlAttribute]
+        public string Name { get; set; }
+    }
+
+    [Serializable]
+    [XmlType(TypeName="Repository", Namespace="http://www.codewise.org/schema/foosync/ServerRepositoryConfig.xsd")]
+    public class ServerRepositoryDirectory
+    {
+        [XmlAttribute]
+        public string Name { get; set; }
+
+        [XmlAttribute]
         public string Path { get; set; }
 
         [XmlElement]
@@ -57,11 +92,18 @@ namespace Codewise.FooSync.Daemon
         [XmlElement]
         public IgnorePatterns IgnoreRegex { get; set; }
 
-        [XmlElement]
-        public ServerRepositoryDirectoryAllowedClientKeys AllowedClientKeys { get; set; }
+        [XmlArray]
+        public List<UserRef> Users { get; private set; }
 
-        [XmlElement]
-        public bool AllowAllClients { get; set; }
+        public ServerRepositoryDirectory()
+        {
+            Users = new List<UserRef>();
+        }
+
+        public override string ToString()
+        {
+            return Path;
+        }
     }
 
     [Serializable]
@@ -77,13 +119,5 @@ namespace Codewise.FooSync.Daemon
         [XmlAttribute]
         public bool CaseInsensitive { get; set; }
          */
-    }
-
-    [Serializable]
-    [XmlType(Namespace = "http://www.codewise.org/schema/foosync/ServerRepositoryConfig.xsd")]
-    public class ServerRepositoryDirectoryAllowedClientKeys
-    {
-        [XmlElement("Path")]
-        public string[] Paths { get; set; }
     }
 }

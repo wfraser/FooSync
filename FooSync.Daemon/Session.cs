@@ -12,9 +12,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.Security;
+using System.Security;
 using System.Threading;
 using System.Text;
 
@@ -22,16 +24,20 @@ namespace Codewise.FooSync.Daemon
 {
     public class Session
     {
+        public static readonly string AnonymousUsername = "anonymous";
+
         public bool UseSSL { get; set; }
 
         private TcpClient              _client;
         private SslStream              _ssl;
         private Stream                 _stream;
+        private BinaryReader           _reader;
+        private BinaryWriter           _writer;
         private FooSyncEngine          _foo;
         private ServerRepositoryConfig _config;
         private Dictionary<string, ICollection<string>> _exceptions;
         private bool                   _authenticated = false;
-        private string                 _repoName = string.Empty;
+        private string                 _userName = AnonymousUsername;
 
         public Session(TcpClient client, FooSyncEngine foo, ServerRepositoryConfig config, Dictionary<string, ICollection<string>> exceptions)
         {
@@ -58,7 +64,12 @@ namespace Codewise.FooSync.Daemon
                 _stream = _client.GetStream();
             }
 
+            _reader = new BinaryReader(_stream);
+            _writer = new BinaryWriter(_stream);
+
+#if !DEBUG
             _stream.ReadTimeout = 2000;
+#endif
 
             try
             {
@@ -69,7 +80,7 @@ namespace Codewise.FooSync.Daemon
                     // comes first and succeeds.
                     //
 
-                    var opCode = (OpCode)NetUtil.GetInt(_stream);
+                    var opCode = (OpCode)_reader.ReadInt32();
 
                     if (opCode == OpCode.HttpGet)
                     {
@@ -85,15 +96,9 @@ namespace Codewise.FooSync.Daemon
                         break;
                     }
 
-                    if (opCode == OpCode.ListRepos)
-                    {
-                        HandleListRepos();
-                        continue;
-                    }
-
                     if (!_authenticated && opCode != OpCode.Auth)
                     {
-                        NetUtil.WriteInt(_stream, (int)RetCode.BadAuth);
+                        _writer.Write(RetCode.BadAuth);
                         _client.Close();
                         return;
                     }
@@ -106,6 +111,10 @@ namespace Codewise.FooSync.Daemon
 
                         case OpCode.Auth:
                             _authenticated = HandleAuthRequest();
+                            break;
+
+                        case OpCode.ListRepos:
+                            HandleListRepos();
                             break;
 
                         case OpCode.Tree:
@@ -121,7 +130,7 @@ namespace Codewise.FooSync.Daemon
                             break;
 
                         default:
-                            NetUtil.WriteInt(_stream, (int)RetCode.BadOp);
+                            _writer.Write(RetCode.BadOp);
                             _client.Close();
                             break;
                     }
@@ -154,8 +163,7 @@ namespace Codewise.FooSync.Daemon
 
         private void HandleHelloRequest()
         {
-            NetUtil.WriteString(
-                _stream,
+            _writer.Write(
                 "Codewise.FooSync.Daemon says hello "
                     + (_client.Client.RemoteEndPoint as IPEndPoint).Address.ToString()
             );
@@ -169,25 +177,29 @@ namespace Codewise.FooSync.Daemon
         /// <returns>true if the user is authenticated; false otherwise</returns>
         private bool HandleAuthRequest()
         {
-            _repoName = NetUtil.GetString(_stream);
+            var username = _reader.ReadString();
+            var password = _reader.ReadSecureString();
 
-            if (!_config.Repositories.ContainsKey(_repoName))
+            var userSpec = _config.Users.SingleOrDefault(u => u.Name == username);
+            if (userSpec == null || !CheckPassword(userSpec.Password, password))
             {
-                NetUtil.WriteInt(_stream, (int)RetCode.BadRepo);
+                _writer.Write(RetCode.BadAuth);
                 return false;
             }
-
-            if (_config.Repositories[_repoName].AllowAllClients)
+            else
             {
-                NetUtil.WriteInt(_stream, (int)RetCode.Success);
+                _writer.Write(RetCode.Success);
+                _userName = username;
                 return true;
             }
+        }
 
-            // TODO
-            
-            NetUtil.WriteInt(_stream, (int)RetCode.BadAuth);
+        private bool CheckPassword(UserSpec.UserSpecPassword expected, SecureString actual)
+        {
+            if (expected == null)
+                return true;
 
-            return false;
+            return true;
         }
 
         /// <summary>
@@ -200,20 +212,17 @@ namespace Codewise.FooSync.Daemon
 
             foreach (var repo in _config.Repositories)
             {
-                if (repo.Value.AllowAllClients)
-                {
-                    repos.Add(repo.Key);
-                }
-                // TODO else: check client key
+                // TODO check client auth
+                repos.Add(repo.Key);
             }
 
             repos.Sort();
 
-            NetUtil.WriteInt(_stream, (int)RetCode.Success);
-            NetUtil.WriteInt(_stream, repos.Count);
+            _writer.Write(RetCode.Success);
+            _writer.Write(repos.Count);
             foreach (var repoName in repos)
             {
-                NetUtil.WriteString(_stream, repoName);
+                _writer.Write(repoName);
             }
         }
 
@@ -226,15 +235,17 @@ namespace Codewise.FooSync.Daemon
         /// </summary>
         private void HandleTreeRequest()
         {
-            if (!Directory.Exists(_config.Repositories[_repoName].Path))
+            var repoName = _reader.ReadString();
+
+            if (!Directory.Exists(_config.Repositories[repoName].Path))
             {
-                NetUtil.WriteInt(_stream, (int)RetCode.BadPath);
+                _writer.Write(RetCode.BadPath);
                 return;
             }
 
-            NetUtil.WriteInt(_stream, (int)RetCode.Success);
+            _writer.Write(RetCode.Success);
 
-            FooTree.ToStream(_foo, _config.Repositories[_repoName].Path, _exceptions[_repoName], _stream);
+            FooTree.ToStream(_foo, _config.Repositories[repoName].Path, _exceptions[repoName], _stream);
         }
 
         /// <summary>
@@ -245,23 +256,25 @@ namespace Codewise.FooSync.Daemon
         /// </summary>
         private void HandleStateRequest()
         {
+            var repoName = _reader.ReadString();
+
             var stateFile = Path.Combine(
-                _config.Repositories[_repoName].Path,
+                _config.Repositories[repoName].Path,
                 FooSyncEngine.RepoStateFileName
             );
 
             if (!File.Exists(stateFile))
             {
                 var state = new RepositoryState();
-                state.AddSource(new FooTree(_foo, _config.Repositories[_repoName].Path), RepositoryState.RepoSourceName);
+                state.AddSource(new FooTree(_foo, _config.Repositories[repoName].Path), RepositoryState.RepoSourceName);
                 state.Write(stateFile);
             }
 
-            NetUtil.WriteInt(_stream, (int)RetCode.Success);
+            _writer.Write(RetCode.Success);
 
             using (var statestream = new FileStream(stateFile, FileMode.Open))
             {
-                NetUtil.WriteLong(_stream, statestream.Length);
+                _writer.Write(statestream.Length);
                 statestream.CopyTo(_stream);
             }
         }
@@ -274,28 +287,29 @@ namespace Codewise.FooSync.Daemon
         /// </summary>
         private void HandleFileRequest()
         {
-            var filename = NetUtil.GetString(_stream);
+            var repoName = _reader.ReadString();
+            var filename = _reader.ReadString();
 
             if (Path.DirectorySeparatorChar != '/')
             {
                 filename = filename.Replace('/', Path.DirectorySeparatorChar);
             }
 
-            var fullPath = Path.Combine(_config.Repositories[_repoName].Path, filename);
+            var fullPath = Path.Combine(_config.Repositories[repoName].Path, filename);
 
             try
             {
                 //using (var file = new FileStream(fullPath, FileMode.Open))
                 using (var file = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
-                    NetUtil.WriteInt(_stream, (int)RetCode.Success);
-                    NetUtil.WriteLong(_stream, file.Length);
+                    _writer.Write(RetCode.Success);
+                    _writer.Write(file.Length);
                     file.CopyTo(_stream);
                 }
             }
             catch (FileNotFoundException)
             {
-                NetUtil.WriteInt(_stream, (int)RetCode.BadPath);
+                _writer.Write(RetCode.BadPath);
             }
         }
 

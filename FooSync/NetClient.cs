@@ -27,6 +27,8 @@ namespace Codewise.FooSync
         private string        _repoName;
         private TcpClient     _client;
         private Stream        _stream;
+        private BinaryReader  _reader;
+        private BinaryWriter  _writer;
         private string        _username;
         private SecureString  _password;
 
@@ -42,6 +44,8 @@ namespace Codewise.FooSync
             _repoName = repoName;
             _client   = null;
             _stream   = null;
+            _reader   = null;
+            _writer   = null;
         }
 
         private TcpClient GetClient()
@@ -74,21 +78,16 @@ namespace Codewise.FooSync
         {
             var list = new List<string>();
 
-            var client = GetClient();
-            var stream = client.GetStream();
+            _writer.Write(OpCode.ListRepos);
 
-            NetUtil.WriteOpCode(stream, OpCode.ListRepos);
-            NetUtil.WriteString(stream, _username);
-            NetUtil.WriteString(stream, _password.ToString());
-
-            int i = NetUtil.GetInt(stream);
+            int i = _reader.ReadInt32();
             if (i != (int)RetCode.Success)
                 throw new AuthException(string.Format("Authentication with FooSync server failed: code {0}", ((RetCode)i).ToString()));
 
-            i = NetUtil.GetInt(stream);
+            i = _reader.ReadInt32();
             while (i-- >= 0)
             {
-                var s = NetUtil.GetString(stream);
+                var s = _reader.ReadString();
                 list.Add(s);
             }
 
@@ -116,11 +115,13 @@ namespace Codewise.FooSync
 
             _client = GetClient();
             _stream = _client.GetStream();
+            _reader = new BinaryReader(_stream);
+            _writer = new BinaryWriter(_stream);
 
-            NetUtil.WriteInt(_stream, (int)OpCode.Auth);
-            NetUtil.WriteString(_stream, _repoName);
+            _writer.Write(OpCode.Auth);
+            _writer.Write(_repoName);
 
-            int i = NetUtil.GetInt(_stream);
+            int i = _reader.ReadInt32();
 
             if (i != (int)RetCode.Success)
                 throw new AuthException(string.Format("Authentication with FooSync server failed: code {0}", ((RetCode)i).ToString()));
@@ -132,8 +133,8 @@ namespace Codewise.FooSync
             {
                 try
                 {
-                    NetUtil.WriteInt(_stream, (int)OpCode.Tree);
-                    int i = NetUtil.GetInt(_stream);
+                    _writer.Write(OpCode.Tree);
+                    int i = _reader.ReadInt32();
 
                     if (i != (int)RetCode.Success)
                         throw new FooNetException(string.Format("Failed to get tree from FooSync server: code {0}", ((RetCode)i).ToString()));
