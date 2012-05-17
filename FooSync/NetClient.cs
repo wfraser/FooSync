@@ -105,7 +105,7 @@ namespace Codewise.FooSync
                 throw new AuthException(string.Format("Authentication with FooSync server failed: code {0}", ((RetCode)i).ToString()));
 
             i = _reader.ReadInt32();
-            while (i-- >= 0)
+            while (i-- > 0)
             {
                 var s = _reader.ReadString();
                 list.Add(s);
@@ -134,17 +134,9 @@ namespace Codewise.FooSync
 
         private void Auth()
         {
-            if (_client == null || _client.Connected)
-                return;
-
-            _client = GetClient();
-            _stream = _client.GetStream();
-            _reader = new BinaryReader(_stream);
-            _writer = new BinaryWriter(_stream);
-
             _writer.Write(OpCode.Auth);
-            _writer.Write(_username);
-            _writer.Write(_password);
+            _writer.Write(_username ?? "anonymous");
+            _writer.Write(_password ?? new SecureString());
 
             RetCode ret = _reader.ReadRetCode();
 

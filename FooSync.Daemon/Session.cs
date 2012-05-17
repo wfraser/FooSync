@@ -189,6 +189,9 @@ namespace Codewise.FooSync.Daemon
             var username = _reader.ReadString();
             var password = _reader.ReadString();
 
+            if (string.IsNullOrEmpty(username))
+                username = AnonymousUsername;
+
             var userSpec = _config.Users.SingleOrDefault(u => u.Name == username);
             if (userSpec == null || !CheckPassword(userSpec.Password, password))
             {
