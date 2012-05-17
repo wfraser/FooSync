@@ -37,7 +37,7 @@ all: $(TARGET)
 
 $(TARGET): $(SOURCES)
 	[ ! -x $(TARGETDEST) ] && mkdir $(TARGETDEST) || true
-	$(MCS) -target:$(TARGETTYPE) -out:$(TARGET) -sdk:$(SDK) $(REFSFLAG) $(SOURCES)
+	$(MCS) -target:$(TARGETTYPE) -out:$(TARGET) -sdk:$(SDK) $(REFSFLAG) $(DEFINES) $(SOURCES)
 	cp -v $(BINPLACE) $(TARGETDEST)
 
 clean:

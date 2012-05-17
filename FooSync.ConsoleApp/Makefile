@@ -26,7 +26,7 @@ all: $(TARGET)
 
 $(TARGET): $(SOURCES)
 	[ ! -x $(TARGETDEST) ] && mkdir $(TARGETDEST) || true
-	$(MCS) -target:$(TARGETTYPE) -out:$(TARGET) -sdk:$(SDK) -lib:$(LIBDIR) $(REFSFLAG) $(SOURCES)
+	$(MCS) -target:$(TARGETTYPE) -out:$(TARGET) -sdk:$(SDK) -lib:$(LIBDIR) $(REFSFLAG) $(DEFINES) $(SOURCES)
 
 clean:
 	rm -f $(TARGET)
