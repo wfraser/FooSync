@@ -236,7 +236,7 @@ namespace Codewise.FooSync.Daemon
                     throw new InvalidOperationException(string.Format("Unknown hash type {0}; can't check password", expected.Type));
             }
 
-            byte[] input = Encoding.UTF8.GetBytes(_config.HashSalt + actual);
+            byte[] input = Encoding.UTF8.GetBytes(expected.Salt + actual);
             byte[] output = hash.ComputeHash(input);
 
             return (expected.Value.Trim().ToLower() == BytesToHexString(output));

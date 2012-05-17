@@ -17,7 +17,6 @@
     <xs:sequence>
       <xs:element name="ServerName" type="xs:string"/>
       <xs:element name="ServerDescription" type="xs:string"/>
-      <xs:element name="HashSalt" type="xs:string"/>
 
       <xs:element name="Users">
         <xs:complexType>
@@ -46,6 +45,7 @@
           <xs:simpleContent>
             <xs:extension base="xs:string">
               <xs:attribute name="Type" type="xs:string" default="SHA-512"/>
+              <xs:attribute name="Salt" type="xs:string"/>
             </xs:extension>
           </xs:simpleContent>
         </xs:complexType>

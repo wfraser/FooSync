@@ -29,9 +29,6 @@ namespace Codewise.FooSync.Daemon
         [XmlElement]
         public string ServerDescription { get; set; }
 
-        [XmlElement]
-        public string HashSalt { get; set; }
-
         [XmlArray]
         public List<UserSpec> Users { get; private set; }
 
@@ -71,9 +68,14 @@ namespace Codewise.FooSync.Daemon
             [XmlAttribute]
             public string Type { get; set; }
 
+            [XmlAttribute]
+            public string Salt { get; set; }
+
             public UserSpecPassword()
             {
-                Type = "SHA-512"; // default
+                // set defaults
+                Type = "SHA-512";
+                Salt = string.Empty;
             }
         }
 
