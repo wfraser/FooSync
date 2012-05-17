@@ -53,6 +53,8 @@ namespace Codewise.FooSync.Daemon
                 };
                 ServiceBase.Run(ServicesToRun);
             }
+#else
+            { }
 #endif // !MonoCS
         }
     }
