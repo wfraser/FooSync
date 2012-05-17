@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -33,7 +34,7 @@ namespace Codewise.FooSync.Daemon
         public static readonly string DisplayName = "FooSync Daemon";
         public static readonly string Description = "Serves FooSync repositories across the network.";
 
-        private static readonly string DefaultConfig = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "foosyncd_config.xml");
+        private static readonly string DefaultConfig = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "foosyncd_config.xml");
 
         public FooSyncService()
         {
@@ -53,6 +54,10 @@ namespace Codewise.FooSync.Daemon
             }
 
             ProcessArguments(programArgs);
+
+#if DEBUG
+            Trace.Listeners.Add(new ConsoleTraceListener());
+#endif
 
             Run();
         }
@@ -167,6 +172,10 @@ namespace Codewise.FooSync.Daemon
                 try
                 {
                     var client = listener.AcceptTcpClient();
+#if DEBUG
+                    Console.WriteLine("Accepted new client {0}", ((IPEndPoint)client.Client.RemoteEndPoint));
+#endif
+
                     var session = new Session(client, _foo, _config, _exceptions);
                     var thread = new Thread(session.Run);
                     thread.Name = "client " + ((IPEndPoint)client.Client.RemoteEndPoint).ToString();

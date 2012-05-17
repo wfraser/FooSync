@@ -83,6 +83,10 @@ namespace Codewise.FooSync.Daemon
 
                     var opCode = _reader.ReadOpCode();
 
+#if DEBUG
+                    Console.WriteLine("OpCode: {0}", opCode);
+#endif
+
                     if (opCode == OpCode.HttpGet)
                     {
                         HandleHttpGet();
@@ -139,6 +143,10 @@ namespace Codewise.FooSync.Daemon
             }
             catch (Exception ex)
             {
+#if DEBUG
+                Console.WriteLine("{0}: {1}", ex.GetType().Name, ex.Message);
+#endif
+
                 if (ex is EndOfStreamException)
                 {
                     return;
@@ -191,6 +199,10 @@ namespace Codewise.FooSync.Daemon
 
             if (string.IsNullOrEmpty(username))
                 username = AnonymousUsername;
+
+#if DEBUG
+            Console.WriteLine("Auth as {0}", username);
+#endif
 
             var userSpec = _config.Users.SingleOrDefault(u => u.Name == username);
             if (userSpec == null || !CheckPassword(userSpec.Password, password))

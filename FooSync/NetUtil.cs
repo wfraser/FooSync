@@ -41,6 +41,9 @@ namespace Codewise.FooSync
 
         public static void Write(this BinaryWriter writer, RetCode r)
         {
+#if DEBUG
+            Console.WriteLine("return: {0}", r);
+#endif
             writer.Write((int)r);
         }
 
