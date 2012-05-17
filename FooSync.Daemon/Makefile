@@ -31,7 +31,7 @@ all: $(TARGET)
 
 $(TARGET): $(SOURCES)
 	[ ! -x $(TARGETDEST) ] && mkdir $(TARGETDEST) || true
-	$(MCS) -target:$(TARGETTYPE) -out:$(TARGET) -sdk:$(SDK) -lib:$(LIBDIR) -pkg:dotnet $(REFSFLAG) $(SOURCES)
+	$(MCS) -target:$(TARGETTYPE) -out:$(TARGET) -sdk:$(SDK) -lib:$(LIBDIR) -pkg:dotnet $(REFSFLAG) $(DEFINES) $(SOURCES)
 
 clean:
 	rm -f $(TARGET)
