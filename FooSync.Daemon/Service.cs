@@ -75,10 +75,11 @@ namespace Codewise.FooSync.Daemon
         {
             _shuttingDown = true;
 
-#if !__MonoCS__
-            _listen4.Stop();
-            _v4thread.Join(10 * 1000);
-#endif
+            if (Type.GetType("Mono.Runtime") == null)
+            {
+                _listen4.Stop();
+                _v4thread.Join(10 * 1000);
+            }
 
             _listen6.Stop();
             _v6thread.Join(10 * 1000);
@@ -152,11 +153,17 @@ namespace Codewise.FooSync.Daemon
 
         private void Run()
         {
-#if !__MonoCS__
-            _listen4 = new TcpListener(IPAddress.Any, _listenPort);
-            _v4thread = new Thread(Listener_AcceptClient);
-            _v4thread.Start(_listen4);
-#endif
+            //
+            // In Linux, it seems an IPv6 socket can accept IPv4 connections.
+            // In fact, if we attempt to bind both IPv4 and IPv6 sockets,
+            //   one will fail due to the address being in use.
+            //
+            if (Type.GetType("Mono.Runtime") == null)
+            {
+                _listen4 = new TcpListener(IPAddress.Any, _listenPort);
+                _v4thread = new Thread(Listener_AcceptClient);
+                _v4thread.Start(_listen4);
+            }
 
             _listen6 = new TcpListener(IPAddress.IPv6Any, _listenPort);
             _v6thread = new Thread(Listener_AcceptClient);
@@ -197,16 +204,9 @@ namespace Codewise.FooSync.Daemon
         private ServerRepositoryConfig _config;
         private Dictionary<string, ICollection<string>> _exceptions;
 
-        //
-        // In Linux, it seems an IPv6 socket can accept IPv4 connections.
-        // In fact, if we attempt to bind both IPv4 and IPv6 sockets,
-        //   one will fail due to the address being in use.
-        //
-#if !__MonoCS__
+        
         private Thread           _v4thread;
         private TcpListener      _listen4;
-#endif
-        
         private Thread           _v6thread;
         private TcpListener      _listen6;
         private bool             _shuttingDown;

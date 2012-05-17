@@ -25,26 +25,17 @@ namespace Codewise.FooSync.Daemon
         /// </summary>
         static void Main()
         {
+            if (Type.GetType("Mono.Runtime") != null // mono-service2 sucks; run as foreground process instead
 #if DEBUG
-            if (Debugger.IsAttached)
+                || Debugger.IsAttached
+#endif
+                )
             {
-#endif //DEBUG
-
-//
-// mono-service2 is really buggy and unreliable.
-// Run as an ordinary foreground process instead.
-//
-#if DEBUG || __MonoCS__
                 var svc = new FooSyncService();
                 var args = Environment.GetCommandLineArgs();
                 svc.Start(args.Where((arg, index) => index > 0).ToArray());
-#endif //DEBUG or MonoCS
-
-#if DEBUG
             }
             else
-#endif //DEBUG
-#if !__MonoCS__
             {
                 ServiceBase[] ServicesToRun;
                 ServicesToRun = new ServiceBase[] 
@@ -53,9 +44,6 @@ namespace Codewise.FooSync.Daemon
                 };
                 ServiceBase.Run(ServicesToRun);
             }
-#else
-            { }
-#endif // !MonoCS
         }
     }
 }
