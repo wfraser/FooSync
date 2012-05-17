@@ -42,17 +42,26 @@ namespace Codewise.FooSync.Daemon
 
         static void serializer_UnknownAttribute(object sender, XmlAttributeEventArgs e)
         {
-            throw new NotImplementedException();
+            throw new XmlException(
+                string.Format("Unknown attribute while deserializing {2}: \"{0}\", expecting: {1}",
+                    e.Attr, e.ExpectedAttributes, e.ObjectBeingDeserialized),
+                null, e.LineNumber, e.LinePosition);
         }
 
         static void serializer_UnknownElement(object sender, XmlElementEventArgs e)
         {
-            throw new NotImplementedException();
+            throw new XmlException(
+                string.Format("Unknown element while deserializing {2}: \"{0}\", expecting: {1}",
+                    e.Element, e.ExpectedElements, e.ObjectBeingDeserialized),
+                null, e.LineNumber, e.LinePosition);
         }
 
         static void serializer_UnknownNode(object sender, XmlNodeEventArgs e)
         {
-            throw new NotImplementedException();
+            throw new XmlException(
+                string.Format("Unknown node while deserializing {2}: \"{0}\", type {1}",
+                    e.Name, e.NodeType, e.ObjectBeingDeserialized),
+                null, e.LineNumber, e.LinePosition);
         }
 
         public static void WriteConfig(ServerRepositoryConfig config, string configXmlFilename)

@@ -32,8 +32,7 @@ namespace Codewise.FooSync
             this.Options = options;
         }
 
-        //public static ICollection<string> PrepareExceptions(RepositoryDirectory dir)
-        public static ICollection<string> PrepareExceptions(IgnorePatterns ignoreRegex, IgnorePatterns ignoreGlob)
+        public static ICollection<string> PrepareExceptions(IIgnorePatterns ignoreRegex, IIgnorePatterns ignoreGlob)
         {
             var exceptions = new List<string>();
 

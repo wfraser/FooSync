@@ -139,17 +139,17 @@ namespace Codewise.FooSync.Daemon
             }
             catch (Exception ex)
             {
-                if (ex is IOException)
+                if (ex is EndOfStreamException)
+                {
+                    return;
+                }
+                else if (ex is IOException)
                 {
                     var se = ex.InnerException as SocketException;
                     if (se != null && se.ErrorCode == 10053) // remote endpoint disconnected
                     {
                         return;
                     }
-                }
-                else if (ex is EndOfStreamException)
-                {
-                    return;
                 }
 
                 if (_client.Connected)
@@ -267,16 +267,23 @@ namespace Codewise.FooSync.Daemon
         private void HandleTreeRequest()
         {
             var repoName = _reader.ReadString();
+            var repo = _config.Repositories[repoName];
 
-            if (!Directory.Exists(_config.Repositories[repoName].Path))
+            if (repo == null || !Directory.Exists(repo.Path))
             {
                 _writer.Write(RetCode.BadPath);
                 return;
             }
 
+            if (repo.Users.Count(u => u.Name == _userName || u.Name == AnonymousUsername) == 0)
+            {
+                _writer.Write(RetCode.BadAuth);
+                return;
+            }
+
             _writer.Write(RetCode.Success);
 
-            FooTree.ToStream(_foo, _config.Repositories[repoName].Path, _exceptions[repoName], _stream);
+            FooTree.ToStream(_foo, repo.Path, _exceptions[repoName], _stream);
         }
 
         /// <summary>
@@ -288,16 +295,29 @@ namespace Codewise.FooSync.Daemon
         private void HandleStateRequest()
         {
             var repoName = _reader.ReadString();
+            var repo = _config.Repositories[repoName];
+
+            if (repo == null || !Directory.Exists(repo.Path))
+            {
+                _writer.Write(RetCode.BadPath);
+                return;
+            }
+
+            if (repo.Users.Count(u => u.Name == _userName || u.Name == AnonymousUsername) == 0)
+            {
+                _writer.Write(RetCode.BadAuth);
+                return;
+            }
 
             var stateFile = Path.Combine(
-                _config.Repositories[repoName].Path,
+                repo.Path,
                 FooSyncEngine.RepoStateFileName
             );
 
             if (!File.Exists(stateFile))
             {
                 var state = new RepositoryState();
-                state.AddSource(new FooTree(_foo, _config.Repositories[repoName].Path), RepositoryState.RepoSourceName);
+                state.AddSource(new FooTree(_foo, repo.Path), RepositoryState.RepoSourceName);
                 state.Write(stateFile);
             }
 
@@ -320,13 +340,26 @@ namespace Codewise.FooSync.Daemon
         {
             var repoName = _reader.ReadString();
             var filename = _reader.ReadString();
+            var repo = _config.Repositories[repoName];
+
+            if (repo == null || !Directory.Exists(repo.Path))
+            {
+                _writer.Write(RetCode.BadPath);
+                return;
+            }
+
+            if (repo.Users.Count(u => u.Name == _userName || u.Name == AnonymousUsername) == 0)
+            {
+                _writer.Write(RetCode.BadAuth);
+                return;
+            }
 
             if (Path.DirectorySeparatorChar != '/')
             {
                 filename = filename.Replace('/', Path.DirectorySeparatorChar);
             }
 
-            var fullPath = Path.Combine(_config.Repositories[repoName].Path, filename);
+            var fullPath = Path.Combine(repo.Path, filename);
 
             try
             {

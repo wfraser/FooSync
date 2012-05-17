@@ -105,9 +105,15 @@ namespace Codewise.FooSync
          */
     }
 
+    public interface IIgnorePatterns
+    {
+        string[] Patterns { get; set; }
+        bool CaseInsensitive { get; set; }
+    }
+
     [Serializable]
     [XmlType(Namespace = "http://www.codewise.org/schema/foosync/RepositoryConfig.xsd")]
-    public class IgnorePatterns
+    public class IgnorePatterns : IIgnorePatterns
     {
         [XmlElement("Pattern")]
         public string[] Patterns { get; set; }

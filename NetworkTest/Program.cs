@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using Codewise.FooSync;
@@ -54,12 +55,16 @@ namespace Codewise.FooSync.NetworkTest
             var writer = new BinaryWriter(stream);
             var reader = new BinaryReader(stream);
 
+            var passwd = new System.Security.SecureString();
+            foreach (char c in "qwerty")
+                passwd.AppendChar(c);
+
             RetCode ret;
             int count = 0;
 
             writer.Write(OpCode.Auth);
-            writer.Write("wfraser");
-            writer.Write("qwerty");
+            writer.Write("test");
+            writer.Write(passwd);
             ret = reader.ReadRetCode();
 
             Console.WriteLine("auth returned {0}", ret);
@@ -97,6 +102,16 @@ namespace Codewise.FooSync.NetworkTest
                 );
 
             Console.WriteLine("{0} items in tree", tree.Files.Count);
+
+            writer.Write(OpCode.GetFile);
+            writer.Write("test");
+            writer.Write(tree.Files.Keys.First());
+            ret = reader.ReadRetCode();
+
+            Console.WriteLine("getfile returned {0}", ret);
+
+            var len = reader.ReadInt64();
+            var bytes = reader.ReadBytes((int)len);
 
             stream.Close();
         }

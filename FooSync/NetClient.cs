@@ -34,6 +34,11 @@ namespace Codewise.FooSync
 
         private static int SocketTimeout = 10;
 
+        public string Hostname { get { return _hostname; } }
+        public int Port { get { return _port; } }
+        public string Username { get { return _username; } }
+        public string RepoName { get { return _repoName; } set { _repoName = value; } }
+
         public NetClient(FooSyncEngine foo, string hostname, int port, string username, SecureString password, string repoName = null)
         {
             _foo      = foo;
@@ -74,9 +79,24 @@ namespace Codewise.FooSync
             return client;
         }
 
+        private void EnsureConnected()
+        {
+            if (_client != null && _client.Connected)
+                return;
+
+            _client = GetClient();
+            _stream = _client.GetStream();
+            _reader = new BinaryReader(_stream);
+            _writer = new BinaryWriter(_stream);
+
+            Auth();
+        }
+
         public ICollection<string> ListRepositories()
         {
             var list = new List<string>();
+
+            EnsureConnected();
 
             _writer.Write(OpCode.ListRepos);
 
@@ -96,7 +116,11 @@ namespace Codewise.FooSync
 
         public static bool IsDisconnect(Exception ex)
         {
-            if (ex is IOException)
+            if (ex is EndOfStreamException)
+            {
+                return true;
+            }
+            else if (ex is IOException)
             {
                 var se = ex.InnerException as SocketException;
                 if (se != null && se.ErrorCode == 10053) // remote endpoint disconnected
@@ -119,12 +143,13 @@ namespace Codewise.FooSync
             _writer = new BinaryWriter(_stream);
 
             _writer.Write(OpCode.Auth);
-            _writer.Write(_repoName);
+            _writer.Write(_username);
+            _writer.Write(_password);
 
-            int i = _reader.ReadInt32();
+            RetCode ret = _reader.ReadRetCode();
 
-            if (i != (int)RetCode.Success)
-                throw new AuthException(string.Format("Authentication with FooSync server failed: code {0}", ((RetCode)i).ToString()));
+            if (ret != RetCode.Success)
+                throw new AuthException(string.Format("Authentication with FooSync server failed: {0}", ret));
         }
 
         public FooTree GetTree(Progress callback = null)
