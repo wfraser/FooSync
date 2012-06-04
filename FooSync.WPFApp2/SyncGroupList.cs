@@ -1,5 +1,5 @@
 ﻿///
-/// Codewise/FooSync/WPFApp2/RepositoryList.cs
+/// Codewise/FooSync/WPFApp2/SyncGroupList.cs
 /// 
 /// by William R. Fraser:
 ///     http://www.codewise.org/
