@@ -31,10 +31,10 @@ namespace Codewise.FooSync.WPFApp2
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static readonly string RepoListFilename = "repolist.xml";
+        public static readonly string RepoListFilename = "syncgroups.xml";
 
-        private string         _settingsPath;
-        private RepositoryList _repoList;
+        private string        _settingsPath;
+        private SyncGroupList _syncGroupList;
 
         public static FooSyncEngine Foo { get; private set; }
 
@@ -61,7 +61,7 @@ namespace Codewise.FooSync.WPFApp2
             if (!Directory.Exists(_settingsPath))
                 Directory.CreateDirectory(_settingsPath);
 
-            if (!LoadRepoList())
+            if (!LoadSyncGroups())
                 Application.Current.Shutdown();
         }
 
@@ -75,21 +75,21 @@ namespace Codewise.FooSync.WPFApp2
             return (T)attrs[0];
         }
 
-        private bool LoadRepoList()
+        private bool LoadSyncGroups()
         {
             try
             {
                 using (var stream = new FileStream(Path.Combine(_settingsPath, RepoListFilename), FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
-                    _repoList = RepositoryList.ReadFromFile(stream);
+                    _syncGroupList = SyncGroupList.ReadFromFile(stream);
                 }
             }
             catch (FileNotFoundException)
             {
                 using (var stream = new FileStream(Path.Combine(_settingsPath, RepoListFilename), FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
-                    _repoList = new RepositoryList();
-                    _repoList.WriteToFile(stream);
+                    _syncGroupList = new SyncGroupList();
+                    _syncGroupList.WriteToFile(stream);
                 }
             }
             catch (Exception ex)
@@ -111,7 +111,7 @@ namespace Codewise.FooSync.WPFApp2
                 return false;
             }
 
-            RepoListTree.DataContext = _repoList;
+            TreePane.DataContext = _syncGroupList;
 
             return true;
         }
@@ -123,54 +123,11 @@ namespace Codewise.FooSync.WPFApp2
             about.ShowDialog();
         }
 
-        private void NewLocalPair(object sender, RoutedEventArgs e)
-        {
-            var localPairEntryWindow = new LocalPairEntryWindow();
-            localPairEntryWindow.ShowInTaskbar = false;
-            localPairEntryWindow.ShowActivated = true;
-            localPairEntryWindow.Topmost = true;
-            var result = localPairEntryWindow.ShowDialog();
-            if (result.HasValue && result.Value)
-            {
-                _repoList.LocalPaths.Add(
-                    new LocalRepositoryPair() {
-                        RepositoryPath = localPairEntryWindow.RepositoryPath.Text,
-                        SourcePath     = localPairEntryWindow.SourcePath.Text
-                    }
-                );
-            }
-        }
-
-        private void NewRemoteServer(object sender, RoutedEventArgs e)
-        {
-            var serverEntryWindow = new ServerEntryWindow();
-            serverEntryWindow.ShowInTaskbar = false;
-            serverEntryWindow.ShowActivated = true;
-            serverEntryWindow.Topmost = true;
-            var result = serverEntryWindow.ShowDialog();
-            if (result.HasValue && result.Value)
-            {
-                var serverUrl = new FooSyncUrl(serverEntryWindow.ServerUri.Text);
-                _repoList.Servers.Add(
-                    new ServerRepositoryList() {
-                        HostName = serverUrl.Host,
-                        Port     = serverUrl.Port,
-                        Username = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Username.Text : "",
-                        Password = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Password.Password : ""
-                    }
-                );
-            }
-        }
-
-        private void NewRemotePair(object sender, RoutedEventArgs e)
-        {
-        }
-
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             using (var stream = new FileStream(Path.Combine(_settingsPath, RepoListFilename), FileMode.Truncate, FileAccess.Write, FileShare.None))
             {
-                _repoList.WriteToFile(stream);
+                _syncGroupList.WriteToFile(stream);
             }
         }
 
@@ -179,19 +136,19 @@ namespace Codewise.FooSync.WPFApp2
             if (e.Parameter is ServerRepositoryList)
             {
                 var server = (ServerRepositoryList)e.Parameter;
-                _repoList.Servers.Remove(server);
+                _syncGroupList.Servers.Remove(server);
             }
-            else if (e.Parameter is ServerRepositoryPair)
+            else if (e.Parameter is ServerRepository)
             {
-                var repo = (ServerRepositoryPair)e.Parameter;
-                var server = _repoList.Servers.Where((o) => o == repo.Server).FirstOrDefault();
+                var repo = (ServerRepository)e.Parameter;
+                var server = _syncGroupList.Servers.Where((o) => o == repo.Server).FirstOrDefault();
                 if (server != null)
                     server.Repositories.Remove(repo);
             }
-            else if (e.Parameter is LocalRepositoryPair)
+            else if (e.Parameter is SyncGroup)
             {
-                var pair = (LocalRepositoryPair)e.Parameter;
-                _repoList.LocalPaths.Remove(pair);
+                var pair = (SyncGroup)e.Parameter;
+                _syncGroupList.SyncGroups.Remove(pair);
             }
         }
 
@@ -199,11 +156,76 @@ namespace Codewise.FooSync.WPFApp2
         {
             if (e.Parameter != null &&
                     (e.Parameter is ServerRepositoryList
-                    || e.Parameter is ServerRepositoryPair
-                    || e.Parameter is LocalRepositoryPair))
+                    || e.Parameter is ServerRepository
+                    || e.Parameter is SyncGroup))
                 e.CanExecute = true;
             else
                 e.CanExecute = false;
+        }
+
+        private void CanNew(object sender, CanExecuteRoutedEventArgs e)
+        {
+            if (e.Parameter != null &&
+                    (e.Parameter is ICollection<ServerRepositoryList>
+                    || e.Parameter is ICollection<SyncGroup>
+                    || e.Parameter is SyncGroup))
+                e.CanExecute = true;
+            else
+                e.CanExecute = false;
+        }
+
+        private void OnNew(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e.Parameter is ICollection<ServerRepositoryList>)
+            {
+                var servers = (ICollection<ServerRepositoryList>)e.Parameter;
+
+                var serverEntryWindow = new ServerEntryWindow();
+                serverEntryWindow.ShowInTaskbar = false;
+                serverEntryWindow.ShowActivated = true;
+                serverEntryWindow.Topmost = true;
+                var result = serverEntryWindow.ShowDialog();
+                if (result.HasValue && result.Value)
+                {
+                    var serverUrl = new FooSyncUrl(serverEntryWindow.ServerUri.Text);
+
+                    if (servers.Count((server) =>
+                            (server.Hostname.Equals(serverUrl.Host)
+                                && server.Port == serverUrl.Port)) > 0)
+                    {
+                        //
+                        // Duplicate.
+                        //
+
+                        MessageBox.Show(
+                            string.Format("That server ({0}) is already in your Saved Servers list.",
+                                serverUrl.Host),
+                            "Duplicate Server",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error
+                            );
+                        return;
+                    }
+
+                    servers.Add(
+                        new ServerRepositoryList()
+                        {
+                            Hostname = serverUrl.Host,
+                            Port = serverUrl.Port,
+                            Username = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Username.Text : "",
+                            Password = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Password.Password : ""
+                        }
+                    );
+                }
+            }
+            else if (e.Parameter is ICollection<SyncGroup>)
+            {
+
+            }
+            else if (e.Parameter is SyncGroup)
+            {
+
+            }
         }
     }
 }

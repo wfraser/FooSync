@@ -17,17 +17,11 @@
         Closing="Window_Closing"
         >
     <Window.Resources>
-        <foo:CollectionItemAdderConverter x:Key="CollectionItemAdderConverter"/>
-        <Style TargetType="Button"
-               BasedOn="{StaticResource {x:Type Button}}"
-               x:Key="AddMoreButton">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="Content" Value="..."/>
-        </Style>
+        <foo:EmptyCollectionConverter x:Key="EmptyCollectionConverter"/>
     </Window.Resources>
     
     <Window.CommandBindings>
+        <CommandBinding Command="New" CanExecute="CanNew" Executed="OnNew"/>
         <CommandBinding Command="Delete" CanExecute="CanDelete" Executed="DeleteExecuted"/>
     </Window.CommandBindings>
     
@@ -48,32 +42,26 @@
         
         <Grid>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="{Binding Default.RepoListWidth, Source={StaticResource Settings}, Mode=TwoWay}"/>
+                <ColumnDefinition Width="{Binding Default.TreePaneWidth, Source={StaticResource Settings}, Mode=TwoWay}"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
         
-            <TreeView Grid.Column="0" x:Name="RepoListTree">
+            <TreeView Grid.Column="0" x:Name="TreePane">
                 <TreeView.Resources>
                     
-                    <HierarchicalDataTemplate DataType="{x:Type foo:ServerRepositoryList}">
-                        <HierarchicalDataTemplate.ItemsSource>
-                            <Binding Path="Repositories"
-                                     Converter="{StaticResource CollectionItemAdderConverter}">
-                                <Binding.ConverterParameter>
-                                    <DataTemplate>
-                                        <Button Style="{StaticResource AddMoreButton}" Click="NewRemotePair"/>
-                                    </DataTemplate>
-                                </Binding.ConverterParameter>
-                            </Binding>
-                        </HierarchicalDataTemplate.ItemsSource>
-                        <TextBlock Text="{Binding HostName}"
+                    <HierarchicalDataTemplate DataType="{x:Type foo:ServerRepositoryList}"
+                                              ItemsSource="{Binding Repositories}">
+                        <TextBlock Text="{Binding Hostname}"
                                    Margin="0,3,3,3">
                             <TextBlock.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Command="Delete" CommandParameter="{Binding}">
+                                    <MenuItem Header="Delete Server from List"
+                                              Command="Delete"
+                                              CommandParameter="{Binding}">
                                         <MenuItem.Icon>
-                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png" Width="16" Height="16"/>
+                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"
+                                                   Width="16" Height="16"/>
                                         </MenuItem.Icon>
                                     </MenuItem>
                                 </ContextMenu>
@@ -81,14 +69,20 @@
                         </TextBlock>
                     </HierarchicalDataTemplate>
                     
-                    <DataTemplate DataType="{x:Type foo:ServerRepositoryPair}">
-                        <TextBlock Text="{Binding RepositoryName}"
+                    <DataTemplate DataType="{x:Type foo:SyncGroup}">
+                        <TextBlock Text="{Binding Name}"
                                    Margin="0,3,3,3">
                             <TextBlock.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Command="Delete" CommandParameter="{Binding}">
+                                    <MenuItem Header="New Sync Group Member"
+                                              Command="New"
+                                              CommandParameter="{Binding}"/>
+                                    <MenuItem Header="Delete Sync Group"
+                                              Command="Delete"
+                                              CommandParameter="{Binding}">
                                         <MenuItem.Icon>
-                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png" Width="16" Height="16"/>
+                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"
+                                                   Width="16" Height="16"/>
                                         </MenuItem.Icon>
                                     </MenuItem>
                                 </ContextMenu>
@@ -96,39 +90,68 @@
                         </TextBlock>
                     </DataTemplate>
                     
-                    <DataTemplate DataType="{x:Type foo:LocalRepositoryPair}">
-                        <TextBlock Text="{Binding RepositoryPath}"
+                    <DataTemplate DataType="{x:Type foo:ServerRepository}">
+                        <TextBlock Text="{Binding Name}"
                                    Margin="0,3,3,3">
                             <TextBlock.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem IsEnabled="False" Icon="→">
-                                        <MenuItem.Header>
-                                            <TextBlock Text="{Binding SourcePath}"/>
-                                        </MenuItem.Header>
-                                    </MenuItem>
-                                    <Separator/>
-                                    <MenuItem Command="Delete" CommandParameter="{Binding}">
-                                        <MenuItem.Icon>
-                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png" Width="16" Height="16"/>
-                                        </MenuItem.Icon>
-                                    </MenuItem>
+                                    
                                 </ContextMenu>
                             </TextBlock.ContextMenu>
                         </TextBlock>
                     </DataTemplate>
 
                     <CompositeCollection x:Key="collection">
-                        <TreeViewItem Header="Local Directories"
+                        <TreeViewItem Header="Sync Groups"
                                       IsExpanded="True">
                             <TreeViewItem.ItemsSource>
-                                <CompositeCollection>
-                                    <CollectionContainer Collection="{Binding DataContext.LocalPaths, Source={x:Reference RepoListTree}}"/>
-                                    <Button Style="{StaticResource AddMoreButton}" Click="NewLocalPair"/>
-                                </CompositeCollection>
+                                <Binding Path="DataContext.SyncGroups"
+                                         Source="{x:Reference TreePane}"
+                                         Converter="{StaticResource EmptyCollectionConverter}">
+                                    <Binding.TargetNullValue>
+                                        <CompositeCollection>
+                                            <TreeViewItem Header="No Sync Groups are Configured" IsEnabled="False" />
+                                        </CompositeCollection>
+                                    </Binding.TargetNullValue>
+                                </Binding>
                             </TreeViewItem.ItemsSource>
+                            <TreeViewItem.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="New Sync Group"
+                                              Command="New">
+                                        <MenuItem.CommandParameter>
+                                            <Binding Path="DataContext.SyncGroups"
+                                                     Source="{x:Reference TreePane}"/>
+                                        </MenuItem.CommandParameter>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </TreeViewItem.ContextMenu>
                         </TreeViewItem>
-                        <CollectionContainer Collection="{Binding DataContext.Servers, Source={x:Reference RepoListTree}}"/>
-                        <Button Style="{StaticResource AddMoreButton}" Click="NewRemoteServer"/>
+                        <Separator/>
+                        <TreeViewItem Header="Saved Servers"
+                                      IsExpanded="True">
+                            <TreeViewItem.ItemsSource>
+                                <Binding Path="DataContext.Servers"
+                                         Source="{x:Reference TreePane}"
+                                         Converter="{StaticResource EmptyCollectionConverter}">
+                                    <Binding.TargetNullValue>
+                                        <CompositeCollection>
+                                            <TreeViewItem Header="No Servers have been Saved" IsEnabled="False"/>
+                                        </CompositeCollection>
+                                    </Binding.TargetNullValue>
+                                </Binding>
+                            </TreeViewItem.ItemsSource>
+                            <TreeViewItem.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Add Server" Command="New">
+                                        <MenuItem.CommandParameter>
+                                            <Binding Path="DataContext.Servers"
+                                                     Source="{x:Reference TreePane}"/>
+                                        </MenuItem.CommandParameter>
+                                    </MenuItem>
+                                </ContextMenu>
+                            </TreeViewItem.ContextMenu>
+                        </TreeViewItem>
                     </CompositeCollection>
                 </TreeView.Resources>
                 
@@ -158,7 +181,7 @@
                 
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
 
-                    <TextBlock Text="{Binding Source={x:Reference RepoListTree}, Path=SelectedItem.RepositoryURL}"/>
+                    <TextBlock Text="{Binding Source={x:Reference TreePane}, Path=SelectedItem.Name}"/>
 
                 </StackPanel>
             </Grid>

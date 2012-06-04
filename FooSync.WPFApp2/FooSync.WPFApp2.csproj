@@ -74,11 +74,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="CollectionItemAdderConverter.cs" />
+    <Compile Include="EmptyCollectionConverter.cs" />
     <Compile Include="LocalPairEntryWindow.xaml.cs">
       <DependentUpon>LocalPairEntryWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="RepositoryList.cs" />
+    <Compile Include="SyncGroupList.cs" />
     <Compile Include="ServerEntryWindow.xaml.cs">
       <DependentUpon>ServerEntryWindow.xaml</DependentUpon>
     </Compile>
@@ -157,6 +157,9 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
+    <None Include="SyncGroupList.xsd">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
