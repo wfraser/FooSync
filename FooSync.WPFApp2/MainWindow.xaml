@@ -73,7 +73,7 @@
                                 <ContextMenu>
                                     <MenuItem Command="Delete" CommandParameter="{Binding}">
                                         <MenuItem.Icon>
-                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"/>
+                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png" Width="16" Height="16"/>
                                         </MenuItem.Icon>
                                     </MenuItem>
                                 </ContextMenu>
@@ -88,7 +88,7 @@
                                 <ContextMenu>
                                     <MenuItem Command="Delete" CommandParameter="{Binding}">
                                         <MenuItem.Icon>
-                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"/>
+                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png" Width="16" Height="16"/>
                                         </MenuItem.Icon>
                                     </MenuItem>
                                 </ContextMenu>
@@ -101,11 +101,15 @@
                                    Margin="0,3,3,3">
                             <TextBlock.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="{Binding SourcePath}" IsEnabled="False" Icon="→"/>
+                                    <MenuItem IsEnabled="False" Icon="→">
+                                        <MenuItem.Header>
+                                            <TextBlock Text="{Binding SourcePath}"/>
+                                        </MenuItem.Header>
+                                    </MenuItem>
                                     <Separator/>
                                     <MenuItem Command="Delete" CommandParameter="{Binding}">
                                         <MenuItem.Icon>
-                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"/>
+                                            <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png" Width="16" Height="16"/>
                                         </MenuItem.Icon>
                                     </MenuItem>
                                 </ContextMenu>
