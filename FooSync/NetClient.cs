@@ -58,19 +58,22 @@ namespace Codewise.FooSync
             var client = new TcpClient();
             IAsyncResult ar = client.BeginConnect(_hostname, _port, null, null);
 
-            try
+            if (!ar.CompletedSynchronously)
             {
-                if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(SocketTimeout), false))
+                try
+                {
+                    if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(SocketTimeout), false))
+                    {
+                        client.Close();
+                        throw new TimeoutException(string.Format("Connecting to host {0}:{1} took too long.", _hostname, _port));
+                    }
+                    client.EndConnect(ar);
+                }
+                catch (Exception)
                 {
                     client.Close();
-                    throw new TimeoutException(string.Format("Connecting to host {0}:{1} took too long.", _hostname, _port));
+                    throw;
                 }
-                client.EndConnect(ar);
-            }
-            catch (Exception)
-            {
-                client.Close();
-                throw;
             }
 
             client.SendTimeout = SocketTimeout;
@@ -86,6 +89,10 @@ namespace Codewise.FooSync
 
             _client = GetClient();
             _stream = _client.GetStream();
+
+            _stream.ReadTimeout = SocketTimeout * 1000;
+            _stream.WriteTimeout = SocketTimeout * 1000;
+
             _reader = new BinaryReader(_stream);
             _writer = new BinaryWriter(_stream);
 
