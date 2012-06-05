@@ -207,15 +207,20 @@ namespace Codewise.FooSync.WPFApp2
                         return;
                     }
 
-                    servers.Add(
-                        new ServerRepositoryList()
-                        {
-                            Hostname = serverUrl.Host,
-                            Port = serverUrl.Port,
-                            Username = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Username.Text : "",
-                            Password = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Password.Password : ""
-                        }
-                    );
+                    var newServer = new ServerRepositoryList()
+                    {
+                        Hostname = serverUrl.Host,
+                        Port = serverUrl.Port,
+                        Username = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Username.Text : "",
+                        Password = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Password.Password : ""
+                    };
+
+                    foreach (var repoName in serverEntryWindow.Repositories)
+                    {
+                        newServer.Repositories.Add(new ServerRepository() { Server = newServer, Name = repoName });
+                    }
+
+                    servers.Add(newServer);
                 }
             }
             else if (e.Parameter is ICollection<SyncGroup>)
