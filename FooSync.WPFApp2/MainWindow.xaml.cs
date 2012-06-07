@@ -187,11 +187,9 @@ namespace Codewise.FooSync.WPFApp2
                 var result = serverEntryWindow.ShowDialog();
                 if (result.HasValue && result.Value)
                 {
-                    var serverUrl = new FooSyncUrl(serverEntryWindow.ServerUri.Text);
-
                     if (servers.Count((server) =>
-                            (server.Hostname.Equals(serverUrl.Host)
-                                && server.Port == serverUrl.Port)) > 0)
+                            (server.Hostname.Equals(serverEntryWindow.ServerName)
+                                && server.Port == serverEntryWindow.ServerPort)) > 0)
                     {
                         //
                         // Duplicate.
@@ -199,7 +197,7 @@ namespace Codewise.FooSync.WPFApp2
 
                         MessageBox.Show(
                             string.Format("That server ({0}) is already in your Saved Servers list.",
-                                serverUrl.Host),
+                                serverEntryWindow.ServerNameEntry.Text),
                             "Duplicate Server",
                             MessageBoxButton.OK,
                             MessageBoxImage.Error
@@ -209,15 +207,21 @@ namespace Codewise.FooSync.WPFApp2
 
                     var newServer = new ServerRepositoryList()
                     {
-                        Hostname = serverUrl.Host,
-                        Port = serverUrl.Port,
-                        Username = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Username.Text : "",
-                        Password = (serverEntryWindow.UsernameAndPassword.IsChecked ?? false) ? serverEntryWindow.Password.Password : ""
+                        Hostname = serverEntryWindow.ServerName,
+                        Port     = serverEntryWindow.ServerPort,
+                        Username = serverEntryWindow.Username,
+                        Password = serverEntryWindow.Password
                     };
 
                     foreach (var repoName in serverEntryWindow.Repositories)
                     {
-                        newServer.Repositories.Add(new ServerRepository() { Server = newServer, Name = repoName });
+                        var repo = new ServerRepository() { Server = newServer, Name = repoName };
+                        newServer.Repositories.Add(repo);
+                        foreach (var syncGroup in _syncGroupList.SyncGroups.Where(
+                            (syncGroup) => syncGroup.URLs.Contains(repo.URL)))
+                        {
+                            repo.MemberOfSyncGroups.Add(syncGroup.Name);
+                        }
                     }
 
                     servers.Add(newServer);

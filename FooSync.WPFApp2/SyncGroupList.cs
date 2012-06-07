@@ -24,7 +24,7 @@ namespace Codewise.FooSync.WPFApp2
 {
     [Serializable]
     [XmlType("SyncGroupList", Namespace="http://www.codewise.org/schema/foosync/SyncGroupList.xsd")]
-    public class SyncGroupList : INotifyCollectionChanged
+    public class SyncGroupList : INotifyPropertyChanged
     {
         public SyncGroupList()
         {
@@ -35,15 +35,32 @@ namespace Codewise.FooSync.WPFApp2
             Servers.CollectionChanged += new NotifyCollectionChangedEventHandler(Child_CollectionChanged);
         }
 
-        void Child_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        void Child_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            if (CollectionChanged != null)
+            if (PropertyChanged != null)
             {
-                CollectionChanged(this, e);
+                string property = null;
+                if (sender == SyncGroups)
+                {
+                    property = "SyncGroups";
+                }
+                else if (sender == Servers)
+                {
+                    property = "Servers";
+                }
+
+                if (property != null)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs(property));
+                }
+                else
+                {
+                    System.Diagnostics.Debug.Assert(false, "unknown property");
+                }
             }
         }
 
-        public event NotifyCollectionChangedEventHandler CollectionChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
 
         [XmlArray]
         [XmlArrayItem("SyncGroup")]
@@ -229,6 +246,41 @@ namespace Codewise.FooSync.WPFApp2
         {
             MemberOfSyncGroups = new List<string>();
         }
+
+        public FooSyncUrl URL
+        {
+            get
+            {
+                if (_url == null)
+                {
+                    var urlString = new StringBuilder();
+                    urlString.Append("fs://");
+
+                    /*
+                    if (!string.IsNullOrEmpty(Server.Username))
+                    {
+                        urlString.Append(Server.Username);
+                        if (!string.IsNullOrEmpty(Server.Password))
+                        {
+                            urlString.Append(":").Append(Server.Password);
+                        }
+                        urlString.Append("@");
+                    }
+                     */
+
+                    urlString.Append(Server.Hostname)
+                             .Append(":")
+                             .Append(Server.Port)
+                             .Append("/")
+                             .Append(Name);
+
+                    _url = new FooSyncUrl(urlString.ToString());
+                }
+                return _url;
+            }
+        }
+
+        private FooSyncUrl _url = null;
 
         #region equality overrides
         public override bool Equals(object obj)

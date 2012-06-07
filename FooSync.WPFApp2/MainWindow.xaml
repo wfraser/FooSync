@@ -106,7 +106,7 @@
                                       IsExpanded="True">
                             <TreeViewItem.ItemsSource>
                                 <Binding Path="DataContext.SyncGroups"
-                                         Source="{x:Reference TreePane}"
+                                         ElementName="TreePane"
                                          Converter="{StaticResource EmptyCollectionConverter}">
                                     <Binding.TargetNullValue>
                                         <CompositeCollection>
@@ -132,7 +132,7 @@
                                       IsExpanded="True">
                             <TreeViewItem.ItemsSource>
                                 <Binding Path="DataContext.Servers"
-                                         Source="{x:Reference TreePane}"
+                                         ElementName="TreePane"
                                          Converter="{StaticResource EmptyCollectionConverter}">
                                     <Binding.TargetNullValue>
                                         <CompositeCollection>
@@ -181,7 +181,7 @@
                 
                 <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
 
-                    <TextBlock Text="{Binding Source={x:Reference TreePane}, Path=SelectedItem.Name}"/>
+                    <TextBlock Text="{Binding ElementName=TreePane, Path=SelectedItem.Name}"/>
 
                 </StackPanel>
             </Grid>

@@ -10,7 +10,7 @@ namespace Codewise.FooSync
     public class FooSyncUrl : Uri
     {
         public static readonly string UriSchemeFooSync = "fs";
-        public static readonly int DefaultPort = 22022;
+        public static readonly short  DefaultPort = 22022;
 
         private bool _isLocal;
 
@@ -74,6 +74,31 @@ namespace Codewise.FooSync
             sb.Append(AbsolutePath);
 
             return sb.ToString();
+        }
+
+        public override bool Equals(object comparand)
+        {
+            var other = comparand as FooSyncUrl;
+            if (other == null)
+            {
+                return false;
+            }
+
+            if (this.Host.Equals(other.Host)
+                && this.Port.Equals(other.Port)
+                && this.AbsolutePath.Equals(other.AbsolutePath))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
     }
 }

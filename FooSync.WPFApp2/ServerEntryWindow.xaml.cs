@@ -38,8 +38,56 @@ namespace Codewise.FooSync.WPFApp2
         {
             InitializeComponent();
             Repositories = new List<string>();
-            ServerUri.Focus();
-            ServerUri.CaretIndex = ServerUri.Text.Length;
+            ServerNameEntry.Focus();
+            ServerNameEntry.CaretIndex = ServerNameEntry.Text.Length;
+        }
+
+        public string ServerName
+        {
+            get
+            {
+                if (!ServerNameEntry.Text.Contains(':'))
+                {
+                    return ServerNameEntry.Text;
+                }
+                else
+                {
+                    return ServerNameEntry.Text.Split(new char[] { ':' }, 2)[0];
+                }
+            }
+        }
+
+        public short ServerPort
+        {
+            get
+            {
+                if (!ServerNameEntry.Text.Contains(':'))
+                {
+                    return FooSyncUrl.DefaultPort;
+                }
+                else
+                {
+                    return short.Parse(ServerNameEntry.Text.Split(new char[] { ':' }, 2)[1]);
+                }
+            }
+        }
+
+        public string Username
+        {
+            get
+            {
+                return (UsernameAndPassword.IsChecked ?? false)
+                    ? UsernameEntry.Text : null;
+            }
+        }
+
+        public string Password
+        {
+            get
+            {
+                return (UsernameAndPassword.IsChecked ?? false)
+                    ? PasswordEntry.Password : null;
+            }
         }
 
         private void Cancel(object sender, RoutedEventArgs e)
@@ -52,17 +100,17 @@ namespace Codewise.FooSync.WPFApp2
             _url = null;
             try
             {
-                _url = new FooSyncUrl(ServerUri.Text);
+                _url = new FooSyncUrl("fs://" + ServerNameEntry.Text);
             }
             catch (FormatException)
             {
-                ErrorText.Text = "Invalid URL; it must be of the form \"fs://hostname\"";
+                ErrorText.Text = "Invalid hostname.";
                 ErrorText.Visibility = System.Windows.Visibility.Visible;
                 return;
             }
 
-            string username = (UsernameAndPassword.IsChecked ?? false) ? Username.Text : null;
-            SecureString password = (UsernameAndPassword.IsChecked ?? false) ? Password.SecurePassword : null;
+            string username = (UsernameAndPassword.IsChecked ?? false) ? UsernameEntry.Text : null;
+            SecureString password = (UsernameAndPassword.IsChecked ?? false) ? PasswordEntry.SecurePassword : null;
             var client = new NetClient(MainWindow.Foo, _url.Host, _url.Port, username, password);
 
             var connectionWorker = new BackgroundWorker();

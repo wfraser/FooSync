@@ -17,12 +17,22 @@
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
     <DockPanel>
-        
-        <TextBox x:Name="ServerUri"
-                 DockPanel.Dock="Top"
+
+        <DockPanel DockPanel.Dock="Top">
+            <Label DockPanel.Dock="Left"
+                   VerticalAlignment="Center"
+                   Target="{Binding ElementName=ServerNameEntry}"
+                   Padding="5"
+                   Margin="5,15,0,0">
+                Server Hostname:
+            </Label>
+            
+            <TextBox 
+                 Name="ServerNameEntry"
                  Padding="5"
                  Margin="5,15,5,0"
-                 Text="fs://" />
+                 Text="" />
+        </DockPanel>
 
         <TextBlock x:Name="ErrorText"
                    DockPanel.Dock="Top"
@@ -44,7 +54,7 @@
                    VerticalAlignment="Center"/>
             <RadioButton Grid.Column="1"
                          GroupName="AuthMode"
-                         IsChecked="True"
+                         IsChecked="True"                         
                          Content="Anonymous"
                          VerticalAlignment="Center"/>
             <RadioButton Grid.Column="2"
@@ -57,7 +67,7 @@
         <GroupBox DockPanel.Dock="Top"
                   Header="Authentication"
                   Margin="5,0,5,5"
-                  Visibility="{Binding IsChecked, Source={x:Reference UsernameAndPassword}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                  Visibility="{Binding IsChecked, ElementName=UsernameAndPassword, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -69,15 +79,19 @@
                 </Grid.RowDefinitions>
 
                 <Label Grid.Row="0" Grid.Column="0"
+                       Target="{Binding ElementName=UsernameEntry}"
+                       VerticalAlignment="Center"
                        Content="Username:"/>
                 <Label Grid.Row="1" Grid.Column="0"
+                       Target="{Binding ElementName=PasswordEntry}"
+                       VerticalAlignment="Center"
                        Content="Password:"/>
 
-                <TextBox x:Name="Username"
+                <TextBox x:Name="UsernameEntry"
                          Grid.Row="0" Grid.Column="1"
                          Padding="5"
                          Margin="5,15,5,15"/>
-                <PasswordBox x:Name="Password"
+                <PasswordBox x:Name="PasswordEntry"
                              Grid.Row="1" Grid.Column="1"
                              Padding="5"
                              Margin="5,15,5,15"/>
