@@ -28,6 +28,25 @@
     <DockPanel>
         
         <ToolBar DockPanel.Dock="Top">
+            <Button ToolTip="New Sync Group">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"
+                           Width="16" Height="16" Margin="2"
+                           VerticalAlignment="Center"/>
+                    <TextBlock VerticalAlignment="Center">New Sync Group</TextBlock>
+                </StackPanel>
+            </Button>
+
+            <Button ToolTip="Connect to Server"
+                    Click="NewRemoteServer_Click">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"
+                           Width="16" Height="16" Margin="2"
+                           VerticalAlignment="Center"/>
+                    <TextBlock VerticalAlignment="Center">Connect to Server</TextBlock>
+                </StackPanel>
+            </Button>
+
             <Button ToolTip="About"
                     ToolBar.OverflowMode="Always"
                     Click="ShowAboutWindow">

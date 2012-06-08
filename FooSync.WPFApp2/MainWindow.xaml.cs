@@ -178,54 +178,7 @@ namespace Codewise.FooSync.WPFApp2
         {
             if (e.Parameter is ICollection<ServerRepositoryList>)
             {
-                var servers = (ICollection<ServerRepositoryList>)e.Parameter;
-
-                var serverEntryWindow = new ServerEntryWindow();
-                serverEntryWindow.ShowInTaskbar = false;
-                serverEntryWindow.ShowActivated = true;
-                serverEntryWindow.Topmost = true;
-                var result = serverEntryWindow.ShowDialog();
-                if (result.HasValue && result.Value)
-                {
-                    if (servers.Count((server) =>
-                            (server.Hostname.Equals(serverEntryWindow.ServerName)
-                                && server.Port == serverEntryWindow.ServerPort)) > 0)
-                    {
-                        //
-                        // Duplicate.
-                        //
-
-                        MessageBox.Show(
-                            string.Format("That server ({0}) is already in your Saved Servers list.",
-                                serverEntryWindow.ServerNameEntry.Text),
-                            "Duplicate Server",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error
-                            );
-                        return;
-                    }
-
-                    var newServer = new ServerRepositoryList()
-                    {
-                        Hostname = serverEntryWindow.ServerName,
-                        Port     = serverEntryWindow.ServerPort,
-                        Username = serverEntryWindow.Username,
-                        Password = serverEntryWindow.Password
-                    };
-
-                    foreach (var repoName in serverEntryWindow.Repositories)
-                    {
-                        var repo = new ServerRepository() { Server = newServer, Name = repoName };
-                        newServer.Repositories.Add(repo);
-                        foreach (var syncGroup in _syncGroupList.SyncGroups.Where(
-                            (syncGroup) => syncGroup.URLs.Contains(repo.URL)))
-                        {
-                            repo.MemberOfSyncGroups.Add(syncGroup.Name);
-                        }
-                    }
-
-                    servers.Add(newServer);
-                }
+                NewRemoteServer();
             }
             else if (e.Parameter is ICollection<SyncGroup>)
             {
@@ -234,6 +187,72 @@ namespace Codewise.FooSync.WPFApp2
             else if (e.Parameter is SyncGroup)
             {
 
+            }
+        }
+
+        void NewRemoteServer_Click(object sender, RoutedEventArgs e)
+        {
+            NewRemoteServer();
+        }
+
+        void NewRemoteServer()
+        {
+            var serverEntryWindow = new ServerEntryWindow();
+            serverEntryWindow.ShowInTaskbar = false;
+            serverEntryWindow.ShowActivated = true;
+            serverEntryWindow.Topmost = true;
+            var result = serverEntryWindow.ShowDialog();
+            if (result.HasValue && result.Value)
+            {
+                if (_syncGroupList.Servers.Count((server) =>
+                        (server.Hostname.Equals(serverEntryWindow.ServerName)
+                            && server.Port == serverEntryWindow.ServerPort)) > 0)
+                {
+                    //
+                    // Duplicate.
+                    //
+
+                    MessageBox.Show(
+                        string.Format("That server ({0}) is already in your Saved Servers list.",
+                            serverEntryWindow.ServerNameEntry.Text),
+                        "Duplicate Server",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error
+                        );
+                    return;
+                }
+
+                var newServer = new ServerRepositoryList()
+                {
+                    Hostname = serverEntryWindow.ServerName,
+                    Port = serverEntryWindow.ServerPort,
+                    Username = serverEntryWindow.Username,
+                    Password = serverEntryWindow.Password
+                };
+
+                foreach (var repoName in serverEntryWindow.Repositories)
+                {
+                    var repo = new ServerRepository() { Server = newServer, Name = repoName };
+                    newServer.Repositories.Add(repo);
+                    foreach (var syncGroup in _syncGroupList.SyncGroups.Where(
+                        (syncGroup) => syncGroup.URLs.Contains(repo.URL)))
+                    {
+                        repo.MemberOfSyncGroups.Add(syncGroup.Name);
+                    }
+                }
+
+                _syncGroupList.Servers.Add(newServer);
+
+                //
+                // Hack to avoid first item showing up twice.
+                // This has something to do with the use of EmptyCollectionConverter...
+                // Need to find a better real solution.
+                //
+                if (_syncGroupList.Servers.Count == 1)
+                {
+                    _syncGroupList.Servers.Add(null);
+                    _syncGroupList.Servers.RemoveAt(1);
+                }
             }
         }
     }
