@@ -22,21 +22,29 @@ namespace Codewise.FooSync.Daemon
                 return null;
             }
 
-            using (var reader = XmlReader.Create(configXmlFilename))
+            try
             {
-                var serializer = new XmlSerializer(typeof(ServerRepositoryConfig));
-                serializer.UnknownAttribute += serializer_UnknownAttribute;
-                serializer.UnknownElement += serializer_UnknownElement;
-                serializer.UnknownNode += serializer_UnknownNode;
-
-                var config = (ServerRepositoryConfig)serializer.Deserialize(reader);
-
-                foreach (var repo in config.RepositoriesList)
+                using (var reader = XmlReader.Create(configXmlFilename))
                 {
-                    config.Repositories.Add(repo.Name, repo);
-                }
+                    var serializer = new XmlSerializer(typeof(ServerRepositoryConfig));
+                    serializer.UnknownAttribute += serializer_UnknownAttribute;
+                    serializer.UnknownElement += serializer_UnknownElement;
+                    serializer.UnknownNode += serializer_UnknownNode;
 
-                return config;
+                    var config = (ServerRepositoryConfig)serializer.Deserialize(reader);
+
+                    foreach (var repo in config.RepositoriesList)
+                    {
+                        config.Repositories.Add(repo.Name, repo);
+                    }
+
+                    return config;
+                }
+            }
+            catch (Exception ex)
+            {
+                error = string.Format("{0} ({1})", ex.Message, ex.GetType().Name);
+                return null;
             }
         }
 

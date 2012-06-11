@@ -31,9 +31,17 @@ namespace Codewise.FooSync.Daemon
 #endif
                 )
             {
-                var svc = new FooSyncService();
-                var args = Environment.GetCommandLineArgs();
-                svc.Start(args.Where((arg, index) => index > 0).ToArray());
+                try
+                {
+                    var svc = new FooSyncService();
+                    var args = Environment.GetCommandLineArgs();
+                    svc.Start(args.Where((arg, index) => index > 0).ToArray());
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Unhandled {0}: {1}", ex.GetType().Name, ex.Message);
+		    Console.WriteLine(ex.StackTrace);
+                }
             }
             else
             {
