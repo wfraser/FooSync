@@ -242,17 +242,6 @@ namespace Codewise.FooSync.WPFApp2
                 }
 
                 _syncGroupList.Servers.Add(newServer);
-
-                //
-                // Hack to avoid first item showing up twice.
-                // This has something to do with the use of EmptyCollectionConverter...
-                // Need to find a better real solution.
-                //
-                if (_syncGroupList.Servers.Count == 1)
-                {
-                    _syncGroupList.Servers.Add(null);
-                    _syncGroupList.Servers.RemoveAt(1);
-                }
             }
         }
     }

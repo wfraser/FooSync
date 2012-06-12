@@ -1,7 +1,7 @@
 ﻿///
-/// Codewise/FooSync/WPFApp2/EmptyCollectionConverter.cs
+/// Codewise/FooSync/WPFApp2/VisibleWhenEmptyConverter.cs
 /// 
-/// by William R. Fraser
+/// by William R. Fraser:
 ///     http://www.codewise.org/
 ///     https://github.com/wfraser/FooSync
 ///     
@@ -19,29 +19,25 @@ using System.Windows.Data;
 
 namespace Codewise.FooSync.WPFApp2
 {
-    public class EmptyCollectionConverter : IValueConverter
+    /// <summary>
+    /// When given a collection as input value, returns Visibility.Visible if that collection is
+    /// empty; otherwise returns Visibility.Collapsed.
+    /// Useful for having a fallback value be displayed when the collection is empty.
+    /// </summary>
+    class VisibleWhenEmptyConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null)
-                return null;
+            var coll = value as ICollection;
 
-            if (!(value is ICollection))
-                throw new ArgumentException(GetType().Name + " only works with collections", "value");
-
-            var coll = (ICollection)value;
-
-            if (coll.Count == 0)
+            if (coll == null || coll.Count == 0)
             {
-                return null;
+                return Visibility.Visible;
             }
 
-            return value;
+            return Visibility.Collapsed;
         }
 
-        /// <summary>
-        /// Not supported.
-        /// </summary>
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();

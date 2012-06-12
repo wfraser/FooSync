@@ -74,7 +74,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="EmptyCollectionConverter.cs" />
     <Compile Include="LocalPairEntryWindow.xaml.cs">
       <DependentUpon>LocalPairEntryWindow.xaml</DependentUpon>
     </Compile>
@@ -84,6 +83,7 @@
     </Compile>
     <Compile Include="Settings.cs" />
     <Compile Include="VersionToDateTimeConverter.cs" />
+    <Compile Include="VisibleWhenEmptyConverter.cs" />
     <Page Include="AboutWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
