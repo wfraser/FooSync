@@ -1,4 +1,14 @@
-﻿using System;
+﻿///
+/// Codewise/FooSync/FooSyncUrl.cs
+/// 
+/// by William R. Fraser:
+///     http://www.codewise.org/
+///     https://github.com/wfraser/FooSync
+///     
+/// Copyright (c) 2012
+/// 
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,6 +17,12 @@ using System.Xml.Serialization;
 
 namespace Codewise.FooSync
 {
+    /// <summary>
+    /// An extension of the System.Uri class that handles fs:// and file:/// URLs.
+    /// Includes logic to take into account the FooSync daemon default port.
+    /// 
+    /// Note: do not include a username:password when using this class.
+    /// </summary>
     public class FooSyncUrl : Uri
     {
         public static readonly string UriSchemeFooSync = "fs";
@@ -14,6 +30,10 @@ namespace Codewise.FooSync
 
         private bool _isLocal;
 
+        /// <summary>
+        /// C'tor.
+        /// </summary>
+        /// <param name="url">file:/// or fs:// URL</param>
         public FooSyncUrl(string url)
             : base(url)
         {
@@ -22,6 +42,11 @@ namespace Codewise.FooSync
             if (!_isLocal && Scheme != UriSchemeFooSync)
             {
                 throw new FormatException("Invalid URI schema; must be " + UriSchemeFooSync + " or " + Uri.UriSchemeFile + ", not " + Scheme);
+            }
+
+            if (UserInfo != string.Empty)
+            {
+                throw new FormatException("Don't use a username/password with a fs:// URL");
             }
 
             if (_isLocal)
@@ -37,6 +62,10 @@ namespace Codewise.FooSync
             }
         }
 
+        /// <summary>
+        /// If file:/// URL, -1.
+        /// If fs:// URL, the server port.
+        /// </summary>
         public new int Port
         {
             get
@@ -45,6 +74,10 @@ namespace Codewise.FooSync
             }
         }
 
+        /// <summary>
+        /// If file:/// URL, true.
+        /// If fs:// URL, whether the port is equal to FooSyncUrl.DefaultPort
+        /// </summary>
         public new bool IsDefaultPort
         {
             get
@@ -53,6 +86,11 @@ namespace Codewise.FooSync
             }
         }
 
+        /// <summary>
+        /// Converts the FooSyncUrl instance into a URL string.
+        /// Does not include the port if it is the default port.
+        /// </summary>
+        /// <returns>file:/// or fs:// URL string</returns>
         public override string ToString()
         {
             var sb = new StringBuilder();
@@ -76,6 +114,12 @@ namespace Codewise.FooSync
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Compare two FooSyncUrl instances for equality.
+        /// Equality is considered host, port, and path being equal.
+        /// </summary>
+        /// <param name="comparand"></param>
+        /// <returns></returns>
         public override bool Equals(object comparand)
         {
             var other = comparand as FooSyncUrl;
