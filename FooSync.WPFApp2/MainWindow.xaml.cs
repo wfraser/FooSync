@@ -133,58 +133,110 @@ namespace Codewise.FooSync.WPFApp2
 
         private void DeleteExecuted(object sender, ExecutedRoutedEventArgs e)
         {
-            if (e.Parameter is ServerRepositoryList)
+            object param = e.Parameter;
+
+            if (param == null)
             {
-                var server = (ServerRepositoryList)e.Parameter;
+                var elem = Keyboard.FocusedElement as FrameworkElement;
+                if (elem != null)
+                {
+                    param = elem.DataContext;
+                }
+            }
+
+            if (param is ServerRepositoryList)
+            {
+                var server = (ServerRepositoryList)param;
                 _syncGroupList.Servers.Remove(server);
             }
-            else if (e.Parameter is ServerRepository)
+            else if (param is ServerRepository)
             {
-                var repo = (ServerRepository)e.Parameter;
+                var repo = (ServerRepository)param;
                 var server = _syncGroupList.Servers.Where((o) => o == repo.Server).FirstOrDefault();
                 if (server != null)
                     server.Repositories.Remove(repo);
             }
-            else if (e.Parameter is SyncGroup)
+            else if (param is SyncGroup)
             {
-                var pair = (SyncGroup)e.Parameter;
+                var pair = (SyncGroup)param;
                 _syncGroupList.SyncGroups.Remove(pair);
             }
         }
 
         private void CanDelete(object sender, CanExecuteRoutedEventArgs e)
         {
-            if (e.Parameter != null &&
-                    (e.Parameter is ServerRepositoryList
-                    || e.Parameter is ServerRepository
-                    || e.Parameter is SyncGroup))
+            object param = e.Parameter;
+
+            if (param == null)
+            {
+                var elem = Keyboard.FocusedElement as FrameworkElement;
+                if (elem != null)
+                {
+                    param = elem.DataContext;
+                }
+            }
+
+            if (param != null &&
+                    (param is ServerRepositoryList
+                    || param is ServerRepository
+                    || param is SyncGroup))
+            {
                 e.CanExecute = true;
+            }
             else
+            {
                 e.CanExecute = false;
+            }
         }
 
         private void CanNew(object sender, CanExecuteRoutedEventArgs e)
         {
-            if (e.Parameter != null &&
-                    (e.Parameter is ICollection<ServerRepositoryList>
-                    || e.Parameter is ICollection<SyncGroup>
-                    || e.Parameter is SyncGroup))
+            object param = e.Parameter;
+
+            if (param == null)
+            {
+                var elem = Keyboard.FocusedElement as FrameworkElement;
+                if (elem != null)
+                {
+                    param = elem.DataContext;
+                }
+            }
+
+            if (param != null &&
+                    (param is ICollection<ServerRepositoryList>
+                    || param is ICollection<SyncGroup>
+                    || param is SyncGroup))
+            {
                 e.CanExecute = true;
+            }
             else
+            {
                 e.CanExecute = false;
+            }
         }
 
         private void OnNew(object sender, ExecutedRoutedEventArgs e)
         {
-            if (e.Parameter is ICollection<ServerRepositoryList>)
+            object param = e.Parameter;
+
+            if (param == null)
+            {
+                var elem = Keyboard.FocusedElement as FrameworkElement;
+                if (elem != null)
+                {
+                    param = elem.DataContext;
+                }
+            }
+
+            if (param is ICollection<ServerRepositoryList>)
             {
                 NewRemoteServer();
             }
-            else if (e.Parameter is ICollection<SyncGroup>)
+            else if (param is ICollection<SyncGroup>)
             {
-
+                NewSyncGroup();
             }
-            else if (e.Parameter is SyncGroup)
+            else if (param is SyncGroup)
             {
 
             }
@@ -242,6 +294,100 @@ namespace Codewise.FooSync.WPFApp2
                 }
 
                 _syncGroupList.Servers.Add(newServer);
+            }
+        }
+
+        private void NewSyncGroup_Click(object sender, RoutedEventArgs e)
+        {
+            NewSyncGroup();
+        }
+
+        void NewSyncGroup()
+        {
+            var syncGroupEntryWindow = new SyncGroupEntryWindow();
+            syncGroupEntryWindow.ShowInTaskbar = false;
+            syncGroupEntryWindow.ShowActivated = true;
+            syncGroupEntryWindow.Topmost = true;
+            var result = syncGroupEntryWindow.ShowDialog();
+            if (result.HasValue && result.Value)
+            {
+                if (_syncGroupList.SyncGroups.Count((group) => group.Name.Equals(syncGroupEntryWindow.SyncGroupNameEntry.Text)) > 0)
+                {
+                    //
+                    // Duplicate.
+                    //
+
+                    MessageBox.Show(
+                        string.Format("A sync group with that name ({0}) already exists.",
+                            syncGroupEntryWindow.SyncGroupNameEntry.Text),
+                        "Duplicate Server",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error
+                        );
+                    return;
+                }
+
+                var newSyncGroup = new SyncGroup()
+                {
+                    Name = syncGroupEntryWindow.SyncGroupNameEntry.Text
+                };
+                newSyncGroup.URLs.Add(new FooSyncUrl("file:///" + syncGroupEntryWindow.LocationEntry.Text));
+
+                _syncGroupList.SyncGroups.Add(newSyncGroup);
+            }
+        }
+
+        private void DragDropDataContext_MouseMove(object sender, MouseEventArgs e)
+        {
+            var element = sender as FrameworkElement;
+            if (element != null && e.LeftButton == MouseButtonState.Pressed)
+            {
+                DragDrop.DoDragDrop(element, element.DataContext, DragDropEffects.Link);
+            }
+        }
+
+        private void SyncGroup_DragEnter(object sender, DragEventArgs e)
+        {
+            var elem = sender as FrameworkElement;
+            if (elem == null || !(elem.DataContext is SyncGroup))
+            {
+                return;
+            }
+
+            var formats = e.Data.GetFormats(true);
+            if (formats.Contains(typeof(ServerRepository).FullName))
+            {
+                e.Effects = DragDropEffects.Link;
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
+        }
+
+        private void SyncGroup_Drop(object sender, DragEventArgs e)
+        {
+            var elem = sender as FrameworkElement;
+            if (elem == null || !(elem.DataContext is SyncGroup))
+            {
+                return;
+            }
+
+            var formats = e.Data.GetFormats(true);
+            if (!formats.Contains(typeof(ServerRepository).FullName))
+            {
+                e.Effects = DragDropEffects.None;
+                return;
+            }
+
+            e.Effects = DragDropEffects.Link;
+            var repo = (ServerRepository)e.Data.GetData(typeof(ServerRepository));
+            var syncGroup = (SyncGroup)elem.DataContext;
+
+            if (!syncGroup.URLs.Contains(repo.URL))
+            {
+                syncGroup.URLs.Add(repo.URL);
+                repo.MemberOfSyncGroups.Add(syncGroup.Name);
             }
         }
     }

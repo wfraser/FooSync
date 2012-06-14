@@ -1,4 +1,4 @@
-﻿<Window x:Class="Codewise.FooSync.WPFApp2.LocalPairEntryWindow"
+﻿<Window x:Class="Codewise.FooSync.WPFApp2.SyncGroupEntryWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="New Local Folder Pair"
@@ -19,33 +19,27 @@
                VerticalAlignment="Center"
                HorizontalAlignment="Right"
                Margin="10,0,0,0"
-               Content="Main Location:"/>
+               Content="Sync Group Name:"/>
         <Label Grid.Row="1" Grid.Column="0"
                VerticalAlignment="Center"
                HorizontalAlignment="Right"
                Margin="10,0,0,0"
-               Content="Secondary Location:"/>
+               Content="Location:"/>
         
-        <TextBox x:Name="RepositoryPath"
-                 Grid.Row="0" Grid.Column="1"
+        <TextBox x:Name="SyncGroupNameEntry"
+                 Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
                  Padding="5"
-                 Margin="5,15,0,15"/>
-        <TextBox x:Name="SourcePath"
+                 Margin="5,15,10,15"/>
+        <TextBox x:Name="LocationEntry"
                  Grid.Row="1" Grid.Column="1"
                  Padding="5"
                  Margin="5,15,0,15"/>
         
-        <Button Grid.Row="0" Grid.Column="2"
-                Padding="5,0,5,0"
-                Margin="0,15,10,15"
-                Content="Browse"
-                Tag="{x:Reference RepositoryPath}"
-                Click="FolderBrowse"/>
         <Button Grid.Row="1" Grid.Column="2"
                 Padding="5,0,5,0"
                 Margin="0,15,10,15"
                 Content="Browse"
-                Tag="{x:Reference SourcePath}"
+                Tag="{Binding ElementName=LocationEntry}"
                 Click="FolderBrowse"/>
         
         <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3">

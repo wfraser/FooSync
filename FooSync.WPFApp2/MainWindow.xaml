@@ -28,7 +28,8 @@
     <DockPanel>
         
         <ToolBar DockPanel.Dock="Top">
-            <Button ToolTip="New Sync Group">
+            <Button ToolTip="New Sync Group"
+                    Click="NewSyncGroup_Click">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"
                            Width="16" Height="16" Margin="2"
@@ -95,7 +96,10 @@
                     
                     <DataTemplate DataType="{x:Type foo:SyncGroup}">
                         <TextBlock Text="{Binding Name}"
-                                   Margin="0,3,3,3">
+                                   Margin="0,3,3,3"
+                                   AllowDrop="True"
+                                   DragEnter="SyncGroup_DragEnter"
+                                   Drop="SyncGroup_Drop">
                             <TextBlock.InputBindings>
                                 <KeyBinding Command="Delete"
                                             CommandParameter="{Binding}"
@@ -121,7 +125,8 @@
                     
                     <DataTemplate DataType="{x:Type foo:ServerRepository}">
                         <TextBlock Text="{Binding Name}"
-                                   Margin="0,3,3,3">
+                                   Margin="0,3,3,3"
+                                   MouseMove="DragDropDataContext_MouseMove">
                             <TextBlock.ContextMenu>
                                 <ContextMenu>
                                     
@@ -132,13 +137,13 @@
 
                     <CompositeCollection x:Key="collection">
                         <TreeViewItem Header="Sync Groups"
-                                      IsExpanded="True">
+                                      IsExpanded="True"
+                                      DataContext="{Binding DataContext.SyncGroups, Source={x:Reference TreePane}}">
                             <TreeViewItem.ItemsSource>
                                 <CompositeCollection>
                                     <TreeViewItem Header="No Sync Groups are Configured" IsEnabled="False">
                                         <TreeViewItem.Visibility>
-                                            <Binding Converter="{StaticResource VisibleWhenEmptyConverter}"
-                                                     Path="DataContext.SyncGroups" Source="{x:Reference TreePane}"/>
+                                            <Binding Converter="{StaticResource VisibleWhenEmptyConverter}"/>
                                         </TreeViewItem.Visibility>
                                     </TreeViewItem>
                                     <CollectionContainer Collection="{Binding DataContext.SyncGroups, Source={x:Reference TreePane}}"/>
@@ -147,24 +152,20 @@
                             <TreeViewItem.ContextMenu>
                                 <ContextMenu>
                                     <MenuItem Header="New Sync Group"
-                                              Command="New">
-                                        <MenuItem.CommandParameter>
-                                            <Binding Path="DataContext.SyncGroups"
-                                                     Source="{x:Reference TreePane}"/>
-                                        </MenuItem.CommandParameter>
-                                    </MenuItem>
+                                              Command="New"
+                                              CommandParameter="{Binding}"/>
                                 </ContextMenu>
                             </TreeViewItem.ContextMenu>
                         </TreeViewItem>
                         <Separator/>
                         <TreeViewItem Header="Saved Servers"
-                                      IsExpanded="True">
+                                      IsExpanded="True"
+                                      DataContext="{Binding DataContext.Servers, Source={x:Reference TreePane}}">
                             <TreeViewItem.ItemsSource>
                                 <CompositeCollection>
                                     <TreeViewItem Header="No Servers have been Saved" IsEnabled="False">
                                         <TreeViewItem.Visibility>
-                                            <Binding Converter="{StaticResource VisibleWhenEmptyConverter}"
-                                                     Path="DataContext.Servers" Source="{x:Reference TreePane}"/>
+                                            <Binding Converter="{StaticResource VisibleWhenEmptyConverter}"/>
                                         </TreeViewItem.Visibility>
                                     </TreeViewItem>
                                     <CollectionContainer Collection="{Binding DataContext.Servers, Source={x:Reference TreePane}}"/>
@@ -172,12 +173,9 @@
                             </TreeViewItem.ItemsSource>
                             <TreeViewItem.ContextMenu>
                                 <ContextMenu>
-                                    <MenuItem Header="Add Server" Command="New">
-                                        <MenuItem.CommandParameter>
-                                            <Binding Path="DataContext.Servers"
-                                                     Source="{x:Reference TreePane}"/>
-                                        </MenuItem.CommandParameter>
-                                    </MenuItem>
+                                    <MenuItem Header="Add Server"
+                                              Command="New"
+                                              CommandParameter="{Binding}"/>
                                 </ContextMenu>
                             </TreeViewItem.ContextMenu>
                         </TreeViewItem>

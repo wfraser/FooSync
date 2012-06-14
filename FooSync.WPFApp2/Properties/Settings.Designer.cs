@@ -26,12 +26,12 @@ namespace Codewise.FooSync.WPFApp2.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("200")]
-        public global::System.Windows.GridLength RepoListWidth {
+        public global::System.Windows.GridLength TreePaneWidth {
             get {
-                return ((global::System.Windows.GridLength)(this["RepoListWidth"]));
+                return ((global::System.Windows.GridLength)(this["TreePaneWidth"]));
             }
             set {
-                this["RepoListWidth"] = value;
+                this["TreePaneWidth"] = value;
             }
         }
         

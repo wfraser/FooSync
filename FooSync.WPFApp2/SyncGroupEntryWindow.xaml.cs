@@ -17,9 +17,9 @@ namespace Codewise.FooSync.WPFApp2
     /// <summary>
     /// Interaction logic for LocalPairEntryWindow.xaml
     /// </summary>
-    public partial class LocalPairEntryWindow : Window
+    public partial class SyncGroupEntryWindow : Window
     {
-        public LocalPairEntryWindow()
+        public SyncGroupEntryWindow()
         {
             InitializeComponent();
         }
@@ -88,15 +88,9 @@ namespace Codewise.FooSync.WPFApp2
 
         private void Submit(object sender, RoutedEventArgs e)
         {
-            if (!Directory.Exists(RepositoryPath.Text))
+            if (!Directory.Exists(LocationEntry.Text))
             {
-                MessageBox.Show("Repository path is invalid.", "Invalid Path", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            if (!Directory.Exists(SourcePath.Text))
-            {
-                MessageBox.Show("Source path is invalid.", "Invalid Path", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Path is invalid.", "Invalid Path", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 

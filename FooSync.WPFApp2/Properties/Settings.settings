@@ -2,7 +2,7 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Codewise.FooSync.WPFApp2.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="RepoListWidth" Type="System.Windows.GridLength" Scope="User">
+    <Setting Name="TreePaneWidth" Type="System.Windows.GridLength" Scope="User">
       <Value Profile="(Default)">200</Value>
     </Setting>
     <Setting Name="IsFirstRun" Type="System.Boolean" Scope="User">

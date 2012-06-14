@@ -74,8 +74,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="LocalPairEntryWindow.xaml.cs">
-      <DependentUpon>LocalPairEntryWindow.xaml</DependentUpon>
+    <Compile Include="SyncGroupEntryWindow.xaml.cs">
+      <DependentUpon>SyncGroupEntryWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="SyncGroupList.cs" />
     <Compile Include="ServerEntryWindow.xaml.cs">
@@ -88,7 +88,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="LocalPairEntryWindow.xaml">
+    <Page Include="SyncGroupEntryWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
