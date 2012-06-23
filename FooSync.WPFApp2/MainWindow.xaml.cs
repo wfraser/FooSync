@@ -32,14 +32,25 @@ namespace Codewise.FooSync.WPFApp2
     public partial class MainWindow : Window
     {
         public static readonly string RepoListFilename = "syncgroups.xml";
+        public static FooSyncEngine Foo { get; private set; }
+
+        private static MainWindow _instance = null;
+
+        public bool IsClosed { get; private set; }
 
         private string        _settingsPath;
         private SyncGroupList _syncGroupList;
+        private Dictionary<SyncGroup, RepositoryDiff> _repositoryDiffControls;
 
-        public static FooSyncEngine Foo { get; private set; }
-
-        public MainWindow()
+        internal MainWindow()
         {
+            System.Diagnostics.Debug.Assert(_instance == null,
+                "duplicate Codewise.FooSync.WPFApp2.MainWindow constructed! It's supposed to be a singleton!");
+
+            _instance = this;
+
+            IsClosed = false;
+
             InitializeComponent();
 
             if (Properties.Settings.Default.IsFirstRun)
@@ -63,6 +74,13 @@ namespace Codewise.FooSync.WPFApp2
 
             if (!LoadSyncGroups())
                 Application.Current.Shutdown();
+
+            _repositoryDiffControls = new Dictionary<SyncGroup, RepositoryDiff>();
+        }
+
+        public static MainWindow GetInstance()
+        {
+            return _instance;
         }
 
         private static T GetAssemblyAttribute<T>()
@@ -129,6 +147,8 @@ namespace Codewise.FooSync.WPFApp2
             {
                 _syncGroupList.Serialize(stream);
             }
+
+            IsClosed = true;
         }
 
         private void DeleteExecuted(object sender, ExecutedRoutedEventArgs e)
@@ -255,12 +275,12 @@ namespace Codewise.FooSync.WPFApp2
             }
         }
 
-        void NewRemoteServer_Click(object sender, RoutedEventArgs e)
+        private void NewRemoteServer_Click(object sender, RoutedEventArgs e)
         {
             NewRemoteServer();
         }
 
-        void NewRemoteServer()
+        private void NewRemoteServer()
         {
             var serverEntryWindow = new ServerEntryWindow();
             serverEntryWindow.ShowInTaskbar = false;
@@ -321,7 +341,7 @@ namespace Codewise.FooSync.WPFApp2
             NewSyncGroup();
         }
 
-        void NewSyncGroup()
+        private void NewSyncGroup()
         {
             var syncGroupEntryWindow = new SyncGroupEntryWindow();
             syncGroupEntryWindow.ShowInTaskbar = false;
@@ -418,6 +438,26 @@ namespace Codewise.FooSync.WPFApp2
             {
                 return;
             }
+
+            if (!_repositoryDiffControls.ContainsKey(syncGroup))
+            {
+                _repositoryDiffControls.Add(syncGroup, new RepositoryDiff(syncGroup));
+            }
+
+            RepositoryDiff diffPanel = _repositoryDiffControls[syncGroup];
+
+            SyncGroupView.Children.Add(diffPanel);
+            SyncGroupOverView.Visibility = Visibility.Collapsed;
+
+            diffPanel.Cancelled += new EventHandler(delegate (object panel, EventArgs x)
+                {
+                    _repositoryDiffControls.Remove(syncGroup);
+                    SyncGroupView.Children.Remove(diffPanel);
+                    SyncGroupOverView.Visibility = Visibility.Visible;
+                }
+            );
+
+            diffPanel.Start();
         }
 
         private void SyncGroupLocationShow_Click(object sender, RoutedEventArgs e)
@@ -490,8 +530,30 @@ namespace Codewise.FooSync.WPFApp2
         {
             if (e.NewValue is SyncGroup)
             {
+                SyncGroup syncGroup = (SyncGroup)e.NewValue;
+
                 SyncGroupView.Visibility = Visibility.Visible;
                 ServerView.Visibility = Visibility.Collapsed;
+
+                bool found = false;
+                foreach (KeyValuePair<SyncGroup, RepositoryDiff> pair in _repositoryDiffControls)
+                {
+                    if (pair.Key == syncGroup)
+                    {
+                        SyncGroupOverView.Visibility = Visibility.Collapsed;
+                        pair.Value.Visibility = Visibility.Visible;
+                        found = true;
+                    }
+                    else
+                    {
+                        pair.Value.Visibility = Visibility.Collapsed;
+                    }
+                }
+
+                if (!found)
+                {
+                    SyncGroupOverView.Visibility = Visibility.Visible;
+                }
             }
             else if (e.NewValue is FooServer)
             {

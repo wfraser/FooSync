@@ -65,7 +65,7 @@
 
         <!-- ########################################################## -->
 
-        <Grid>
+        <Grid x:Name="MainGrid">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="{Binding Default.TreePaneWidth, Source={StaticResource Settings}, Mode=TwoWay}"/>
                 <ColumnDefinition Width="Auto"/>
@@ -204,67 +204,76 @@
 
             <!-- ########################################################## -->
 
-            <DockPanel x:Name="SyncGroupView"
+            <Grid x:Name="SyncGroupView"
                         Grid.Column="2"
                         Visibility="Collapsed"
                         Margin="10,0,10,10"
                         DataContext="{Binding ElementName=TreePane, Path=SelectedItem}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
                 
-                <TextBlock DockPanel.Dock="Top"
-                           FontSize="11">SYNC GROUP</TextBlock>
+                <DockPanel x:Name="SyncGroupOverView">
+                    <TextBlock DockPanel.Dock="Top"
+                               FontSize="11">SYNC GROUP</TextBlock>
                 
-                <TextBlock DockPanel.Dock="Top"
-                           FontSize="32">
-                    <TextBlock.Text>
-                        <Binding Path="Name"
-                                 FallbackValue="[No Value]"/>
-                    </TextBlock.Text>
-                </TextBlock>
+                    <TextBlock DockPanel.Dock="Top"
+                               FontSize="32">
+                        <TextBlock.Text>
+                            <Binding Path="Name"
+                                     FallbackValue="[No Value]"/>
+                        </TextBlock.Text>
+                    </TextBlock>
                 
-                <TextBlock DockPanel.Dock="Top"
-                           Padding="0,10,0,0">Locations:</TextBlock>
+                    <TextBlock DockPanel.Dock="Top"
+                               Padding="0,10,0,0">Locations:</TextBlock>
                 
-                <WrapPanel DockPanel.Dock="Top">
-                    <ListBox x:Name="SyncGroupLocation"
-                             Margin="10"
-                             Padding="5">
-                        <ListBox.ItemsSource>
-                            <Binding Path="URLs"
-                                     Converter="{StaticResource UrlPrettifierConverter}">
-                                <Binding.FallbackValue>
-                                    <CompositeCollection>
-                                        <ListBoxItem IsEnabled="False">(none)</ListBoxItem>
-                                    </CompositeCollection>
-                                </Binding.FallbackValue>
-                            </Binding>
-                        </ListBox.ItemsSource>
-                    </ListBox>
-                </WrapPanel>
+                    <WrapPanel DockPanel.Dock="Top">
+                        <ListBox x:Name="SyncGroupLocation"
+                                 Margin="10"
+                                 Padding="5">
+                            <ListBox.ItemsSource>
+                                <Binding Path="URLs"
+                                         Converter="{StaticResource UrlPrettifierConverter}">
+                                    <Binding.FallbackValue>
+                                        <CompositeCollection>
+                                            <ListBoxItem IsEnabled="False">(none)</ListBoxItem>
+                                        </CompositeCollection>
+                                    </Binding.FallbackValue>
+                                </Binding>
+                            </ListBox.ItemsSource>
+                        </ListBox>
+                    </WrapPanel>
                 
-                <WrapPanel DockPanel.Dock="Top">
-                    <Button Margin="10,0,0,0"
-                            Click="SyncGroupLocationShow_Click">
-                        <Button.Visibility>
-                            <Binding ElementName="SyncGroupLocation"
-                                     Path="SelectedItem"
-                                     Converter="{StaticResource NullToVisibilityConverter}"/>
-                        </Button.Visibility>
-                        Show
-                    </Button>
-                </WrapPanel>
+                    <WrapPanel DockPanel.Dock="Top">
+                        <Button Margin="10,0,0,0"
+                                Click="SyncGroupLocationShow_Click">
+                            <Button.Visibility>
+                                <Binding ElementName="SyncGroupLocation"
+                                         Path="SelectedItem"
+                                         Converter="{StaticResource NullToVisibilityConverter}"/>
+                            </Button.Visibility>
+                            Show
+                        </Button>
+                    </WrapPanel>
 
-                <WrapPanel VerticalAlignment="Bottom">
-                    <Button IsDefault="True"
-                            Click="Synchronize_Click">Synchronize</Button>
-                </WrapPanel>
+                    <WrapPanel VerticalAlignment="Bottom">
+                        <Button IsDefault="True"
+                                Click="Synchronize_Click">Synchronize</Button>
+                    </WrapPanel>
 
-            </DockPanel>
+                </DockPanel>
+
+            </Grid>
 
             <!-- ########################################################## -->
             
             <DockPanel x:Name="ServerView"
                        Grid.Column="2"
-                       Visibility="Visible"
+                       Visibility="Collapsed"
                        Margin="10,0,10,10"
                        DataContext="{Binding ElementName=TreePane, Path=SelectedItem}">
 
