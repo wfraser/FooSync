@@ -18,6 +18,9 @@
         >
     <Window.Resources>
         <foo:VisibleWhenEmptyConverter x:Key="VisibleWhenEmptyConverter"/>
+        <foo:UrlPrettifierConverter x:Key="UrlPrettifierConverter"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <foo:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
     </Window.Resources>
     
     <Window.CommandBindings>
@@ -27,14 +30,14 @@
     
     <DockPanel>
         
-        <ToolBar DockPanel.Dock="Top">
+        <ToolBar x:Name="ToolBar" DockPanel.Dock="Top">
             <Button ToolTip="New Sync Group"
                     Click="NewSyncGroup_Click">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"
                            Width="16" Height="16" Margin="2"
                            VerticalAlignment="Center"/>
-                    <TextBlock VerticalAlignment="Center">New Sync Group</TextBlock>
+                    <AccessText VerticalAlignment="Center">_New Sync Group</AccessText>
                 </StackPanel>
             </Button>
 
@@ -44,7 +47,7 @@
                     <Image Source="/FooSync.WPFApp2;component/Resources/loki_128.png"
                            Width="16" Height="16" Margin="2"
                            VerticalAlignment="Center"/>
-                    <TextBlock VerticalAlignment="Center">Connect to Server</TextBlock>
+                    <AccessText VerticalAlignment="Center">Connect to _Server</AccessText>
                 </StackPanel>
             </Button>
 
@@ -55,11 +58,13 @@
                     <Image Source="/FooSync.WPFApp2;component/Resources/FSLogo16glow.png"
                            Width="16" Height="16" Margin="2"
                            VerticalAlignment="Center"/>
-                    <TextBlock VerticalAlignment="Center">About</TextBlock>
+                    <AccessText VerticalAlignment="Center">_About</AccessText>
                 </StackPanel>
             </Button>
         </ToolBar>
-        
+
+        <!-- ########################################################## -->
+
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="{Binding Default.TreePaneWidth, Source={StaticResource Settings}, Mode=TwoWay}"/>
@@ -187,31 +192,68 @@
                 </TreeView.ItemsSource>
             </TreeView>
             
+            <!-- ########################################################## -->
+            
             <GridSplitter Grid.Column="1"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Stretch"
                           ShowsPreview="True"
                           Width="3"/>
 
-            <!-- centered content -->
-            <Grid Grid.Column="2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+            <!-- ########################################################## -->
+
+            <DockPanel x:Name="SyncGroupView"
+                        Grid.Column="2"
+                        Visibility="Visible"
+                        Margin="10,0,10,10"
+                        DataContext="{Binding ElementName=TreePane, Path=SelectedItem}">
                 
-                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical">
+                <TextBlock DockPanel.Dock="Top"
+                           FontSize="11">SYNC GROUP</TextBlock>
+                
+                <TextBlock DockPanel.Dock="Top"
+                           FontSize="32"
+                           VerticalAlignment="Bottom"
+                           Text="{Binding Name, FallbackValue=[No Value]}"/>
+                
+                <TextBlock DockPanel.Dock="Top"
+                           Padding="0,10,0,0">Locations:</TextBlock>
+                
+                <WrapPanel DockPanel.Dock="Top">
+                    <ListBox x:Name="SyncGroupLocation"
+                             Margin="10"
+                             Padding="5">
+                        <ListBox.ItemsSource>
+                            <Binding Path="URLs"
+                                     Converter="{StaticResource UrlPrettifierConverter}">
+                                <Binding.FallbackValue>
+                                    <CompositeCollection>
+                                        <ListBoxItem IsEnabled="False">(none)</ListBoxItem>
+                                    </CompositeCollection>
+                                </Binding.FallbackValue>
+                            </Binding>
+                        </ListBox.ItemsSource>
+                    </ListBox>
+                </WrapPanel>
+                
+                <WrapPanel DockPanel.Dock="Top">
+                    <Button Margin="10,0,0,0"
+                            Click="SyncGroupLocationShow_Click">
+                        <Button.Visibility>
+                            <Binding ElementName="SyncGroupLocation"
+                                     Path="SelectedItem"
+                                     Converter="{StaticResource NullToVisibilityConverter}"/>
+                        </Button.Visibility>
+                        Show
+                    </Button>
+                </WrapPanel>
 
-                    <TextBlock Text="{Binding ElementName=TreePane, Path=SelectedItem.Name}"/>
+                <WrapPanel VerticalAlignment="Bottom">
+                    <Button IsDefault="True"
+                            Click="Synchronize_Click">Synchronize</Button>
+                </WrapPanel>
 
-                </StackPanel>
-            </Grid>
+            </DockPanel>
 
         </Grid>
 

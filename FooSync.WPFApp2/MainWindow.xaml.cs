@@ -390,5 +390,69 @@ namespace Codewise.FooSync.WPFApp2
                 repo.MemberOfSyncGroups.Add(syncGroup.Name);
             }
         }
+
+        private void Synchronize_Click(object sender, RoutedEventArgs e)
+        {
+            var syncGroup = TreePane.SelectedItem as SyncGroup;
+
+            if (syncGroup == null)
+            {
+                return;
+            }
+        }
+
+        private void SyncGroupLocationShow_Click(object sender, RoutedEventArgs e)
+        {
+            var syncGroup = TreePane.SelectedItem as SyncGroup;
+            var index = SyncGroupLocation.SelectedIndex;
+
+            if (syncGroup == null || index == -1)
+            {
+                return;
+            }
+
+            FooSyncUrl url;
+
+            try
+            {
+                url = syncGroup.URLs[index];
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return;
+            }
+
+            if (url.IsLocal)
+            {
+                //
+                // open explorer
+                //
+
+                OpenExplorerIn(url.LocalPath);
+            }
+            else
+            {
+                //
+                // Highlight server repository in the tree pane
+                //
+
+                TreePane.SelectPath(new TreeViewExtensions.ItemSelector[] {
+                    (object o) => (o is TreeViewItem && string.Equals(((TreeViewItem)o).Header, "Saved Servers")),
+                    (object o) => (o is ServerRepositoryList && ((ServerRepositoryList)o).Hostname == url.Host),
+                    (object o) => (o is ServerRepository && ((ServerRepository)o).Name == url.AbsolutePath.Substring(1))
+                });
+            }
+
+        }
+
+        private void OpenExplorerAt(string filename)
+        {
+            System.Diagnostics.Process.Start("explorer.exe", "/select," + filename);
+        }
+
+        private void OpenExplorerIn(string path)
+        {
+            System.Diagnostics.Process.Start("explorer.exe", path);
+        }
     }
 }

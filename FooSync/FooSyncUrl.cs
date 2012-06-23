@@ -62,6 +62,14 @@ namespace Codewise.FooSync
             }
         }
 
+        public bool IsLocal
+        {
+            get
+            {
+                return _isLocal;
+            }
+        }
+
         /// <summary>
         /// If file:/// URL, -1.
         /// If fs:// URL, the server port.

@@ -74,6 +74,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="TreeViewExtensions.cs" />
+    <Compile Include="NullToVisibilityConverter.cs" />
     <Compile Include="SyncGroupEntryWindow.xaml.cs">
       <DependentUpon>SyncGroupEntryWindow.xaml</DependentUpon>
     </Compile>
@@ -82,6 +84,7 @@
       <DependentUpon>ServerEntryWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Settings.cs" />
+    <Compile Include="UrlPrettifierConverter.cs" />
     <Compile Include="VersionToDateTimeConverter.cs" />
     <Compile Include="VisibleWhenEmptyConverter.cs" />
     <Page Include="AboutWindow.xaml">
