@@ -436,7 +436,7 @@ namespace Codewise.FooSync.WPFApp2
                 // Highlight server repository in the tree pane
                 //
 
-                TreePane.SelectPath(new TreeViewExtensions.TreeWalkerPredicate[] {
+                TreePane.SelectPath(new Predicate<object>[] {
                     (object o) => (o is TreeViewItem && string.Equals(((TreeViewItem)o).Header, "Saved Servers")),
                     (object o) => (o is ServerRepositoryList && ((ServerRepositoryList)o).Hostname == url.Host),
                     (object o) => (o is ServerRepository && ((ServerRepository)o).Name == url.AbsolutePath.Substring(1))
