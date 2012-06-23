@@ -74,6 +74,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CollectionExtensions.cs" />
     <Compile Include="TreeViewExtensions.cs" />
     <Compile Include="NullToVisibilityConverter.cs" />
     <Compile Include="SyncGroupEntryWindow.xaml.cs">

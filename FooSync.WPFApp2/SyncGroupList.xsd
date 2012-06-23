@@ -18,7 +18,7 @@
       <xs:element name="Servers">
         <xs:complexType>
           <xs:sequence>
-            <xs:element name="Server" type="ServerRepositoryList" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="Server" type="FooServer" minOccurs="0" maxOccurs="unbounded"/>
           </xs:sequence>
         </xs:complexType>
       </xs:element>
@@ -38,8 +38,9 @@
     <xs:attribute name="Name" type="xs:string" use="required"/>
   </xs:complexType>
 
-  <xs:complexType name="ServerRepositoryList">
-    <xs:sequence>
+  <xs:complexType name="FooServer">
+    <xs:all>
+      <xs:element name="Description" type="xs:string" minOccurs="0" maxOccurs="1"/>
       <xs:element name="Repositories">
         <xs:complexType>
           <xs:sequence>
@@ -47,7 +48,7 @@
           </xs:sequence>
         </xs:complexType>
       </xs:element>
-    </xs:sequence>
+    </xs:all>
     <xs:attribute name="Hostname" type="xs:string" use="required"/>
     <xs:attribute name="Port" type="xs:short" default="22022" use="optional"/>
     <xs:attribute name="Username" type="xs:string" use="optional"/>

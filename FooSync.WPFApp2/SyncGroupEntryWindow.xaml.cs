@@ -22,6 +22,7 @@ namespace Codewise.FooSync.WPFApp2
         public SyncGroupEntryWindow()
         {
             InitializeComponent();
+            SyncGroupNameEntry.Focus();
         }
 
         /// <summary>

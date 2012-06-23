@@ -144,22 +144,36 @@ namespace Codewise.FooSync.WPFApp2
                 }
             }
 
-            if (param is ServerRepositoryList)
+            if (param is FooServer)
             {
-                var server = (ServerRepositoryList)param;
+                var server = (FooServer)param;
+
+                foreach (SyncGroup syncGroup in _syncGroupList.SyncGroups)
+                {
+                    foreach (ServerRepository repo in server.Repositories)
+                    {
+                        if (syncGroup.URLs.Contains(repo.URL))
+                        {
+                            syncGroup.URLs.Remove(repo.URL);
+                        }
+                    }
+                }
+
                 _syncGroupList.Servers.Remove(server);
-            }
-            else if (param is ServerRepository)
-            {
-                var repo = (ServerRepository)param;
-                var server = _syncGroupList.Servers.Where((o) => o == repo.Server).FirstOrDefault();
-                if (server != null)
-                    server.Repositories.Remove(repo);
             }
             else if (param is SyncGroup)
             {
-                var pair = (SyncGroup)param;
-                _syncGroupList.SyncGroups.Remove(pair);
+                var syncGroup = (SyncGroup)param;
+
+                foreach (FooServer server in _syncGroupList.Servers)
+                {
+                    foreach (ServerRepository repo in server.Repositories)
+                    {
+                        repo.MemberOfSyncGroups.Remove(syncGroup.Name);
+                    }
+                }
+
+                _syncGroupList.SyncGroups.Remove(syncGroup);
             }
         }
 
@@ -177,8 +191,7 @@ namespace Codewise.FooSync.WPFApp2
             }
 
             if (param != null &&
-                    (param is ServerRepositoryList
-                    || param is ServerRepository
+                    (param is FooServer
                     || param is SyncGroup))
             {
                 e.CanExecute = true;
@@ -203,7 +216,7 @@ namespace Codewise.FooSync.WPFApp2
             }
 
             if (param != null &&
-                    (param is ICollection<ServerRepositoryList>
+                    (param is ICollection<FooServer>
                     || param is ICollection<SyncGroup>
                     || param is SyncGroup))
             {
@@ -228,7 +241,7 @@ namespace Codewise.FooSync.WPFApp2
                 }
             }
 
-            if (param is ICollection<ServerRepositoryList>)
+            if (param is ICollection<FooServer>)
             {
                 NewRemoteServer();
             }
@@ -274,12 +287,13 @@ namespace Codewise.FooSync.WPFApp2
                     return;
                 }
 
-                var newServer = new ServerRepositoryList()
+                var newServer = new FooServer()
                 {
                     Hostname = serverEntryWindow.ServerName,
                     Port = serverEntryWindow.ServerPort,
                     Username = serverEntryWindow.Username,
-                    Password = serverEntryWindow.Password
+                    Password = serverEntryWindow.Password,
+                    Description = serverEntryWindow.ServerDescription
                 };
 
                 foreach (var repoName in serverEntryWindow.Repositories)
@@ -294,6 +308,11 @@ namespace Codewise.FooSync.WPFApp2
                 }
 
                 _syncGroupList.Servers.Add(newServer);
+
+                TreePane.SelectPath(new Predicate<object>[] {
+                    (object o) => (o is TreeViewItem && string.Equals(((TreeViewItem)o).Header, "Saved Servers")),
+                    (object o) => (o == newServer)
+                });
             }
         }
 
@@ -438,7 +457,7 @@ namespace Codewise.FooSync.WPFApp2
 
                 TreePane.SelectPath(new Predicate<object>[] {
                     (object o) => (o is TreeViewItem && string.Equals(((TreeViewItem)o).Header, "Saved Servers")),
-                    (object o) => (o is ServerRepositoryList && ((ServerRepositoryList)o).Hostname == url.Host),
+                    (object o) => (o is FooServer && ((FooServer)o).Hostname == url.Host),
                     (object o) => (o is ServerRepository && ((ServerRepository)o).Name == url.AbsolutePath.Substring(1))
                 });
             }
@@ -448,6 +467,27 @@ namespace Codewise.FooSync.WPFApp2
         private static void OpenExplorerIn(string path)
         {
             System.Diagnostics.Process.Start("explorer.exe", path);
+        }
+
+        private void ServerDescriptionDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            ServerDescriptionDisplay.Visibility = Visibility.Collapsed;
+            ServerDescriptionEdit.Visibility = Visibility.Visible;
+        }
+
+        private void ServerDescriptionEdit_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return)
+            {
+                e.Handled = true;
+                ServerDescriptionEdit.Visibility = Visibility.Collapsed;
+                ServerDescriptionDisplay.Visibility = Visibility.Visible;
+                ((FooServer)TreePane.SelectedItem).Description = ((TextBox)sender).Text;
+            }
+        }
+
+        private void ServerDescriptionEdit_KeyDown(object sender, KeyEventArgs e)
+        {
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Codewise.FooSync.WPFApp2
         public SyncGroupList()
         {
             SyncGroups = new ObservableCollection<SyncGroup>();
-            Servers    = new ObservableCollection<ServerRepositoryList>();
+            Servers    = new ObservableCollection<FooServer>();
 
             SyncGroups.CollectionChanged += new NotifyCollectionChangedEventHandler(Child_CollectionChanged);
             Servers.CollectionChanged += new NotifyCollectionChangedEventHandler(Child_CollectionChanged);
@@ -68,7 +68,7 @@ namespace Codewise.FooSync.WPFApp2
 
         [XmlArray]
         [XmlArrayItem("Server")]
-        public ObservableCollection<ServerRepositoryList> Servers { get; private set; }
+        public ObservableCollection<FooServer> Servers { get; private set; }
 
         public static SyncGroupList Deserialize(Stream stream)
         {
@@ -103,13 +103,16 @@ namespace Codewise.FooSync.WPFApp2
 
     [Serializable]
     [XmlType("ServerRepositoryList", Namespace="http://www.codewise.org/schema/foosync/SyncGroupList.xsd")]
-    public class ServerRepositoryList
+    public class FooServer
     {
-        public ServerRepositoryList()
+        public FooServer()
         {
             Port = FooSyncUrl.DefaultPort;
             Repositories = new Collection<ServerRepository>();
         }
+
+        [XmlElement]
+        public string Description { get; set; }
 
         [XmlAttribute]
         public string Hostname { get; set; }
@@ -130,7 +133,7 @@ namespace Codewise.FooSync.WPFApp2
         #region equality overrides
         public override bool Equals(object obj)
         {
-            ServerRepositoryList other = obj as ServerRepositoryList;
+            FooServer other = obj as FooServer;
             if (other != null)
             {
                 return (this.Hostname == other.Hostname && this.Port == other.Port);
@@ -240,7 +243,7 @@ namespace Codewise.FooSync.WPFApp2
         public Collection<string> MemberOfSyncGroups { get; private set; }
 
         [XmlIgnore]
-        public ServerRepositoryList Server { get; set; }
+        public FooServer Server { get; set; }
 
         public ServerRepository()
         {

@@ -31,6 +31,8 @@ namespace Codewise.FooSync.WPFApp2
     public partial class ServerEntryWindow : Window
     {
         public ICollection<string> Repositories { get; private set; }
+        public string ReportedServerName { get; private set; }
+        public string ServerDescription { get; private set; }
 
         private FooSyncUrl _url;
 
@@ -140,6 +142,8 @@ namespace Codewise.FooSync.WPFApp2
             {
                 var client = e.Argument as NetClient;
                 Repositories = client.ListRepositories();
+                ReportedServerName = client.ReportedHostname;
+                ServerDescription = client.ServerDescription;
                 e.Result = true;
             }
             catch (Exception ex)
