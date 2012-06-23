@@ -101,7 +101,7 @@ namespace Codewise.FooSync.Daemon
                         break;
                     }
 
-                    if (!_authenticated && opCode != OpCode.Auth)
+                    if (!_authenticated && opCode != OpCode.Auth && opCode != OpCode.Hello)
                     {
                         _writer.Write(RetCode.BadAuth);
                         _client.Close();
@@ -154,7 +154,10 @@ namespace Codewise.FooSync.Daemon
                 else if (ex is IOException)
                 {
                     var se = ex.InnerException as SocketException;
-                    if (se != null && se.ErrorCode == 10053) // remote endpoint disconnected
+                    if (se != null && (
+                            se.ErrorCode == 10053   // remote endpoint disconnected
+                         || se.ErrorCode == 10054   // existing connection closed
+                    ))
                     {
                         return;
                     }
@@ -180,6 +183,19 @@ namespace Codewise.FooSync.Daemon
         private void HandleHelloRequest()
         {
             _writer.Write(RetCode.Success);
+
+            _writer.Write(FooSyncService.ProtocolVersion.Major);
+            _writer.Write(FooSyncService.ProtocolVersion.Minor);
+            
+            _writer.Write(_config.ServerName);
+            _writer.Write(_config.ServerDescription);
+
+            Version thisVer = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            _writer.Write(thisVer.Major);
+            _writer.Write(thisVer.Minor);
+            _writer.Write(thisVer.Build);
+            _writer.Write(thisVer.Revision);
+
             _writer.Write(
                 "Codewise.FooSync.Daemon says hello "
                     + (_client.Client.RemoteEndPoint as IPEndPoint).Address.ToString()
@@ -220,7 +236,7 @@ namespace Codewise.FooSync.Daemon
 
         private bool CheckPassword(UserSpec.UserSpecPassword expected, string actual)
         {
-            if (expected == null)
+            if (expected == null || expected.Value == null)
                 return true;
 
             HashAlgorithm hash;

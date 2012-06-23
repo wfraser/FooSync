@@ -33,6 +33,7 @@ namespace Codewise.FooSync.Daemon
         public static readonly string Name = "FooSyncService";
         public static readonly string DisplayName = "FooSync Daemon";
         public static readonly string Description = "Serves FooSync repositories across the network.";
+        public static readonly Version ProtocolVersion = new Version(0, 0);
 
         private static readonly string DefaultConfig = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "foosyncd_config.xml");
 

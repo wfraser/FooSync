@@ -62,6 +62,19 @@ namespace Codewise.FooSync.NetworkTest
             RetCode ret;
             int count = 0;
 
+            writer.Write(OpCode.Hello);
+            ret = reader.ReadRetCode();
+
+            Console.WriteLine("hello returned {0}", ret);
+
+            Version protocolVersion = new Version(reader.ReadInt32(), reader.ReadInt32());
+            String serverName = reader.ReadString();
+            String serverDesc = reader.ReadString();
+            Version serverVersion = new Version(reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32(), reader.ReadInt32());
+            String helloString = reader.ReadString();
+
+            Console.WriteLine("Protocol {0}\nName: {1}\nDescription: {2}\nServer {3}\n{4}", protocolVersion, serverName, serverDesc, serverVersion, helloString);
+
             writer.Write(OpCode.Auth);
             writer.Write("test");
             writer.Write(passwd);

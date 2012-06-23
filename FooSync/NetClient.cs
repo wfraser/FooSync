@@ -39,6 +39,14 @@ namespace Codewise.FooSync
         public string Username { get { return _username; } }
         public string RepoName { get { return _repoName; } set { _repoName = value; } }
 
+        public string ReportedHostname { get; private set; }
+        public string ServerDescription { get; private set; }
+        public Version ServerProtocolVersion { get; private set; }
+        public Version ServerSoftwareVersion { get; private set; }
+
+        public static readonly Version MinProtocolVersion = new Version(0,0);
+        public static readonly Version MaxProtocolVersion = new Version(0,0);
+
         public NetClient(FooSyncEngine foo, string hostname, int port, string username, SecureString password, string repoName = null)
         {
             _foo      = foo;
@@ -51,6 +59,10 @@ namespace Codewise.FooSync
             _stream   = null;
             _reader   = null;
             _writer   = null;
+
+            ReportedHostname = null;
+            ServerDescription = null;
+            ServerProtocolVersion = null;
         }
 
         private TcpClient GetClient()
@@ -107,11 +119,11 @@ namespace Codewise.FooSync
 
             _writer.Write(OpCode.ListRepos);
 
-            int i = _reader.ReadInt32();
-            if (i != (int)RetCode.Success)
-                throw new AuthException(string.Format("Authentication with FooSync server failed: code {0}", ((RetCode)i).ToString()));
+            RetCode ret = _reader.ReadRetCode();
+            if (ret != RetCode.Success)
+                throw new AuthException(string.Format("Authentication with FooSync server failed: {0}", ret));
 
-            i = _reader.ReadInt32();
+            int i = _reader.ReadInt32();
             while (i-- > 0)
             {
                 var s = _reader.ReadString();
@@ -141,11 +153,51 @@ namespace Codewise.FooSync
 
         private void Auth()
         {
+            RetCode ret;
+
+            if (ServerProtocolVersion == null)
+            {
+                _writer.Write(OpCode.Hello);
+
+                ret = _reader.ReadRetCode();
+                if (ret != RetCode.Success)
+                {
+                    throw new AuthException(string.Format("Server didn't say hello: {0}", ret));
+                }
+
+                ServerProtocolVersion = new Version(_reader.ReadInt32(), _reader.ReadInt32());
+
+                if (ServerProtocolVersion > MaxProtocolVersion)
+                {
+                    throw new AuthException(
+                        string.Format(
+                            "Server's protocol version is unsupported: {0} is higher than max supported version {1}",
+                            ServerProtocolVersion,
+                            MaxProtocolVersion));
+                }
+
+                if (ServerProtocolVersion < MinProtocolVersion)
+                {
+                    throw new AuthException(
+                        string.Format(
+                            "Server's protocol version is unsupported: {0} is lower than min supported version {1}",
+                            ServerProtocolVersion,
+                            MinProtocolVersion));
+                }
+
+                ReportedHostname = _reader.ReadString();
+                ServerDescription = _reader.ReadString();
+
+                ServerSoftwareVersion = new Version(_reader.ReadInt32(), _reader.ReadInt32(), _reader.ReadInt32(), _reader.ReadInt32());
+
+                string helloString = _reader.ReadString();
+            }
+
             _writer.Write(OpCode.Auth);
             _writer.Write(_username ?? "anonymous");
             _writer.Write(_password ?? new SecureString());
 
-            RetCode ret = _reader.ReadRetCode();
+            ret = _reader.ReadRetCode();
 
             if (ret != RetCode.Success)
                 throw new AuthException(string.Format("Authentication with FooSync server failed: {0}", ret));
