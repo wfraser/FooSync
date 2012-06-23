@@ -72,7 +72,9 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
         
-            <TreeView Grid.Column="0" x:Name="TreePane">
+            <TreeView x:Name="TreePane"
+                      Grid.Column="0" 
+                      SelectedItemChanged="TreePane_SelectedItemChanged">
                 <TreeView.Resources>
                     
                     <HierarchicalDataTemplate DataType="{x:Type foo:FooServer}"
@@ -294,7 +296,6 @@
                          DockPanel.Dock="Top"
                          FontSize="18"
                          Visibility="Collapsed"
-                         KeyDown="ServerDescriptionEdit_KeyDown"
                          PreviewKeyDown="ServerDescriptionEdit_PreviewKeyDown">
                     <TextBox.Text>
                         <Binding Path="Description"

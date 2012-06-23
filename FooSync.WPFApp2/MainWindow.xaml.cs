@@ -486,8 +486,23 @@ namespace Codewise.FooSync.WPFApp2
             }
         }
 
-        private void ServerDescriptionEdit_KeyDown(object sender, KeyEventArgs e)
+        private void TreePane_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
+            if (e.NewValue is SyncGroup)
+            {
+                SyncGroupView.Visibility = Visibility.Visible;
+                ServerView.Visibility = Visibility.Collapsed;
+            }
+            else if (e.NewValue is FooServer)
+            {
+                SyncGroupView.Visibility = Visibility.Collapsed;
+                ServerView.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                SyncGroupView.Visibility = Visibility.Collapsed;
+                ServerView.Visibility = Visibility.Collapsed;
+            }
         }
     }
 }
