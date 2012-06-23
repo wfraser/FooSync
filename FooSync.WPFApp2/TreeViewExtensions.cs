@@ -8,6 +8,11 @@
 /// Copyright (c) 2012
 /// 
 
+///
+/// The general method in SetSelected comes from:
+///     http://quickduck.com/blog/2008/12/11/selecting-an-item-in-a-treeview-in-wpf/
+/// 
+
 using System;
 using System.Linq;
 using System.Windows;
