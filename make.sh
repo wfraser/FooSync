@@ -1,6 +1,6 @@
 #!/bin/sh
 
 make -C FooSync
-make -C FooSync.ConsoleApp
-make -C FooSync.Daemon
+make -C ConsoleApp
+make -C Daemon
 

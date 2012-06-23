@@ -1,0 +1,12 @@
+﻿<Application x:Class="Codewise.FooSync.WPFApp.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:foo="clr-namespace:Codewise.FooSync.WPFApp"
+             xmlns:properties="clr-namespace:Codewise.FooSync.WPFApp.Properties"
+             StartupUri="MainWindow.xaml"
+             Exit="Application_Exit"
+             >
+    <Application.Resources>
+        <properties:Settings x:Key="Settings"/>
+    </Application.Resources>
+</Application>
