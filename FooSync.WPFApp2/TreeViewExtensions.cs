@@ -23,7 +23,7 @@ namespace Codewise.FooSync.WPFApp2
 {
     public static class TreeViewExtensions
     {
-        public delegate bool ItemSelector(object o);
+        public delegate bool TreeWalkerPredicate(object o);
 
         /// <summary>
         /// Select the item in the tree view that satisfies a number of predicates along the path
@@ -34,12 +34,12 @@ namespace Codewise.FooSync.WPFApp2
         /// determine which nodes to expand.</param>
         /// <returns>true if all predicates were matched (or search interrupted due to unexpanded
         /// items)</returns>
-        public static bool SelectPath(this TreeView treeView, ItemSelector[] predicates)
+        public static bool SelectPath(this TreeView treeView, TreeWalkerPredicate[] predicates)
         {
             return SetSelected(treeView, predicates);
         }
 
-        private static bool SetSelected(ItemsControl parent, ItemSelector[] predicates)
+        private static bool SetSelected(ItemsControl parent, TreeWalkerPredicate[] predicates)
         {
             if (parent == null)
             {
