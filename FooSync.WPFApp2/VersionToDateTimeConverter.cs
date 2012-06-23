@@ -23,12 +23,12 @@ namespace Codewise.FooSync.WPFApp2
                 return null;
             }
 
-            if (!(value is Version))
+            Version v = value as Version;
+
+            if (v == null)
             {
                 throw new ArgumentException("Input value must be a Version object (it is a " + value.GetType().FullName + ")", "value");
             }
-
-            var v = (Version)value;
 
             if (v.Build != 0)
             {

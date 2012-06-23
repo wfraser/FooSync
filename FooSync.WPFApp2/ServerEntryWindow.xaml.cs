@@ -113,10 +113,12 @@ namespace Codewise.FooSync.WPFApp2
             SecureString password = (UsernameAndPassword.IsChecked ?? false) ? PasswordEntry.SecurePassword : null;
             var client = new NetClient(MainWindow.Foo, _url.Host, _url.Port, username, password);
 
-            var connectionWorker = new BackgroundWorker();
-            connectionWorker.DoWork += new DoWorkEventHandler(connectionWorker_DoWork);
-            connectionWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(connectionWorker_RunWorkerCompleted);
-            connectionWorker.RunWorkerAsync(client);
+            using (var connectionWorker = new BackgroundWorker())
+            {
+                connectionWorker.DoWork += new DoWorkEventHandler(connectionWorker_DoWork);
+                connectionWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(connectionWorker_RunWorkerCompleted);
+                connectionWorker.RunWorkerAsync(client);
+            }
         }
 
         void connectionWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)

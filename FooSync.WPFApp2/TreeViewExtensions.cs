@@ -32,6 +32,8 @@ namespace Codewise.FooSync.WPFApp2
         /// determine which nodes to expand.</param>
         /// <returns>true if all predicates were matched (or search interrupted due to unexpanded
         /// items)</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1011",
+            Justification="This extension is only intended for TreeView objects")]
         public static bool SelectPath(this TreeView treeView, Predicate<object>[] predicates)
         {
             return SetSelected(treeView, predicates);

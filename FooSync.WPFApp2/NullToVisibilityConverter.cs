@@ -15,6 +15,11 @@ using System.Windows;
 
 namespace Codewise.FooSync.WPFApp2
 {
+    /// <summary>
+    /// Converts null to Visibility.Collapsed, and all other values to Visibility.Visible
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812",
+        Justification="Only instantiated by XAML")]
     class NullToVisibilityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

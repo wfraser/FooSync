@@ -70,7 +70,7 @@ namespace Codewise.FooSync.WPFApp2
         [XmlArrayItem("Server")]
         public ObservableCollection<ServerRepositoryList> Servers { get; private set; }
 
-        public static SyncGroupList ReadFromFile(FileStream stream)
+        public static SyncGroupList Deserialize(Stream stream)
         {
             var serializer = new XmlSerializer(typeof(SyncGroupList), "http://www.codewise.org/schema/foosync/SyncGroupList.xsd");
 
@@ -87,7 +87,7 @@ namespace Codewise.FooSync.WPFApp2
             return list;
         }
 
-        public void WriteToFile(FileStream stream)
+        public void Serialize(Stream stream)
         {
             var settings = new XmlWriterSettings();
             settings.Indent = true;
@@ -108,7 +108,7 @@ namespace Codewise.FooSync.WPFApp2
         public ServerRepositoryList()
         {
             Port = FooSyncUrl.DefaultPort;
-            Repositories = new List<ServerRepository>();
+            Repositories = new Collection<ServerRepository>();
         }
 
         [XmlAttribute]
@@ -125,14 +125,14 @@ namespace Codewise.FooSync.WPFApp2
 
         [XmlArray]
         [XmlArrayItem("Repository")]
-        public List<ServerRepository> Repositories { get; private set; }
+        public Collection<ServerRepository> Repositories { get; private set; }
 
         #region equality overrides
         public override bool Equals(object obj)
         {
-            if (obj is ServerRepositoryList)
+            ServerRepositoryList other = obj as ServerRepositoryList;
+            if (other != null)
             {
-                var other = (ServerRepositoryList)obj;
                 return (this.Hostname == other.Hostname && this.Port == other.Port);
             }
 
@@ -180,7 +180,7 @@ namespace Codewise.FooSync.WPFApp2
         }
 
         [XmlIgnore]
-        public List<FooSyncUrl> URLs
+        public Collection<FooSyncUrl> URLs
         {
             get
             {
@@ -193,11 +193,11 @@ namespace Codewise.FooSync.WPFApp2
         {
             _rawStringURLs = new ObservableCollection<string>();
             _rawStringURLs.CollectionChanged += new NotifyCollectionChangedEventHandler(RawStringURLs_CollectionChanged);
-            _urls = new List<FooSyncUrl>();
+            _urls = new Collection<FooSyncUrl>();
         }
 
         private ObservableCollection<string> _rawStringURLs;
-        private List<FooSyncUrl> _urls;
+        private Collection<FooSyncUrl> _urls;
 
         private void RawStringURLs_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
@@ -237,14 +237,14 @@ namespace Codewise.FooSync.WPFApp2
 
         [XmlArray]
         [XmlArrayItem("Name")]
-        public List<string> MemberOfSyncGroups { get; private set; }
+        public Collection<string> MemberOfSyncGroups { get; private set; }
 
         [XmlIgnore]
         public ServerRepositoryList Server { get; set; }
 
         public ServerRepository()
         {
-            MemberOfSyncGroups = new List<string>();
+            MemberOfSyncGroups = new Collection<string>();
         }
 
         public FooSyncUrl URL
@@ -280,6 +280,7 @@ namespace Codewise.FooSync.WPFApp2
             }
         }
 
+        [NonSerialized]
         private FooSyncUrl _url = null;
 
         #region equality overrides

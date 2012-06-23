@@ -65,7 +65,7 @@ namespace Codewise.FooSync.WPFApp2
                 Application.Current.Shutdown();
         }
 
-        private T GetAssemblyAttribute<T>()
+        private static T GetAssemblyAttribute<T>()
         {
             object[] attrs = Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(T), false);
 
@@ -81,7 +81,7 @@ namespace Codewise.FooSync.WPFApp2
             {
                 using (var stream = new FileStream(Path.Combine(_settingsPath, RepoListFilename), FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
-                    _syncGroupList = SyncGroupList.ReadFromFile(stream);
+                    _syncGroupList = SyncGroupList.Deserialize(stream);
                 }
             }
             catch (FileNotFoundException)
@@ -89,7 +89,7 @@ namespace Codewise.FooSync.WPFApp2
                 using (var stream = new FileStream(Path.Combine(_settingsPath, RepoListFilename), FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
                     _syncGroupList = new SyncGroupList();
-                    _syncGroupList.WriteToFile(stream);
+                    _syncGroupList.Serialize(stream);
                 }
             }
             catch (Exception ex)
@@ -127,7 +127,7 @@ namespace Codewise.FooSync.WPFApp2
         {
             using (var stream = new FileStream(Path.Combine(_settingsPath, RepoListFilename), FileMode.Truncate, FileAccess.Write, FileShare.None))
             {
-                _syncGroupList.WriteToFile(stream);
+                _syncGroupList.Serialize(stream);
             }
         }
 
@@ -445,12 +445,7 @@ namespace Codewise.FooSync.WPFApp2
 
         }
 
-        private void OpenExplorerAt(string filename)
-        {
-            System.Diagnostics.Process.Start("explorer.exe", "/select," + filename);
-        }
-
-        private void OpenExplorerIn(string path)
+        private static void OpenExplorerIn(string path)
         {
             System.Diagnostics.Process.Start("explorer.exe", path);
         }

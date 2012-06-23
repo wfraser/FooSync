@@ -33,11 +33,12 @@ namespace Codewise.FooSync.WPFApp2
         /// <param name="e"></param>
         private void FolderBrowse(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement)
+            FrameworkElement wpfElement = sender as FrameworkElement;
+            if (wpfElement != null)
             {
-                var target = ((FrameworkElement)sender).Tag as TextBox;
+                TextBox target = wpfElement.Tag as TextBox;
 
-                if (target ==  null)
+                if (target == null)
                     throw new InvalidCastException("FolderBrowse sender needs to have a tag set to a TextBox instance.");
 
                 var folder = ShowFolderBrowser("All Files|*.*");
@@ -53,7 +54,7 @@ namespace Codewise.FooSync.WPFApp2
         /// </summary>
         /// <param name="filter">Filename filter for if the OS doesn't support a folder browser.</param>
         /// <returns>Full path the user selected.</returns>
-        private string ShowFolderBrowser(string filter)
+        private static string ShowFolderBrowser(string filter)
         {
             bool cancelled = false;
             string path = null;
