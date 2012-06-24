@@ -1,5 +1,5 @@
 ﻿///
-/// Codewise/FooSync/WPFApp/NullToVisibilityConverter.cs
+/// Codewise/FooSync/WPFApp/ValueIsNotNullConverter.cs
 /// 
 /// by William R. Fraser:
 ///     http://www.codewise.org/
@@ -20,16 +20,11 @@ namespace Codewise.FooSync.WPFApp
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812",
         Justification="Only instantiated by XAML")]
-    class NullToVisibilityConverter : IValueConverter
+    class ValueIsNotNullConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null)
-            {
-                return Visibility.Collapsed;
-            }
-
-            return Visibility.Visible;
+            return (value != null);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

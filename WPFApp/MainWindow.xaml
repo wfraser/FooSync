@@ -20,12 +20,12 @@
         <foo:VisibleWhenEmptyConverter x:Key="VisibleWhenEmptyConverter"/>
         <foo:UrlPrettifierConverter x:Key="UrlPrettifierConverter"/>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <foo:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <foo:ValueIsNotNullConverter x:Key="ValueIsNotNullConverter"/>
     </Window.Resources>
     
     <Window.CommandBindings>
         <CommandBinding Command="New" CanExecute="CanNew" Executed="OnNew"/>
-        <CommandBinding Command="Delete" CanExecute="CanDelete" Executed="DeleteExecuted"/>
+        <CommandBinding Command="Delete" CanExecute="CanDelete" Executed="OnDelete"/>
     </Window.CommandBindings>
     
     <DockPanel>
@@ -251,11 +251,11 @@
                     <WrapPanel DockPanel.Dock="Top">
                         <Button Margin="10,0,0,0"
                                 Click="SyncGroupLocationShow_Click">
-                            <Button.Visibility>
+                            <Button.IsEnabled>
                                 <Binding ElementName="SyncGroupLocation"
                                          Path="SelectedItem"
-                                         Converter="{StaticResource NullToVisibilityConverter}"/>
-                            </Button.Visibility>
+                                         Converter="{StaticResource ValueIsNotNullConverter}"/>
+                            </Button.IsEnabled>
                             Show
                         </Button>
                     </WrapPanel>

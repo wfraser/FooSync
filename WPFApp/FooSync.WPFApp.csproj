@@ -78,7 +78,7 @@
       <DependentUpon>RepositoryDiff.xaml</DependentUpon>
     </Compile>
     <Compile Include="TreeViewExtensions.cs" />
-    <Compile Include="NullToVisibilityConverter.cs" />
+    <Compile Include="ValueIsNotNullConverter.cs" />
     <Compile Include="SyncGroupEntryWindow.xaml.cs">
       <DependentUpon>SyncGroupEntryWindow.xaml</DependentUpon>
     </Compile>

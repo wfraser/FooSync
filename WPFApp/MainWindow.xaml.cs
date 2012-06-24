@@ -151,7 +151,7 @@ namespace Codewise.FooSync.WPFApp
             IsClosed = true;
         }
 
-        private void DeleteExecuted(object sender, ExecutedRoutedEventArgs e)
+        private void OnDelete(object sender, ExecutedRoutedEventArgs e)
         {
             object param = e.Parameter;
 
