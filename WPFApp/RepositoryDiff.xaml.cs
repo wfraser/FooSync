@@ -49,7 +49,7 @@ namespace Codewise.FooSync.WPFApp
                             }
                         ));
 
-                        if (MainWindow.GetInstance().IsClosed || _cancel)
+                        if (MainWindow.Instance.IsClosed || _cancel)
                         {
                             break;
                         }

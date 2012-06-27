@@ -129,6 +129,7 @@ namespace Codewise.FooSync.WPFApp
                 DialogResult = true;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         void connectionWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             OKButton.Dispatcher.Invoke(new Action(() => 

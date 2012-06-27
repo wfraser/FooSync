@@ -187,7 +187,7 @@ namespace Ookii.Dialogs.Wpf
             get { return _description ?? string.Empty; }
             set 
             { 
-                _description = value;
+                _description = value ?? string.Empty;
                 if( _dialog != null )
                 {
                     string[] lines = _description.Split(new char[] { '\n' }, 2);

@@ -24,8 +24,7 @@ namespace Codewise.FooSync.WPFApp
     /// empty; otherwise returns Visibility.Collapsed.
     /// Useful for having a fallback value be displayed when the collection is empty.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812", 
-        Justification = "Only instantiated by XAML")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
     class VisibleWhenEmptyConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

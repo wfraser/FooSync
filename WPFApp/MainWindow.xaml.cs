@@ -78,9 +78,9 @@ namespace Codewise.FooSync.WPFApp
             _repositoryDiffControls = new Dictionary<SyncGroup, RepositoryDiff>();
         }
 
-        public static MainWindow GetInstance()
+        public static MainWindow Instance
         {
-            return _instance;
+            get { return _instance; }
         }
 
         private static T GetAssemblyAttribute<T>()
@@ -93,6 +93,7 @@ namespace Codewise.FooSync.WPFApp
             return (T)attrs[0];
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         private bool LoadSyncGroups()
         {
             try
@@ -154,6 +155,8 @@ namespace Codewise.FooSync.WPFApp
         private void OnDelete(object sender, ExecutedRoutedEventArgs e)
         {
             object param = e.Parameter;
+            FooServer paramFooServer;
+            SyncGroup paramSyncGroup;
 
             if (param == null)
             {
@@ -164,13 +167,11 @@ namespace Codewise.FooSync.WPFApp
                 }
             }
 
-            if (param is FooServer)
+            if ((paramFooServer = param as FooServer) != null)
             {
-                var server = (FooServer)param;
-
                 foreach (SyncGroup syncGroup in _syncGroupList.SyncGroups)
                 {
-                    foreach (ServerRepository repo in server.Repositories)
+                    foreach (ServerRepository repo in paramFooServer.Repositories)
                     {
                         if (syncGroup.URLs.Contains(repo.URL))
                         {
@@ -179,21 +180,19 @@ namespace Codewise.FooSync.WPFApp
                     }
                 }
 
-                _syncGroupList.Servers.Remove(server);
+                _syncGroupList.Servers.Remove(paramFooServer);
             }
-            else if (param is SyncGroup)
+            else if ((paramSyncGroup = param as SyncGroup) != null)
             {
-                var syncGroup = (SyncGroup)param;
-
                 foreach (FooServer server in _syncGroupList.Servers)
                 {
                     foreach (ServerRepository repo in server.Repositories)
                     {
-                        repo.MemberOfSyncGroups.Remove(syncGroup.Name);
+                        repo.MemberOfSyncGroups.Remove(paramSyncGroup.Name);
                     }
                 }
 
-                _syncGroupList.SyncGroups.Remove(syncGroup);
+                _syncGroupList.SyncGroups.Remove(paramSyncGroup);
             }
         }
 
@@ -280,6 +279,7 @@ namespace Codewise.FooSync.WPFApp
             NewRemoteServer();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1800:DoNotCastUnnecessarily")]
         private void NewRemoteServer()
         {
             var serverEntryWindow = new ServerEntryWindow();
@@ -460,6 +460,7 @@ namespace Codewise.FooSync.WPFApp
             diffPanel.Start();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1800:DoNotCastUnnecessarily")]
         private void SyncGroupLocationShow_Click(object sender, RoutedEventArgs e)
         {
             var syncGroup = TreePane.SelectedItem as SyncGroup;
