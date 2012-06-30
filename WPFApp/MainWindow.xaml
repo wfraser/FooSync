@@ -258,6 +258,16 @@
                             </Button.IsEnabled>
                             Show
                         </Button>
+                        <Button Margin="10,0,0,0"
+                                Click="SyncGroupLocationRemove_Click">
+                            <Button.IsEnabled>
+                                <Binding ElementName="SyncGroupLocation"
+                                         Path="SelectedItem"
+                                         Converter="{StaticResource ValueIsNotNullConverter}"/>
+                            </Button.IsEnabled>
+                            Remove
+                        </Button>
+                        
                     </WrapPanel>
 
                     <WrapPanel VerticalAlignment="Bottom">
@@ -288,30 +298,17 @@
                     </TextBlock.Text>
                 </TextBlock>
                 
-                <TextBlock x:Name="ServerDescriptionDisplay"
-                           DockPanel.Dock="Top"
-                           FontSize="18"
-                           Foreground="{x:Static SystemColors.ControlDarkBrush}"
-                           Cursor="IBeam"
-                           MouseLeftButtonDown="ServerDescriptionDisplay_MouseLeftButtonDown">
-                    <TextBlock.Text>
+                <foo:EditableTextBlock x:Name="ServerDescription"
+                                       DockPanel.Dock="Top"
+                                       FontSize="18">
+                    <foo:EditableTextBlock.Text>
                         <Binding Path="Description"
                                  FallbackValue="[No Value]"
-                                 TargetNullValue="(no description)"/>
-                    </TextBlock.Text>
-                </TextBlock>
-                
-                <TextBox x:Name="ServerDescriptionEdit"
-                         DockPanel.Dock="Top"
-                         FontSize="18"
-                         Visibility="Collapsed"
-                         PreviewKeyDown="ServerDescriptionEdit_PreviewKeyDown">
-                    <TextBox.Text>
-                        <Binding Path="Description"
-                                 FallbackValue="[No Value]"
-                                 TargetNullValue="(no description)"/>
-                    </TextBox.Text>
-                </TextBox>
+                                 TargetNullValue="(no description)"
+                                 Mode="TwoWay"/>
+                    </foo:EditableTextBlock.Text>
+                </foo:EditableTextBlock>
+                                       
                 
                 <TextBlock DockPanel.Dock="Top"></TextBlock>
 

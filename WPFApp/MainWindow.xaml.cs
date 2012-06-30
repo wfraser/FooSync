@@ -502,7 +502,26 @@ namespace Codewise.FooSync.WPFApp
                     (object o) => (o is ServerRepository && ((ServerRepository)o).Name == url.AbsolutePath.Substring(1))
                 });
             }
+        }
 
+        private void SyncGroupLocationRemove_Click(object sender, RoutedEventArgs e)
+        {
+            var syncGroup = TreePane.SelectedItem as SyncGroup;
+            var index = SyncGroupLocation.SelectedIndex;
+
+            if (syncGroup == null || index == -1)
+            {
+                return;
+            }
+
+            try
+            {
+                syncGroup.URLs.RemoveAt(index);
+                SyncGroupLocation.GetBindingExpression(ListBox.ItemsSourceProperty).UpdateTarget();
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+            }
         }
 
         private static void OpenExplorerIn(string path)
@@ -510,6 +529,7 @@ namespace Codewise.FooSync.WPFApp
             System.Diagnostics.Process.Start("explorer.exe", path);
         }
 
+        /*
         private void ServerDescriptionDisplay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             ServerDescriptionDisplay.Visibility = Visibility.Collapsed;
@@ -523,12 +543,21 @@ namespace Codewise.FooSync.WPFApp
                 e.Handled = true;
                 ServerDescriptionEdit.Visibility = Visibility.Collapsed;
                 ServerDescriptionDisplay.Visibility = Visibility.Visible;
-                ((FooServer)TreePane.SelectedItem).Description = ((TextBox)sender).Text;
+                ServerDescriptionEdit.GetBindingExpression(TextBox.TextProperty).UpdateSource();
             }
         }
+         */
 
         private void TreePane_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
+            if (e.OldValue is FooServer)
+            {
+                //
+                // Make sure description edit box is closed.
+                //
+                ServerDescription.CancelEdit();
+            }
+
             if (e.NewValue is SyncGroup)
             {
                 SyncGroup syncGroup = (SyncGroup)e.NewValue;
