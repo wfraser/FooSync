@@ -27,8 +27,10 @@ namespace Codewise.ArgumentParser
         /// These arrays configure what switches the parser will recognize.
         /// Prefix any letter with an ampersand to denote that letter as a short form.
         /// </summary>
-        private static readonly string[] OPTIONS = { "&directory" };
-        private static readonly string[] FLAGS = { "&help", "hash", "casesensitive" };
+        private static readonly string[] OPTIONS = { "&user", "&pass" };
+        private static readonly string[] FLAGS = { "&help", "casesensitive",
+                                                     "&create", "&add", "&rm", "&sync",
+                                                 };
 
         /// <summary>
         /// Collects arguments like "--foo=bar", "--foo:bar", "--foo bar", or "-f bar"
@@ -119,11 +121,11 @@ namespace Codewise.ArgumentParser
         /// </summary>
         /// <param name="args">List of command-line arguments to parse.</param>
         public void Parse(IList<string> args)
-        {            
-            bool parsingFlags = true;
+        {
+            bool parsingFlagsDisabled = false;
             for (int i = 0; i < args.Count; i++)
             {
-                if (parsingFlags)
+                if (!parsingFlagsDisabled)
                 {
                     bool flagSet = true;
                     var a = args[i];
@@ -136,9 +138,14 @@ namespace Codewise.ArgumentParser
                     {
                         a = a.Substring(1);
                     }
+                    else if (a.Equals("--"))
+                    {
+                        parsingFlagsDisabled = true;
+                        Ordinals.Add(args[i]);
+                        continue;
+                    }
                     else
                     {
-                        parsingFlags = false;
                         Ordinals.Add(args[i]);
                         continue;
                     }
@@ -196,7 +203,6 @@ namespace Codewise.ArgumentParser
                     }
                     else
                     {
-                        parsingFlags = false;
                         Ordinals.Add(args[i]);
                     }
                 }

@@ -279,6 +279,12 @@ namespace Codewise.FooSync
         public Options Options { get; private set; }
     }
 
+    public interface IIgnorePatterns
+    {
+        string[] Patterns { get; set; }
+        bool CaseInsensitive { get; set; }
+    }
+
     public delegate void Progress(int completed, int total, string item);
 
     public enum ChangeStatus

@@ -29,6 +29,7 @@ namespace Codewise.FooSync
         public static readonly short  DefaultPort = 22022;
 
         private bool _isLocal;
+        private bool _isUNC;
 
         /// <summary>
         /// C'tor.
@@ -38,6 +39,9 @@ namespace Codewise.FooSync
             : base(url)
         {
             _isLocal = (Scheme == Uri.UriSchemeFile);
+
+            // URL like file://hostname/share
+            _isUNC = _isLocal && (!string.IsNullOrEmpty(Host));
 
             if (!_isLocal && Scheme != UriSchemeFooSync)
             {
@@ -49,14 +53,7 @@ namespace Codewise.FooSync
                 throw new FormatException("Don't use a username/password with a fs:// URL");
             }
 
-            if (_isLocal)
-            {
-                if (!string.IsNullOrEmpty(Host))
-                {
-                    throw new FormatException("Can't have a hostname with a file:// URL");
-                }
-            }
-            else if (string.IsNullOrEmpty(Host))
+            if (!_isLocal && string.IsNullOrEmpty(Host))
             {
                 throw new FormatException("Hostname is required for fs:// URL");
             }
@@ -64,10 +61,12 @@ namespace Codewise.FooSync
 
         public bool IsLocal
         {
-            get
-            {
-                return _isLocal;
-            }
+            get { return _isLocal; }
+        }
+
+        public bool IsUNC
+        {
+            get { return _isUNC; }
         }
 
         /// <summary>
@@ -122,13 +121,20 @@ namespace Codewise.FooSync
             return sb.ToString();
         }
 
+        public override bool Equals(object comparand)
+        {
+            return Equals(comparand, false);
+        }
+
         /// <summary>
         /// Compare two FooSyncUrl instances for equality.
         /// Equality is considered host, port, and path being equal.
+        /// Host is always compared case-insensitively.
         /// </summary>
         /// <param name="comparand"></param>
-        /// <returns></returns>
-        public override bool Equals(object comparand)
+        /// <param name="caseInsensitive">if true, the path component is compared without regarding case.</param>
+        /// <returns>true if equal, false otherwise</returns>
+        public bool Equals(object comparand, bool caseInsensitive)
         {
             var other = comparand as FooSyncUrl;
             if (other == null)
@@ -136,9 +142,11 @@ namespace Codewise.FooSync
                 return false;
             }
 
-            if (this.Host.Equals(other.Host)
+            if (this.Scheme.Equals(other.Scheme, StringComparison.OrdinalIgnoreCase)
+                && this.Host.Equals(other.Host, StringComparison.OrdinalIgnoreCase)
                 && this.Port.Equals(other.Port)
-                && this.AbsolutePath.Equals(other.AbsolutePath))
+                && this.AbsolutePath.Equals(other.AbsolutePath,
+                    (caseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)))
             {
                 return true;
             }

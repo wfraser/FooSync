@@ -10,14 +10,11 @@
 
 using System;
 using System.IO;
-using System.Security.Cryptography;
 
 namespace Codewise.FooSync
 {
     public class FooFileInfo : FooFileInfoBase
     {
-        static MD5 Hasher = MD5.Create();
-
         internal FooFileInfo()
         {
         }
@@ -30,27 +27,6 @@ namespace Codewise.FooSync
         }
 
         #region public properties
-
-        public override string Hash
-        {
-            get
-            {
-                if (_hash == null)
-                {
-                    using (FileStream f = Info.OpenRead())
-                    {
-                        byte[] bytes = Hasher.ComputeHash(f);
-                        _hash = string.Empty;
-                        foreach (byte b in bytes)
-                        {
-                            _hash += string.Format("{0:X2}", b);
-                        }
-                    }
-                }
-
-                return _hash;
-            }
-        }
 
         public override DateTime MTime
         {
@@ -100,7 +76,6 @@ namespace Codewise.FooSync
         #region private members
 
         private FileInfo _info;
-        private string _hash;
 
         #endregion
     }
@@ -126,28 +101,13 @@ namespace Codewise.FooSync
             if (other == null)
                 throw new ArgumentNullException("other");
 
-            if (this.MTime != other.MTime)
-            {
-                if (Foo != null && Foo.Options.ComputeHashes && (this.Hash == other.Hash))
-                {
-                    return 0;
-                }
-                else
-                {
-                    return this.MTime.CompareTo(other.MTime);
-                }
-            }
-            else
-            {
-                return 0;
-            }
+            return this.MTime.CompareTo(other.MTime);
         }
 
         public string Path { get; internal set; }
         public string Source { get; internal set; }
         public virtual DateTime MTime { get; internal set; }
         public virtual long Size { get; internal set; }
-        public virtual string Hash { get { throw new NotImplementedException("Can't get hash from a FooFileInfoBase"); } }
 
         protected FooSyncEngine Foo { get; set; }
     }

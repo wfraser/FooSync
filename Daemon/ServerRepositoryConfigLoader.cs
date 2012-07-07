@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
+using Codewise.FooSync;
 
 namespace Codewise.FooSync.Daemon
 {
@@ -12,7 +13,7 @@ namespace Codewise.FooSync.Daemon
 
         public static ServerRepositoryConfig GetConfig(string configXmlFilename, out string error)
         {
-            if (!RepositoryConfigLoader.ValidateAgainstSchema(
+            if (!XmlConfigLoader.Validate(
                     configXmlFilename,
                     System.IO.Path.Combine(
                         System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
@@ -24,22 +25,14 @@ namespace Codewise.FooSync.Daemon
 
             try
             {
-                using (var reader = XmlReader.Create(configXmlFilename))
+                ServerRepositoryConfig config = XmlConfigLoader.Load<ServerRepositoryConfig>(configXmlFilename);
+
+                foreach (var repo in config.RepositoriesList)
                 {
-                    var serializer = new XmlSerializer(typeof(ServerRepositoryConfig));
-                    serializer.UnknownAttribute += serializer_UnknownAttribute;
-                    serializer.UnknownElement += serializer_UnknownElement;
-                    serializer.UnknownNode += serializer_UnknownNode;
-
-                    var config = (ServerRepositoryConfig)serializer.Deserialize(reader);
-
-                    foreach (var repo in config.RepositoriesList)
-                    {
-                        config.Repositories.Add(repo.Name, repo);
-                    }
-
-                    return config;
+                    config.Repositories.Add(repo.Name, repo);
                 }
+
+                return config;
             }
             catch (Exception ex)
             {
@@ -48,41 +41,12 @@ namespace Codewise.FooSync.Daemon
             }
         }
 
-        static void serializer_UnknownAttribute(object sender, XmlAttributeEventArgs e)
-        {
-            throw new XmlException(
-                string.Format("Unknown attribute while deserializing {2}: \"{0}\", expecting: {1}",
-                    e.Attr, e.ExpectedAttributes, e.ObjectBeingDeserialized),
-                null, e.LineNumber, e.LinePosition);
-        }
-
-        static void serializer_UnknownElement(object sender, XmlElementEventArgs e)
-        {
-            throw new XmlException(
-                string.Format("Unknown element while deserializing {2}: \"{0}\", expecting: {1}",
-                    e.Element, e.ExpectedElements, e.ObjectBeingDeserialized),
-                null, e.LineNumber, e.LinePosition);
-        }
-
-        static void serializer_UnknownNode(object sender, XmlNodeEventArgs e)
-        {
-            throw new XmlException(
-                string.Format("Unknown node while deserializing {2}: \"{0}\", type {1}",
-                    e.Name, e.NodeType, e.ObjectBeingDeserialized),
-                null, e.LineNumber, e.LinePosition);
-        }
-
         public static void WriteConfig(ServerRepositoryConfig config, string configXmlFilename)
         {
-            using (var writer = XmlWriter.Create(configXmlFilename))
-            {
-                var serializer = new XmlSerializer(typeof(ServerRepositoryConfig));
+            config.Repositories.Clear();
+            config.RepositoriesList.AddRange(config.Repositories.Values);
 
-                config.RepositoriesList.Clear();
-                config.RepositoriesList.AddRange(config.Repositories.Values);
-
-                serializer.Serialize(writer, config);
-            }
+            XmlConfigLoader.Write<ServerRepositoryConfig>(config, configXmlFilename);
         }
     }
 }

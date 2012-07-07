@@ -71,15 +71,8 @@
     <Compile Include="NetUtil.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RepositoryConfig.cs" />
-    <Compile Include="RepositoryConfigLoader.cs" />
     <Compile Include="RepositoryState.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="RepositoryConfig.xsd">
-      <SubType>Designer</SubType>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Compile Include="XmlConfigLoader.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />

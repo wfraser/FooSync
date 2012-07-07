@@ -49,17 +49,25 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="ProgramArguments.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SyncGroupConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FooSync\FooSyncEngine.csproj">
       <Project>{9DD175E1-7392-4A9E-A4DB-22F9EE18D916}</Project>
       <Name>FooSyncEngine</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="SyncGroupConfig.xsd">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

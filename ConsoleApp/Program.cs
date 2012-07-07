@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Codewise.ArgumentParser;
 using Codewise.FooSync;
@@ -20,27 +21,17 @@ namespace Codewise.FooSync.ConsoleApp
 {
     class Program
     {
+        private static readonly string[] MODES = { "create", "add", "rm", "sync" };
+
         [STAThread]
         static void Main(string[] args)
         {
             var programArgs = new ProgramArguments(args);
             var fooOptions = new Options();
 
-            if (programArgs.Flags.ContainsKey("hash"))
-            {
-                fooOptions.ComputeHashes = programArgs.Flags["hash"];
-            }
-
             if (programArgs.Flags.ContainsKey("casesensitive"))
             {
                 fooOptions.CaseInsensitive = !programArgs.Flags["casesensitive"];
-            }
-            else
-            {
-                //
-                // default to case-sensitive on Unix
-                //
-                fooOptions.CaseInsensitive = !(Environment.OSVersion.Platform == PlatformID.Unix);
             }
 
             var foo = new FooSyncEngine(fooOptions);
@@ -61,18 +52,18 @@ namespace Codewise.FooSync.ConsoleApp
 
             if (programArgs.Flags.ContainsKey("help"))
             {
-                Console.WriteLine("usage: {0} [options]", System.Reflection.Assembly.GetExecutingAssembly().GetName().Name);
+                Console.WriteLine("usage: {0} [options]", ProgramName);
                 Console.WriteLine("Loads its configuration from {0} in the current directory", FooSyncEngine.ConfigFileName);
                 return;
             }
 
-            if (programArgs.Ordinals.Count == 1)
-            {
-                Directory.SetCurrentDirectory(programArgs.Ordinals[0]);
-            }
-
             var program = new Program(foo);
             program.Run(programArgs);
+        }
+
+        static string ProgramName
+        {
+            get { return System.Reflection.Assembly.GetExecutingAssembly().GetName().Name; }
         }
 
         Program(FooSyncEngine foo)
@@ -82,401 +73,289 @@ namespace Codewise.FooSync.ConsoleApp
 
         void Run(ProgramArguments args)
         {
-            //
-            // Load the repository config
-            //
+            string mode = CommandLineGetMode(args, "sync");
 
-            string repoConfigError;
-            RepositoryConfig config = RepositoryConfigLoader.GetRepositoryConfig(FooSyncEngine.ConfigFileName, out repoConfigError);
-
-            if (config == null)
+            switch (mode)
             {
-                Console.WriteLine("There's a problem with your config file: {0}", repoConfigError);
-                return;
-            }
+                case null:
+                    Console.WriteLine("usage: {0} <command>", ProgramName);
+                    Console.WriteLine("where <command> is one of: {0}", string.Join(", ", MODES));
+                    break;
 
-
-            List<RepositoryDirectory> directories;
-            if (args.Options.ContainsKey("directory"))
-            {
-                directories = new List<RepositoryDirectory>();
-                foreach (var dir in config.Directories)
-                {
-                    if (dir.Path == args.Options["directory"])
+                case "create":
                     {
-                        directories.Add(dir);
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                directories = new List<RepositoryDirectory>(config.Directories);
-            }
-
-            foreach (var dir in directories)
-            {
-                Console.WriteLine("Synchronizing directory {0}:", dir.Path);
-
-                if (dir.Source == null)
-                {
-                    Console.WriteLine("There's no entry matching your machine name ({0}) in the "
-                        + "repository configuration file for the directory \"{1}\". Skipping.",
-                        Environment.MachineName.ToLower(),
-                        dir.Path);
-                    continue;
-                }
-
-                var exceptions = FooSyncEngine.PrepareExceptions(dir.IgnoreRegex, dir.IgnoreGlob);
-
-                //
-                // Enumerate files in the source and repository trees
-                //
-
-                Console.Write("Enumerating files: repository...");
-                FooTree repo = GetFooTree(dir.Path, exceptions, "repository");
-                if (repo == null)
-                    continue;
-
-                Console.Write(" done. Source...");
-                
-                FooTree source = GetFooTree(dir.Source.Path, exceptions, "source");
-                if (source == null)
-                    continue;
-
-                Console.Write(" done.\n");
-
-                //
-                // Load / generate the repository state
-                //
-
-                Console.Write("Loading repository state...");
-                RepositoryState state;
-                try
-                {
-                    state = new RepositoryState(Path.Combine(dir.Path, FooSyncEngine.RepoStateFileName));
-                }
-                catch (FileNotFoundException)
-                {
-                    state = new RepositoryState();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Unexpected {0} trying to read repository state: {1}",
-                        ex.GetType().Name,
-                        ex.Message);
-                    return;
-                }
-
-                bool stateChanged = false;
-                if (state.Repository == null)
-                {
-                    state.AddSource(repo, RepositoryState.RepoSourceName);
-                    stateChanged = true;
-                }
-
-                if (!state.Sources.ContainsKey(Environment.MachineName.ToLower()))
-                {
-                    state.AddSource(source, Environment.MachineName.ToLower());
-                    stateChanged = true;
-                }
-
-                if (stateChanged)
-                {
-                    state.Write(Path.Combine(dir.Path, FooSyncEngine.RepoStateFileName));
-                }
-                Console.Write(" done.\n");
-
-                //
-                // Compute & display the change set
-                //
-
-                Console.Write("Comparing files...");
-                var changeset = Foo.Inspect(state, repo, source);
-                Console.Write(" done.\n");
-
-                if (changeset.Count(e => e.ChangeStatus != ChangeStatus.Identical) == 0)
-                {
-                    Console.WriteLine("No changes; nothing to do.\n");
-                    continue;
-                }
-
-                //
-                // Check against the repository state
-                //
-
-                FooSyncEngine.GetConflicts(changeset, state, repo, source);
-
-                changeset.SetDefaultActions();
-
-                int conflictCount = changeset.Count(e => e.ConflictStatus != ConflictStatus.NoConflict);
-                if (conflictCount > 0) {
-                    Console.WriteLine("\n{0} Conflicts:\n", conflictCount);
-
-                    foreach (var filename in changeset.Conflicts)
-                    {
-                        string descr = string.Empty;
-                        switch (changeset[filename].ConflictStatus)
+                        if (args.Ordinals.Count != 2)
                         {
-                            case ConflictStatus.ChangedInSourceDeletedInRepo:
-                                descr = "File changed in the source and deleted in the repository";
-                                break;
-
-                            case ConflictStatus.ChangedInRepoDeletedInSource:
-                                descr = "File changed in the repository and deleted in the source";
-                                break;
-
-                            case ConflictStatus.RepoChanged:
-                                descr = "File changed in the repository and in the source (source newer)";
-                                break;
-
-                            case ConflictStatus.SourceChanged:
-                                descr = "File changed in the repository and in the source (repository newer)";
-                                break;
+                            Console.WriteLine("usage: {0} --create <sync group name> <filename>.fsg", ProgramName);
+                            return;
                         }
 
-                        Console.WriteLine("{0}:\n{1}", descr, filename);
-                        if (changeset[filename].ConflictStatus != ConflictStatus.ChangedInRepoDeletedInSource)
+                        CreateSyncGroup(args.Ordinals[0], args.Ordinals[1]);
+                    }
+                    break;
+
+                case "add":
+                    {
+                        if (args.Ordinals.Count != 2)
                         {
-                            Console.WriteLine("\tSource:     modified {0}, {1} bytes",
-                                source.Files[filename].MTime.ToString(),
-                                source.Files[filename].Size);
-                        }
-                        if (changeset[filename].ConflictStatus != ConflictStatus.ChangedInSourceDeletedInRepo)
-                        {
-                            Console.WriteLine("\tRepository: modified {0}, {1} bytes",
-                                repo.Files[filename].MTime.ToString(),
-                                repo.Files[filename].Size);
+                            Console.WriteLine("usage: {0} --add <filename>.fsg <url/path>", ProgramName);
+                            return;
                         }
 
-                        string rpath = Path.GetFullPath(Path.Combine(repo.Path, filename));
-                        string spath = Path.GetFullPath(Path.Combine(source.Path, filename));
+                        SyncGroupConfig syncGroup = LoadSyncGroupConfig(args.Ordinals[0]);
+                        SyncGroupConfigMember newMember = new SyncGroupConfigMember();
 
-                        FileOperation action = GetActionFromUser(File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
-                        changeset[filename].FileOperation = action;
-                        Console.WriteLine();
-                    }
-                }
-
-                //
-                // Display overview of actions to be taken
-                //
-
-                bool accepted = false;
-                while (!accepted)
-                {
-                    var byIndex = new List<string>();
-                    Console.WriteLine("\nActions to be taken:");
-
-                    int nwidth = (int)Math.Ceiling(Math.Log10(changeset.Count(e => e.FileOperation != FileOperation.NoOp)));
-                    int n = 0;
-
-                    if (changeset.Count(e => e.FileOperation == FileOperation.UseRepo) > 0)
-                    {
-                        Console.WriteLine("\nFiles to copy from repository to source:");
-                        foreach (var path in changeset.WithFileOperation(FileOperation.UseRepo))
+                        FooSyncUrl newUrl = NormalizePath(args.Ordinals[1]);
+                        if (newUrl == null)
                         {
-                            byIndex.Add(path);
-                            Console.WriteLine("{0," + nwidth + "}: {1}", ++n, Path.GetFullPath(Path.Combine(repo.Path, path)));
+                            Console.WriteLine("Invalid path or URL \"{0}\"", args.Ordinals[1]);
+                            return;
                         }
-                    }
 
-                    if (changeset.Count(e => e.FileOperation == FileOperation.UseSource) > 0)
-                    {
-                        Console.WriteLine("\nFiles to copy from source to repository:");
-                        foreach (var path in changeset.WithFileOperation(FileOperation.UseSource))
+                        newMember.URL = newUrl.ToString();
+                        if (newUrl.IsLocal)
                         {
-                            byIndex.Add(path);
-                            Console.WriteLine("{0," + nwidth + "}: {1}", ++n, Path.GetFullPath(Path.Combine(source.Path, path)));
+                            newMember.Host = Environment.MachineName;
                         }
-                    }
 
-                    if (changeset.Count(e => e.FileOperation == FileOperation.DeleteRepo) > 0)
-                    {
-                        Console.WriteLine("\nFiles to delete from repository:");
-                        foreach (var path in changeset.WithFileOperation(FileOperation.DeleteRepo))
+                        if (!newMember.URL.Equals(args.Ordinals[1]))
                         {
-                            byIndex.Add(path);
-                            Console.WriteLine("{0," + nwidth + "}: {1}", ++n, Path.GetFullPath(Path.Combine(repo.Path, path)));
+                            Console.WriteLine("Path or URL {0} interpreted as {1}", args.Ordinals[1], newMember.URL);
                         }
-                    }
 
-                    if (changeset.Count(e => e.FileOperation == FileOperation.DeleteSource) > 0)
-                    {
-                        Console.WriteLine("\nFiles to delete from source:");
-                        foreach (var path in changeset.WithFileOperation(FileOperation.DeleteSource))
+                        foreach (SyncGroupConfigMember existingMember in syncGroup.Members)
                         {
-                            byIndex.Add(path);
-                            Console.WriteLine("{0," + nwidth + "}: {1}", ++n, Path.GetFullPath(Path.Combine(source.Path, path)));
-                        }
-                    }
-
-                    Console.Write("\nPress Enter to perform actions, or enter a number to edit one: ");
-                    string changeNum = Console.ReadLine();
-
-                    if (string.IsNullOrEmpty(changeNum))
-                    {
-                        accepted = true;
-                    }
-                    else
-                    {
-                        try
-                        {
-                            if (changeNum.Contains("-"))
+                            try
                             {
-                                int n_start, n_end;
-                                n_start = int.Parse(changeNum.Substring(0, changeNum.IndexOf('-')).Trim()) - 1;
-                                n_end = int.Parse(changeNum.Substring(changeNum.IndexOf('-') + 1).Trim()) - 1;
+                                FooSyncUrl url = new FooSyncUrl(existingMember.URL);
 
-                                if (n_start < 0 || n_end >= changeset.Count(e => e.FileOperation != FileOperation.NoOp))
+                                if (url.Equals(newUrl, Foo.Options.CaseInsensitive)
+                                        && existingMember.Host.Equals(newMember.Host, StringComparison.OrdinalIgnoreCase)
+                                        && !string.IsNullOrEmpty(newMember.Host))
                                 {
-                                    Console.WriteLine("Selection out of range. Try again.");
-                                    continue;
-                                }
-
-                                FileOperation action = GetActionFromUser("multiple", "multiple");
-
-                                for (int i = n_start; i <= n_end; i++)
-                                {
-                                    var path = byIndex[i];
-
-                                    string rpath = Path.GetFullPath(Path.Combine(repo.Path, path));
-                                    string spath = Path.GetFullPath(Path.Combine(source.Path, path));
-
-                                    if ((action == FileOperation.UseRepo || action == FileOperation.DeleteRepo) && !File.Exists(rpath))
-                                    {
-                                        Console.WriteLine("Repo path {0} doesn't exist; can't {1} from there. Not changing the action on this one.",
-                                            rpath, 
-                                            (action == FileOperation.UseRepo) ? "copy" : "delete");
-                                    }
-                                    else if ((action == FileOperation.UseSource || action == FileOperation.DeleteSource) && !File.Exists(spath))
-                                    {
-                                        Console.WriteLine("Source path {0} doesn't exist; can't {1} from there. Not changing the action on this one.",
-                                            spath,
-                                            (action == FileOperation.UseRepo) ? "copy" : "delete");
-                                    }
-                                    else
-                                    {
-                                        changeset[path].FileOperation = action;
-                                    }
+                                    Console.WriteLine("{0} is already a member of that sync group. Aborting.",
+                                        newMember.URL);
+                                    return;
                                 }
                             }
-                            else
+                            catch (FormatException)
                             {
-                                n = int.Parse(changeNum) - 1;
-                                if (n < 0 || n >= changeset.Count(e => e.FileOperation != FileOperation.NoOp))
-                                    throw new FormatException("out of range");
-
-                                var path = byIndex[n];
-                                string rpath = Path.GetFullPath(Path.Combine(repo.Path, path));
-                                string spath = Path.GetFullPath(Path.Combine(source.Path, path));
-
-                                FileOperation action = GetActionFromUser(File.Exists(rpath) ? rpath : null, File.Exists(spath) ? spath : null);
-                                changeset[path].FileOperation = action;
                             }
                         }
-                        catch (Exception ex)
+
+                        if (args.Options.ContainsKey("user"))
                         {
-                            if (ex is FormatException
-                                || ex is OverflowException)
+                            newMember.Auth = new SyncGroupConfigMemberAuth();
+                            newMember.Auth.User = args.Options["user"];
+
+                            if (args.Options.ContainsKey("pass"))
                             {
-                                Console.WriteLine("invalid selection");
+                                newMember.Auth.Password = args.Options["pass"];
                             }
-                            else
+
+                            //TODO: option for prompting at console
+                        }
+
+                        syncGroup.Members.Add(newMember);
+                        XmlConfigLoader.Write(syncGroup, args.Ordinals[0]);
+
+                        Console.WriteLine("Added {0} to sync group \"{1}\"",newMember.URL, syncGroup.Name);
+                    }
+                    break;
+
+                case "rm":
+                    {
+                        if (args.Ordinals.Count != 2)
+                        {
+                            Console.WriteLine("usage: {0} --rm <filename>.fsg <url/path>", ProgramName);
+                            return;
+                        }
+
+                        SyncGroupConfig syncGroup = LoadSyncGroupConfig(args.Ordinals[0]);
+
+                        FooSyncUrl rmUrl = NormalizePath(args.Ordinals[1]);
+                        if (rmUrl == null)
+                        {
+                            Console.WriteLine("Invalid path or URL \"{0}\"", args.Ordinals[1]);
+                            return;
+                        }
+
+                        if (!args.Ordinals[1].Equals(rmUrl.ToString()))
+                        {
+                            Console.WriteLine("Path or URL {0} interpreted as {1}", args.Ordinals[1], rmUrl.ToString());
+                        }
+
+                        SyncGroupConfigMember rmMember = null;
+                        foreach (SyncGroupConfigMember member in syncGroup.Members)
+                        {
+                            FooSyncUrl memUrl;
+                            try
                             {
-                                throw;
+                                memUrl = new FooSyncUrl(member.URL);
+                            }
+                            catch (FormatException)
+                            {
+                                continue;
+                            }
+
+                            if (memUrl.Equals(rmUrl, Foo.Options.CaseInsensitive)
+                                && !string.IsNullOrEmpty(member.Host)
+                                && member.Host.Equals(Environment.MachineName))
+                            {
+                                rmMember = member;
+                                break;
                             }
                         }
+
+                        if (rmMember != null)
+                        {
+                            syncGroup.Members.Remove(rmMember);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Sync group member {0} not found.", rmUrl.ToString());
+                            return;
+                        }
+
+                        XmlConfigLoader.Write(syncGroup, args.Ordinals[0]);
+
+                        Console.WriteLine("Removed {0} from sync group \"{1}\"", rmMember.URL, syncGroup.Name);
                     }
-                }
+                    break;
 
-                //
-                // Perform the operations
-                //
-
-                if (changeset.Count(e => e.FileOperation != FileOperation.NoOp) == 0)
-                {
-                    Console.WriteLine("Nothing to do.\n");
-                    continue;
-                }
-
-                var srcFiles = new List<string>();
-                var dstFiles = new List<string>();
-                var delFiles = new List<string>();
-
-                foreach (var filename in changeset.Where(e => e.FileOperation != FileOperation.NoOp))
-                {
-                    string repoFile = Path.GetFullPath(Path.Combine(repo.Path, filename));
-                    string sourceFile = Path.GetFullPath(Path.Combine(source.Path, filename));
-
-                    switch (changeset[filename].FileOperation)
+                case "sync":
                     {
-                        case FileOperation.UseRepo:
-                            srcFiles.Add(repoFile);
-                            dstFiles.Add(sourceFile);
-                            break;
+                        if (args.Ordinals.Count != 1)
+                        {
+                            Console.WriteLine("usage: {0} --sync <filename>.fsg", ProgramName);
+                            return;
+                        }
 
-                        case FileOperation.UseSource:
-                            srcFiles.Add(sourceFile);
-                            dstFiles.Add(repoFile);
-                            break;
+                        SyncGroupConfig syncGroup = LoadSyncGroupConfig(args.Ordinals[0]);
 
-                        case FileOperation.DeleteRepo:
-                            delFiles.Add(repoFile);
-                            break;
+                        Console.WriteLine("Syncing sync group \"{0}\" with {1} members.",
+                            syncGroup.Name,
+                            syncGroup.Members.Count);
 
-                        case FileOperation.DeleteSource:
-                            delFiles.Add(sourceFile);
-                            break;
+                        Sync(syncGroup);
+
+                        Console.WriteLine("Done syncing \"{0}\".", syncGroup.Name);
                     }
-                }
-
-                if (srcFiles.Count > 0)
-                {
-                    Console.WriteLine("Copying files...");
-                    int width = 0;
-                    CopyEngine.Copy(srcFiles, dstFiles, delegate(int completed, int total, string file)
-                    {
-                        string line = string.Format("{0}/{1} {2}", completed, total, file);
-                        Console.Write("\r{0,"+width+"}\r", string.Empty);
-                        Console.Write(line);
-                        width = line.Length;
-                    });
-                    Console.Write("\r{0," + width + "}\r", string.Empty);
-                    Console.WriteLine("Done.");
-                }
-
-                if (delFiles.Count > 0)
-                {
-                    Console.WriteLine("Deleting files...");
-                    int width = 0;
-                    CopyEngine.Delete(delFiles, delegate(int completed, int total, string file)
-                    {
-                        string line = string.Format("{0}/{1} {2}", completed, total, file);
-                        Console.Write("\r{0," + width + "}\r", string.Empty);
-                        Console.Write(line);
-                        width = line.Length;
-                    });
-                    Console.Write("\r{0," + width + "}\r", string.Empty);
-                    Console.WriteLine("Done.");
-                    Console.WriteLine("Removing newly empty directories...");
-                    CopyEngine.RemoveEmptyDirectories(delFiles, delegate(int completed, int total, string directory)
-                    {
-                        Console.WriteLine("-> {0}", directory);
-                    });
-                }
-
-                //TODO: check whether the file copy succeeded and all files were copied
-
-                //
-                // Update the repository state
-                //
-
-                Console.Write("Updating repository state...");
-                FooSyncEngine.UpdateRepoState(state, changeset, repo, source);
-                state.Write(FooSyncEngine.RepoStateFileName);
-                Console.WriteLine(" done.\n");
+                    break;
             }
+        }
+
+        string CommandLineGetMode(ProgramArguments args, string defaultMode)
+        {
+            string mode = null;
+            IQueryable<string> modes = MODES.AsQueryable<string>();
+
+            foreach (string flag in args.Flags.Keys)
+            {
+                if (modes.Contains(flag))
+                {
+                    if (mode != null)
+                    {
+                        return null;
+                    }
+
+                    mode = flag;
+                }
+            }
+
+            return mode ?? defaultMode;
+        }
+
+        FooSyncUrl NormalizePath(string given)
+        {
+            if (!given.StartsWith("fs://"))
+            {
+                given = Path.GetFullPath(given);
+            }
+
+            if (given.StartsWith("/"))
+            {
+                given = "file://" + given;
+            }
+
+            FooSyncUrl url;
+            try
+            {
+                url = new FooSyncUrl(given);
+            }
+            catch (FormatException)
+            {
+                return null;
+            }
+
+            return url;
+        }
+
+        void CreateSyncGroup(string name, string filename)
+        {
+            SyncGroupConfig config = new SyncGroupConfig();
+            config.Version = 1;
+            config.Name = name;
+            config.IgnoreGlob = new IgnorePatterns();
+            config.IgnorePatterns = new IgnorePatterns();
+
+            XmlConfigLoader.Write(config, filename);
+        }
+
+        SyncGroupConfig LoadSyncGroupConfig(string xmlFilename)
+        {
+            string failMsg;
+            SyncGroupConfig syncGroup = LoadSyncGroupConfig(xmlFilename, out failMsg);
+            
+            if (syncGroup == null)
+            {
+                Console.WriteLine("There's a problem with your sync group config file:\n" + failMsg);
+                Environment.Exit(-1);
+            }
+
+            return syncGroup;
+        }
+
+        SyncGroupConfig LoadSyncGroupConfig(string xmlFilename, out string failMsg)
+        {
+            SyncGroupConfig config;
+
+            if (!XmlConfigLoader.Validate(
+                    xmlFilename,
+                    Path.Combine(
+                        Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location),
+                        "SyncGroupConfig.xsd"),
+                    out failMsg))
+            {
+                return null;
+            }
+
+            try
+            {
+                config = XmlConfigLoader.Load<SyncGroupConfig>(xmlFilename);
+            }
+            catch (Exception ex)
+            {
+                failMsg = XmlConfigLoader.FormatExceptionMessage(ex);
+                return null;
+            }
+
+            foreach (SyncGroupConfigMember member in config.Members)
+            {
+                if (member.URL.StartsWith("file:///") && string.IsNullOrEmpty(member.Host))
+                {
+                    failMsg = "file:// URL given but not Host: " + member.URL;
+                    return null;
+                }
+            }
+
+            failMsg = string.Empty;
+            return config;
+        }
+
+        void Sync(SyncGroupConfig syncGroup)
+        {
+            throw new NotImplementedException("Sync action unimplemented");
         }
 
         private FooTree GetFooTree(string path, ICollection<string> exceptions, string type)

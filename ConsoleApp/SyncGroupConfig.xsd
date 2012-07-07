@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Codewise/FooSync/ConsoleApp/SyncGroupConfig.xsd
+    
+    by William R. Fraser:
+        http://www.codewise.org/
+        https://github.com/wfraser/FooSync
+        
+    Copyright (c) 2012
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://www.codewise.org/schema/foosync/SyncGroupConfig.xsd"
+           targetNamespace="http://www.codewise.org/schema/foosync/SyncGroupConfig.xsd"
+           elementFormDefault="qualified">
+
+  <xs:complexType name="SyncGroupConfig">
+    <xs:all>
+      <xs:element name="IgnoreGlob" type="IgnorePatterns" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="IgnorePatterns" type="IgnorePatterns" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="Members" minOccurs="1" maxOccurs="1">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Member" type="SyncGroupMember" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:all>
+    <xs:attribute name="Version" type="Version" use="required"/>
+    <xs:attribute name="Name" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="SyncGroupMember">
+    <xs:all>
+      <xs:element name="Auth" type="SyncGroupConfigMemberAuth" minOccurs="0" maxOccurs="1"/>
+    </xs:all>
+    <xs:attribute name="URL" type="FooSyncUrl" use="required"/>
+    <xs:attribute name="Host" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="SyncGroupConfigMemberAuth">
+    <xs:attribute name="User" type="xs:string" use="required"/>
+    <!-- Omitting the Password attribute means "prompt the user". -->
+    <xs:attribute name="Password" type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="IgnorePatterns">
+    <xs:sequence>
+      <xs:element name="Pattern" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="CaseInsensitive" type="xs:boolean" default="false"/>
+  </xs:complexType>
+
+  <xs:simpleType name="FooSyncUrl">
+    <xs:restriction base="xs:string">
+      <!-- a file:// URL with a hostname means a UNC path. -->
+      <xs:pattern value="file://([a-zA-Z0-9-][a-zA-Z0-9-.]*)*/.*"/>
+      <!-- technically, a dash shouldn't be the first char of a hostname,
+               but it exists in the wild... -->
+      <xs:pattern value="fs://([a-zA-Z0-9-][a-zA-Z0-9-.]*)+(:[0-9]+)?/.*"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="Version">
+    <xs:restriction base="xs:int">
+      <xs:minInclusive value="1"/>
+      <xs:maxInclusive value="1"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="FooSyncGroup" type="SyncGroupConfig"/>
+</xs:schema>
