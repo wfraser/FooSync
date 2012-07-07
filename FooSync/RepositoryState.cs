@@ -14,47 +14,19 @@ using System.IO;
 
 namespace Codewise.FooSync
 {
-    public class RepositoryState
+    public class RepositoryStateCollection
     {
-        public const string RepoSourceName = ".";
-
-        public RepositoryState()
+        public RepositoryStateCollection()
         {
-            Sources = new Dictionary<string,RepositorySourceState>();
-            Origin  = new Dictionary<string, string>();
+            Repositories = new Dictionary<Guid, RepositoryState>();
+            Origin  = new Dictionary<string, Guid>();
+            RepositoryID = Guid.NewGuid();
         }
 
-        #region public methods
-
-        public void AddSource(FooTree tree, string name)
+        public RepositoryStateCollection(string stateFilename)
         {
-            if (tree == null)
-                throw new ArgumentNullException("tree");
-            if (name == null)
-                throw new ArgumentNullException("name");
-
-            var source = new RepositorySourceState();
-            source.Name = name;
-
-            foreach (var file in tree.Files)
-            {
-                string filename = file.Key;
-                
-                source.MTimes.Add(filename, file.Value.MTime);
-
-                if (name == RepositoryState.RepoSourceName)
-                {
-                    Origin.Add(filename, RepositoryState.RepoSourceName);
-                }
-            }
-
-            Sources.Add(name, source);
-        }
-
-        public RepositoryState(string stateFilename)
-        {
-            Sources = new Dictionary<string, RepositorySourceState>();
-            Origin = new Dictionary<string, string>();
+            Repositories = new Dictionary<Guid, RepositoryState>();
+            Origin = new Dictionary<string, Guid>();
 
             using (var r = new StreamReader(stateFilename, System.Text.Encoding.UTF8))
             {
@@ -62,15 +34,56 @@ namespace Codewise.FooSync
             }
         }
 
+        public RepositoryStateCollection(Stream stream)
+        {
+            Repositories = new Dictionary<Guid, RepositoryState>();
+            Origin = new Dictionary<string, Guid>();
+
+            using (StreamReader r = new StreamReader(stream, System.Text.Encoding.UTF8))
+            {
+                Read(r);
+            }
+        }
+
+        #region public methods
+
+        public void AddRepository(FooTree tree, Guid ID)
+        {
+            if (tree == null)
+                throw new ArgumentNullException("tree");
+
+            RepositoryState repository = new RepositoryState();
+            repository.ID = ID;
+
+            foreach (var file in tree.Files)
+            {
+                string filename = file.Key;
+                
+                repository.MTimes.Add(filename, file.Value.MTime);
+
+                if (ID == RepositoryID)
+                {
+                    Origin.Add(filename, RepositoryID);
+                }
+            }
+
+            Repositories.Add(ID, repository);
+        }
+
         public void Read(StreamReader r)
         {
-            var current = new RepositorySourceState();
-            string source, filename, origin = null;
+            var current = new RepositoryState();
+            Guid otherRepoId;
+            Guid? origin = null;
+            string filename;
             DateTime mtime;
+
+            string guidString = ReadString(r);
+            RepositoryID = new Guid(guidString);
 
             while (!r.EndOfStream)
             {
-                source = ReadString(r);
+                otherRepoId = new Guid(ReadString(r));
                 while (r.Peek() != 0)
                 {
                     filename = ReadString(r);
@@ -87,33 +100,33 @@ namespace Codewise.FooSync
                         filename = filename.Replace('/', Path.DirectorySeparatorChar);
                     }
 
-                    if (source == RepositoryState.RepoSourceName)
+                    if (otherRepoId == RepositoryID)
                     {
-                        origin = ReadString(r);
+                        origin = new Guid(ReadString(r));
                     }
 
                     mtime = DateTime.FromFileTimeUtc(long.Parse(ReadString(r)));
 
                     current.MTimes.Add(filename, mtime);
 
-                    if (origin != null)
+                    if (origin.HasValue)
                     {
-                        Origin.Add(filename, origin);
+                        Origin.Add(filename, origin.Value);
                         origin = null;
                     }
                 }
 
-                current.Name = source;
-                Sources.Add(source, current);
-                current = new RepositorySourceState();
+                current.ID = otherRepoId;
+                Repositories.Add(otherRepoId, current);
+                current = new RepositoryState();
 
                 r.Read();
             }
         }
 
-        public void Write(string sourceFilename)
+        public void Write(string filename)
         {
-            using (var w = new StreamWriter(sourceFilename, false, System.Text.Encoding.UTF8))
+            using (var w = new StreamWriter(filename, false, System.Text.Encoding.UTF8))
             {
                 Write(w);
             }
@@ -121,12 +134,15 @@ namespace Codewise.FooSync
 
         public void Write(StreamWriter w)
         {
-            foreach (var source in Sources.Values)
+            w.Write(RepositoryID.ToString());
+            w.Write('\0');
+
+            foreach (var repo in Repositories.Values)
             {
-                w.Write(source.Name);
+                w.Write(repo.ID.ToString());
                 w.Write('\0');
 
-                foreach (var mtime in source.MTimes)
+                foreach (var mtime in repo.MTimes)
                 {
                     string filename = mtime.Key;
 
@@ -141,9 +157,9 @@ namespace Codewise.FooSync
                     w.Write(filename);
                     w.Write('\0');
 
-                    if (source.Name == RepositoryState.RepoSourceName)
+                    if (repo.ID == RepositoryID)
                     {
-                        w.Write(Origin.ContainsKey(mtime.Key) ? Origin[mtime.Key] : RepositoryState.RepoSourceName);
+                        w.Write(Origin.ContainsKey(mtime.Key) ? Origin[mtime.Key] : RepositoryID);
                         w.Write('\0');
                     }
 
@@ -178,67 +194,56 @@ namespace Codewise.FooSync
 
         #region public properties
 
+        public Guid RepositoryID { get; set; }
+
         /// <summary>
-        /// Gets the RepositorySourceState for the repository itself.
+        /// Gets the RepositoryState for the repository itself.
         /// </summary>
-        public RepositorySourceState Repository
+        public RepositoryState Repository
         {
             get
             {
-                if (Sources == null || !Sources.ContainsKey(RepoSourceName))
+                if (Repositories == null || !Repositories.ContainsKey(RepositoryID))
                 {
                     return null;
                 }
                 else
                 {
-                    return Sources[RepoSourceName];
+                    return Repositories[RepositoryID];
                 }
             }
         }
 
-        /// <summary>
-        /// Gets the RepositorySourceState for the current machine.
-        /// </summary>
-        public RepositorySourceState Source
+        //TODO this is just here to get the project to compile; it needs to be removed!
+        public RepositoryState Source
         {
-            get
-            {
-                if (Sources == null || !Sources.ContainsKey(Environment.MachineName.ToLower()))
-                {
-                    return null;
-                }
-                else
-                {
-                    return Sources[Environment.MachineName.ToLower()];
-                }
-            }
+            get { return null; }
         }
 
         /// <summary>
-        /// Maps source names to their RepositorySourceState.
+        /// Maps repository IDs to their RepositoryState.
         /// </summary>
-        public Dictionary<string, RepositorySourceState> Sources { get; private set; }
+        public Dictionary<Guid, RepositoryState> Repositories { get; private set; }
 
         /// <summary>
-        /// Maps the files in the repository to their origin source name.
+        /// Maps the files in the repository to their origin repository ID.
         /// </summary>
-        public Dictionary<string, string> Origin { get; private set; }
+        public Dictionary<string, Guid> Origin { get; private set; }
 
         #endregion
     }
 
     /// <summary>
-    /// Describes the state of an individual source.
-    /// (The repository itself also uses this structure.)
+    /// Describes the state of an individual repository.
     /// </summary>
-    public class RepositorySourceState
+    public class RepositoryState
     {
-        public RepositorySourceState()
+        public RepositoryState()
         {
             MTimes = new Dictionary<string, DateTime>();
         }
 
-        public string Name { get; set; }
+        public Guid ID { get; set; }
         public Dictionary<string, DateTime> MTimes { get; private set; }
     }
 }

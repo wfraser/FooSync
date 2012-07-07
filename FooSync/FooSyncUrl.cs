@@ -29,7 +29,6 @@ namespace Codewise.FooSync
         public static readonly short  DefaultPort = 22022;
 
         private bool _isLocal;
-        private bool _isUNC;
 
         /// <summary>
         /// C'tor.
@@ -39,9 +38,6 @@ namespace Codewise.FooSync
             : base(url)
         {
             _isLocal = (Scheme == Uri.UriSchemeFile);
-
-            // URL like file://hostname/share
-            _isUNC = _isLocal && (!string.IsNullOrEmpty(Host));
 
             if (!_isLocal && Scheme != UriSchemeFooSync)
             {
@@ -62,11 +58,6 @@ namespace Codewise.FooSync
         public bool IsLocal
         {
             get { return _isLocal; }
-        }
-
-        public bool IsUNC
-        {
-            get { return _isUNC; }
         }
 
         /// <summary>

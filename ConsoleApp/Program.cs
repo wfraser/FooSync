@@ -53,7 +53,7 @@ namespace Codewise.FooSync.ConsoleApp
             if (programArgs.Flags.ContainsKey("help"))
             {
                 Console.WriteLine("usage: {0} [options]", ProgramName);
-                Console.WriteLine("Loads its configuration from {0} in the current directory", FooSyncEngine.ConfigFileName);
+                //TODO
                 return;
             }
 
@@ -112,29 +112,27 @@ namespace Codewise.FooSync.ConsoleApp
                             return;
                         }
 
-                        newMember.URL = newUrl.ToString();
+                        newMember.UrlString = newUrl.ToString();
                         if (newUrl.IsLocal)
                         {
                             newMember.Host = Environment.MachineName;
                         }
 
-                        if (!newMember.URL.Equals(args.Ordinals[1]))
+                        if (!newMember.UrlString.Equals(args.Ordinals[1]))
                         {
-                            Console.WriteLine("Path or URL {0} interpreted as {1}", args.Ordinals[1], newMember.URL);
+                            Console.WriteLine("Path or URL {0} interpreted as {1}", args.Ordinals[1], newMember.UrlString);
                         }
 
                         foreach (SyncGroupConfigMember existingMember in syncGroup.Members)
                         {
                             try
                             {
-                                FooSyncUrl url = new FooSyncUrl(existingMember.URL);
-
-                                if (url.Equals(newUrl, Foo.Options.CaseInsensitive)
+                                if (existingMember.Url.Equals(newUrl, Foo.Options.CaseInsensitive)
                                         && existingMember.Host.Equals(newMember.Host, StringComparison.OrdinalIgnoreCase)
                                         && !string.IsNullOrEmpty(newMember.Host))
                                 {
                                     Console.WriteLine("{0} is already a member of that sync group. Aborting.",
-                                        newMember.URL);
+                                        newMember.UrlString);
                                     return;
                                 }
                             }
@@ -159,7 +157,7 @@ namespace Codewise.FooSync.ConsoleApp
                         syncGroup.Members.Add(newMember);
                         XmlConfigLoader.Write(syncGroup, args.Ordinals[0]);
 
-                        Console.WriteLine("Added {0} to sync group \"{1}\"",newMember.URL, syncGroup.Name);
+                        Console.WriteLine("Added {0} to sync group \"{1}\"",newMember.UrlString, syncGroup.Name);
                     }
                     break;
 
@@ -188,17 +186,7 @@ namespace Codewise.FooSync.ConsoleApp
                         SyncGroupConfigMember rmMember = null;
                         foreach (SyncGroupConfigMember member in syncGroup.Members)
                         {
-                            FooSyncUrl memUrl;
-                            try
-                            {
-                                memUrl = new FooSyncUrl(member.URL);
-                            }
-                            catch (FormatException)
-                            {
-                                continue;
-                            }
-
-                            if (memUrl.Equals(rmUrl, Foo.Options.CaseInsensitive)
+                            if (member.Url.Equals(rmUrl, Foo.Options.CaseInsensitive)
                                 && !string.IsNullOrEmpty(member.Host)
                                 && member.Host.Equals(Environment.MachineName))
                             {
@@ -219,7 +207,7 @@ namespace Codewise.FooSync.ConsoleApp
 
                         XmlConfigLoader.Write(syncGroup, args.Ordinals[0]);
 
-                        Console.WriteLine("Removed {0} from sync group \"{1}\"", rmMember.URL, syncGroup.Name);
+                        Console.WriteLine("Removed {0} from sync group \"{1}\"", rmMember.UrlString, syncGroup.Name);
                     }
                     break;
 
@@ -342,9 +330,9 @@ namespace Codewise.FooSync.ConsoleApp
 
             foreach (SyncGroupConfigMember member in config.Members)
             {
-                if (member.URL.StartsWith("file:///") && string.IsNullOrEmpty(member.Host))
+                if (member.UrlString.StartsWith("file:///") && string.IsNullOrEmpty(member.Host))
                 {
-                    failMsg = "file:// URL given but not Host: " + member.URL;
+                    failMsg = "file:// URL given but not Host: " + member.UrlString;
                     return null;
                 }
             }
@@ -355,7 +343,176 @@ namespace Codewise.FooSync.ConsoleApp
 
         void Sync(SyncGroupConfig syncGroup)
         {
-            throw new NotImplementedException("Sync action unimplemented");
+            //throw new NotImplementedException("Sync action unimplemented");
+
+            if (syncGroup.Members.Count == 0)
+            {
+                Console.WriteLine("Sync group has no members; nothing to sync! Aborting.");
+                return;
+            }
+
+            if (syncGroup.Members.Count == 1)
+            {
+                Console.WriteLine("Sync group has only one member; nothing to sync! Aborting.");
+                return;
+            }
+            
+            for (int i = 0; i < syncGroup.Members.Count; i++)
+            {
+                SyncGroupConfigMember member = syncGroup.Members[i];
+
+                if (member.Host != null
+                        && !Environment.MachineName.Equals(member.Host, StringComparison.OrdinalIgnoreCase))
+                {
+                    syncGroup.Members.RemoveAt(i);
+                    i--;
+                }
+            }
+
+            Dictionary<SyncGroupConfigMember, FooTree> trees = GetTrees(syncGroup);
+            Dictionary<SyncGroupConfigMember, RepositoryStateCollection> states = GetStates(syncGroup, trees);
+        }
+
+        private Dictionary<SyncGroupConfigMember, FooTree> GetTrees(SyncGroupConfig syncGroup)
+        {
+            Dictionary<SyncGroupConfigMember, FooTree> trees = new Dictionary<SyncGroupConfigMember, FooTree>();
+            ICollection<string> exceptions = FooSyncEngine.PrepareExceptions(syncGroup.IgnorePatterns, syncGroup.IgnoreGlob);
+            Progress enumCallback = new Progress((int current, int total, string name) =>
+            {
+                Console.Write("\r{0} items...", current);
+            });
+
+            foreach (SyncGroupConfigMember member in syncGroup.Members)
+            {
+                Console.Write("Enumerating files in ");
+
+                FooTree tree = null;
+                if (member.Url.IsLocal)
+                {
+                    Console.WriteLine(member.Url.LocalPath);
+
+                    try
+                    {
+                        tree = new FooTree(Foo, member.Url.LocalPath, exceptions, enumCallback);
+                        Console.WriteLine("\r{0} items.  ", tree.Files.Count);
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                        Console.WriteLine("Directory {1} not found.", member.Url.LocalPath);
+                        continue;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("{0} reading directory {1}: {2}",
+                            ex.GetType().Name,
+                            member.Url.LocalPath,
+                            ex.Message);
+                        continue;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine(member.UrlString);
+
+                    NetClient nc = new NetClient(
+                        Foo,
+                        member.Url.Host,
+                        member.Url.Port,
+                        member.Auth == null ? string.Empty : member.Auth.User,
+                        member.Auth == null ? string.Empty : member.Auth.Password,
+                        member.Url.AbsolutePath.Substring(1)
+                        );
+
+                    tree = nc.GetTree(enumCallback);
+                    Console.WriteLine("\r{0} items.  ", tree.Files.Count);
+                }
+
+                trees.Add(member, tree);
+            }
+
+            return trees;
+        }
+
+        private Dictionary<SyncGroupConfigMember, RepositoryStateCollection> GetStates(SyncGroupConfig syncGroup, Dictionary<SyncGroupConfigMember, FooTree> trees)
+        {
+            Dictionary<SyncGroupConfigMember, RepositoryStateCollection> states = new Dictionary<SyncGroupConfigMember, RepositoryStateCollection>();
+
+            foreach (SyncGroupConfigMember member in syncGroup.Members)
+            {
+                RepositoryStateCollection state = null;
+
+                if (member.Url.IsLocal)
+                {
+                    try
+                    {
+                        state = new RepositoryStateCollection(Path.Combine(member.Url.LocalPath, FooSyncEngine.RepoStateFileName));
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        state = new RepositoryStateCollection();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Unexpected {0} trying to read repository state: {1}",
+                            ex.GetType().Name,
+                            ex.Message);
+                        continue;
+                    }
+                }
+                else
+                {
+                    NetClient nc = new NetClient(
+                        Foo,
+                        member.Url.Host,
+                        member.Url.Port,
+                        member.Auth == null ? string.Empty : member.Auth.User,
+                        member.Auth == null ? string.Empty : member.Auth.Password,
+                        member.Url.AbsolutePath.Substring(1)
+                        );
+
+                    state = nc.GetState();
+                }
+
+                if (state.Repository == null)
+                {
+                    state.AddRepository(trees[member], state.RepositoryID);
+                }
+
+                foreach (var otherPair in states)
+                {
+                    SyncGroupConfigMember otherMember = otherPair.Key;
+                    RepositoryStateCollection otherState = otherPair.Value;
+
+                    if (!state.Repositories.ContainsKey(otherState.RepositoryID))
+                    {
+                        state.AddRepository(trees[otherMember], otherState.RepositoryID);
+                    }
+
+                    if (!otherState.Repositories.ContainsKey(state.RepositoryID))
+                    {
+                        otherState.AddRepository(trees[member], state.RepositoryID);
+                    }
+                }
+
+                states.Add(member, state);
+            }
+
+            foreach (var pair in states)
+            {
+                SyncGroupConfigMember member = pair.Key;
+                RepositoryStateCollection state = pair.Value;
+
+                if (member.Url.IsLocal)
+                {
+                    state.Write(Path.Combine(member.Url.LocalPath, FooSyncEngine.RepoStateFileName));
+                }
+                else
+                {
+                    //TODO
+                }
+            }
+
+            return states;
         }
 
         private FooTree GetFooTree(string path, ICollection<string> exceptions, string type)

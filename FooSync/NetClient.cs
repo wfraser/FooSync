@@ -30,7 +30,7 @@ namespace Codewise.FooSync
         private BinaryReader  _reader;
         private BinaryWriter  _writer;
         private string        _username;
-        private SecureString  _password;
+        private string        _password;
 
         private static int SocketTimeout = 10;
 
@@ -47,7 +47,7 @@ namespace Codewise.FooSync
         public static readonly Version MinProtocolVersion = new Version(0,0);
         public static readonly Version MaxProtocolVersion = new Version(0,0);
 
-        public NetClient(FooSyncEngine foo, string hostname, int port, string username, SecureString password, string repoName = null)
+        public NetClient(FooSyncEngine foo, string hostname, int port, string username, string password, string repoName = null)
         {
             _foo      = foo;
             _hostname = hostname;
@@ -195,7 +195,7 @@ namespace Codewise.FooSync
 
             _writer.Write(OpCode.Auth);
             _writer.Write(_username ?? "anonymous");
-            _writer.Write(_password ?? new SecureString());
+            _writer.Write(_password ?? string.Empty);
 
             ret = _reader.ReadRetCode();
 
@@ -205,36 +205,34 @@ namespace Codewise.FooSync
 
         public FooTree GetTree(Progress callback = null)
         {
-            while (true)
+            EnsureConnected();
+
+            _writer.Write(OpCode.Tree);
+            _writer.Write(_repoName);
+            RetCode ret = _reader.ReadRetCode();
+
+            if (ret != RetCode.Success)
             {
-                try
-                {
-                    _writer.Write(OpCode.Tree);
-                    int i = _reader.ReadInt32();
-
-                    if (i != (int)RetCode.Success)
-                        throw new FooNetException(string.Format("Failed to get tree from FooSync server: code {0}", ((RetCode)i).ToString()));
-
-                    return new FooTree(_foo, string.Format("fs://{0}:{1}/{2}", _hostname, _port, _repoName), _stream, callback);
-                }
-                catch (AuthException)
-                {
-                    throw;
-                }
-                catch (FooNetException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    if (IsDisconnect(ex))
-                    {
-                        Auth();
-                    }
-
-                    throw;
-                }
+                throw new FooNetException(string.Format("Failed to get tree from FooSync server: code {0}", ret));
             }
+
+            return new FooTree(_foo, string.Format("fs://{0}:{1}/{2}", _hostname, _port, _repoName), _stream, callback); 
+        }
+
+        public RepositoryStateCollection GetState()
+        {
+            EnsureConnected();
+
+            _writer.Write(OpCode.State);
+            _writer.Write(_repoName);
+            RetCode ret = _reader.ReadRetCode();
+
+            if (ret != RetCode.Success)
+            {
+                throw new FooNetException(string.Format("Failed to get repository state from FooSync server: code {0}", ret));
+            }
+
+            return new RepositoryStateCollection(_stream);
         }
 
         private class AuthException : Exception

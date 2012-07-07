@@ -18,8 +18,7 @@ namespace Codewise.FooSync
 {
     public class FooSyncEngine
     {
-        public const string ConfigFileName = ".FooSync_Repository.xml";
-        public const string RepoStateFileName = ".FooSync_RepoState.dat";
+        public const string RepoStateFileName = ".FooSync_Repository.dat";
         public static readonly TimeSpan MTimePrecision = TimeSpan.FromSeconds(1);
 
         public FooSyncEngine()
@@ -70,7 +69,7 @@ namespace Codewise.FooSync
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822: Mark members as static")]
-        public FooChangeSet Inspect(RepositoryState state, FooTree repo, FooTree source, Progress callback = null)
+        public FooChangeSet Inspect(RepositoryStateCollection state, FooTree repo, FooTree source, Progress callback = null)
         {
             if (repo == null)
                 throw new ArgumentNullException("repo");
@@ -142,7 +141,7 @@ namespace Codewise.FooSync
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822: Mark members as static")]
-        public static void GetConflicts(FooChangeSet changeset, RepositoryState repoState, FooTree repo, FooTree source)
+        public static void GetConflicts(FooChangeSet changeset, RepositoryStateCollection repoState, FooTree repo, FooTree source)
         {
             if (changeset == null)
                 throw new ArgumentNullException("changeset");
@@ -164,7 +163,7 @@ namespace Codewise.FooSync
                     
                     case ChangeStatus.Newer:
                         if (!repoState.Origin.ContainsKey(filename) || !repoState.Repository.MTimes.ContainsKey(filename)
-                                || (repoState.Origin[filename] != repoState.Source.Name
+                                || (repoState.Origin[filename] != repoState.Source.ID
                                         && !DateTimesWithinPrecision(repoState.Repository.MTimes[filename], repo.Files[filename].MTime, MTimePrecision)))
                         {
                             //
@@ -218,7 +217,7 @@ namespace Codewise.FooSync
             }
         }
 
-        public static void UpdateRepoState(RepositoryState state, FooChangeSet changeset, FooTree repo, FooTree source)
+        public static void UpdateRepoState(RepositoryStateCollection state, FooChangeSet changeset, FooTree repo, FooTree source)
         {
             if (state == null)
                 throw new ArgumentNullException("state");
@@ -250,7 +249,7 @@ namespace Codewise.FooSync
                 {
                     state.Repository.MTimes[filename] = source.Files[filename].MTime;
                     state.Source.MTimes[filename] = source.Files[filename].MTime;
-                    state.Origin[filename] = state.Source.Name;
+                    state.Origin[filename] = state.Source.ID;
                 }
                 else if (operation == FileOperation.UseRepo)
                 {

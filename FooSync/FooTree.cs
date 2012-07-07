@@ -53,7 +53,7 @@ namespace Codewise.FooSync
 
                         if (callback != null)
                         {
-                            callback(Files.Count + 1, -1, trimmedPath);
+                            callback(Files.Count, -1, trimmedPath);
                         }
                     }
             );
@@ -146,7 +146,7 @@ namespace Codewise.FooSync
                 Debug.Assert(entry.StartsWith(basePath), "file is supposed to start with basePath");
 
                 string trimmedName = entry.Substring(basePath.Length + 1);
-                if (trimmedName == FooSyncEngine.ConfigFileName || trimmedName == FooSyncEngine.RepoStateFileName)
+                if (trimmedName == FooSyncEngine.RepoStateFileName)
                 {
                     continue;
                 }

@@ -347,8 +347,8 @@ namespace Codewise.FooSync.Daemon
 
             if (!File.Exists(stateFile))
             {
-                var state = new RepositoryState();
-                state.AddSource(new FooTree(_foo, repo.Path), RepositoryState.RepoSourceName);
+                RepositoryStateCollection state = new RepositoryStateCollection();
+                state.AddRepository(new FooTree(_foo, repo.Path), state.RepositoryID);
                 state.Write(stateFile);
             }
 

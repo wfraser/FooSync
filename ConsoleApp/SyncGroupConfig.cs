@@ -44,8 +44,40 @@ namespace Codewise.FooSync.ConsoleApp
     [Serializable]
     public class SyncGroupConfigMember
     {
-        [XmlAttribute]
-        public string URL { get; set; }
+        private string _urlString = null;
+        private FooSyncUrl _url = null;
+
+        [XmlAttribute("URL")]
+        public string UrlString
+        {
+            get { return _urlString; }
+
+            set 
+            {
+                _url = null;
+                _urlString = value;
+            }
+        }
+
+        [XmlIgnore]
+        public FooSyncUrl Url
+        {
+            get
+            {
+                if (_url == null)
+                {
+                    _url = new FooSyncUrl(_urlString);
+                }
+
+                return _url;
+            }
+
+            set
+            {
+                _urlString = value.ToString();
+                _url = value;
+            }
+        }
 
         [XmlAttribute]
         public string Host { get; set; }

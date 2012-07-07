@@ -112,7 +112,7 @@ namespace Codewise.FooSync.WPFApp
             }
 
             string username = (UsernameAndPassword.IsChecked ?? false) ? UsernameEntry.Text : null;
-            SecureString password = (UsernameAndPassword.IsChecked ?? false) ? PasswordEntry.SecurePassword : null;
+            string password = (UsernameAndPassword.IsChecked ?? false) ? PasswordEntry.Password : null;
             var client = new NetClient(MainWindow.Foo, _url.Host, _url.Port, username, password);
 
             using (var connectionWorker = new BackgroundWorker())
