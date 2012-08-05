@@ -214,12 +214,6 @@ namespace Codewise.FooSync
             }
         }
 
-        //TODO this is just here to get the project to compile; it needs to be removed!
-        public RepositoryState Source
-        {
-            get { return null; }
-        }
-
         /// <summary>
         /// Maps repository IDs to their RepositoryState.
         /// </summary>

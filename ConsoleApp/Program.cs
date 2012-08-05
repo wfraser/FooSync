@@ -548,19 +548,19 @@ namespace Codewise.FooSync.ConsoleApp
                 Console.Write("Action: ");
                 if (repo != null)
                 {
-                    Console.Write("(1) Copy Repository | ");
+                    Console.Write("(1) Take Other Version | ");
                 }
                 if (source != null)
                 {
-                    Console.Write("(2) Copy Source | ");
+                    Console.Write("(2) Copy This Version | ");
                 }
                 if (repo != null)
                 {
-                    Console.Write("(3) Delete Repository | ");
+                    Console.Write("(3) Delete | ");
                 }
                 if (source != null)
                 {
-                    Console.Write("(4) Delete Source | ");
+                    Console.Write("(4) Delete Others | ");
                 }
                 Console.Write("(5) Do Nothing : ");
 
@@ -570,19 +570,19 @@ namespace Codewise.FooSync.ConsoleApp
                 {
                     case ConsoleKey.D1:
                     case ConsoleKey.NumPad1:
-                        return FileOperation.UseRepo;
+                        return FileOperation.Take;
 
                     case ConsoleKey.D2:
                     case ConsoleKey.NumPad2:
-                        return FileOperation.UseSource;
+                        return FileOperation.Give;
 
                     case ConsoleKey.D3:
                     case ConsoleKey.NumPad3:
-                        return FileOperation.DeleteRepo;
+                        return FileOperation.Delete;
 
                     case ConsoleKey.D4:
                     case ConsoleKey.NumPad4:
-                        return FileOperation.DeleteSource;
+                        return FileOperation.DeleteOthers;
 
                     case ConsoleKey.D5:
                     case ConsoleKey.NumPad5:

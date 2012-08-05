@@ -20,51 +20,59 @@ namespace Codewise.FooSync
     {
         public FooChangeSet()
         {
-            this.Elems = new Dictionary<string, FooChangeSetElem>();
+            this.Elems = new Dictionary<string, Dictionary<Guid, FooChangeSetElem>>();
         }
 
         public void SetDefaultActions()
         {
-            foreach (var filename in Elems.Keys)
+            foreach (string filename in Elems.Keys)
             {
-                if (Elems[filename].ConflictStatus == ConflictStatus.NoConflict)
+                foreach (Guid repoId in Elems[filename].Keys)
                 {
-                    switch (Elems[filename].ChangeStatus)
+                    if (Elems[filename][repoId].ConflictStatus == ConflictStatus.NoConflict)
                     {
-                        case ChangeStatus.Newer:
-                        case ChangeStatus.RepoMissing:
-                            Elems[filename].FileOperation = FileOperation.UseSource;
-                            break;
+                        switch (Elems[filename][repoId].ChangeStatus)
+                        {
+                            case ChangeStatus.Newer:
+                            case ChangeStatus.New:
+                                Elems[filename][repoId].FileOperation = FileOperation.Give;
+                                break;
 
-                        case ChangeStatus.Older:
-                        case ChangeStatus.SourceMissing:
-                            Elems[filename].FileOperation = FileOperation.UseRepo;
-                            break;
+                            case ChangeStatus.Missing:
+                                Elems[filename][repoId].FileOperation = FileOperation.Take;
+                                break;
 
-                        case ChangeStatus.RepoDeleted:
-                            Elems[filename].FileOperation = FileOperation.DeleteSource;
-                            break;
+                            case ChangeStatus.Deleted:
+                                Elems[filename][repoId].FileOperation = FileOperation.DeleteOthers;
+                                break;
 
-                        case ChangeStatus.SourceDeleted:
-                            Elems[filename].FileOperation = FileOperation.DeleteRepo;
-                            break;
+                            case ChangeStatus.Identical:
+                                Elems[filename][repoId].FileOperation = FileOperation.NoOp;
+                                break;
 
-                        default:
-                            System.Diagnostics.Debug.Assert(false, "Invalid change status!");
-                            break;
+                            default:
+                                System.Diagnostics.Debug.Assert(false, "Invalid change status!");
+                                break;
+                        }
                     }
                 }
             }
         }
 
-        public void Add(string filename, ChangeStatus changeStatus)
+        public void Add(string filename, ChangeStatus changeStatus, Guid where)
         {
             lock (((System.Collections.ICollection)Elems).SyncRoot)
             {
-                Elems.Add(filename, new FooChangeSetElem
+                if (!Elems.ContainsKey(filename))
+                {
+                    Elems.Add(filename, new Dictionary<Guid, FooChangeSetElem>());
+                }
+
+                Elems[filename].Add(where, new FooChangeSetElem
                 {
                     Filename = filename,
                     ChangeStatus = changeStatus,
+                    RepositoryId = where,
                     ConflictStatus = ConflictStatus.Undetermined,
                     FileOperation = FileOperation.NoOp,
                 });
@@ -76,23 +84,17 @@ namespace Codewise.FooSync
             }
         }
 
-        public IEnumerable<string> WithFileOperation(FileOperation oper)
-        {
-            return from e in Elems
-                   where e.Value.FileOperation == oper
-                   select e.Key;
-        }
-
+        /// <summary>
+        /// Gets filenames where the given predicate (applied to FooChangeSetElem objects) returns
+        /// true at least once.
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns>Enumerable of filenames</returns>
         public IEnumerable<string> Where(Func<FooChangeSetElem, bool> predicate)
         {
             return from e in Elems
-                   where predicate(e.Value)
+                   where e.Value.Count(x => predicate(x.Value)) > 0
                    select e.Key;
-        }
-
-        public int Count(Func<FooChangeSetElem, bool> predicate)
-        {
-            return Elems.Values.Count(predicate);
         }
 
         public int Count()
@@ -105,7 +107,7 @@ namespace Codewise.FooSync
             get
             {
                 return from e in Elems
-                       where e.Value.ConflictStatus != ConflictStatus.NoConflict
+                       where e.Value.Values.Count(elem => elem.ConflictStatus != ConflictStatus.NoConflict) > 0
                        select e.Key;
             }
         }
@@ -115,10 +117,31 @@ namespace Codewise.FooSync
             return Elems.Keys.GetEnumerator();
         }
 
-        public FooChangeSetElem this[string filename]
+        public Dictionary<Guid, FooChangeSetElem> this[string filename]
         {
             get { return Elems[filename]; }
             set { Elems[filename] = value; }
+        }
+
+        public FooChangeSetElem this[string filename, Guid repoId]
+        {
+            get { return Elems[filename][repoId]; }
+            set { Elems[filename][repoId] = value; }
+        }
+
+        public IEnumerable<string> Filenames
+        {
+            get { return Elems.Keys; }
+        }
+
+        public IEnumerable<Guid> RepoIDs
+        {
+            get
+            {
+                return Elems.Values
+                       .SelectMany(elem => elem.Keys)
+                       .Distinct();
+            }
         }
 
         public void AdviseChanged()
@@ -131,12 +154,13 @@ namespace Codewise.FooSync
 
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
-        private Dictionary<string, FooChangeSetElem> Elems;
+        private Dictionary<string, Dictionary<Guid, FooChangeSetElem>> Elems;
     }
 
     public class FooChangeSetElem
     {
         public string         Filename       { get; set; }
+        public Guid           RepositoryId   { get; set; }
         public ChangeStatus   ChangeStatus   { get; set; }
         public ConflictStatus ConflictStatus { get; set; }
         public FileOperation  FileOperation  { get; set; }

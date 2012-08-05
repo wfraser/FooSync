@@ -80,6 +80,7 @@
     <Compile Include="RepositoryDiff.xaml.cs">
       <DependentUpon>RepositoryDiff.xaml</DependentUpon>
     </Compile>
+    <Compile Include="RepositoryDiffData.cs" />
     <Compile Include="TreeViewExtensions.cs" />
     <Compile Include="ValueIsNotNullConverter.cs" />
     <Compile Include="SyncGroupEntryWindow.xaml.cs">

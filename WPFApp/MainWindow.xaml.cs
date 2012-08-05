@@ -430,7 +430,7 @@ namespace Codewise.FooSync.WPFApp
             }
         }
 
-        private void Synchronize_Click(object sender, RoutedEventArgs e)
+        private void Analyze_Click(object sender, RoutedEventArgs e)
         {
             var syncGroup = TreePane.SelectedItem as SyncGroup;
 
@@ -449,15 +449,27 @@ namespace Codewise.FooSync.WPFApp
             SyncGroupView.Children.Add(diffPanel);
             SyncGroupOverView.Visibility = Visibility.Collapsed;
 
-            diffPanel.Cancelled += new EventHandler(delegate (object panel, EventArgs x)
-                {
-                    _repositoryDiffControls.Remove(syncGroup);
-                    SyncGroupView.Children.Remove(diffPanel);
-                    SyncGroupOverView.Visibility = Visibility.Visible;
-                }
+            diffPanel.Cancelled += new EventHandler(delegate(object panel, EventArgs x)
+            {
+                _repositoryDiffControls.Remove(syncGroup);
+                SyncGroupView.Children.Remove(diffPanel);
+                SyncGroupOverView.Visibility = Visibility.Visible;
+            }
             );
 
             diffPanel.Start();
+        }
+
+        private void Synchronize_Click(object sender, RoutedEventArgs e)
+        {
+            var syncGroup = TreePane.SelectedItem as SyncGroup;
+
+            if (syncGroup == null)
+            {
+                return;
+            }
+
+            //TODO
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1800:DoNotCastUnnecessarily")]

@@ -69,6 +69,21 @@ namespace Codewise.FooSync
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822: Mark members as static")]
+        public FooChangeSet InspectMany(RepositoryStateCollection state, IDictionary<Guid, FooTree> trees, Progress callback = null)
+        {
+            if (state == null)
+                throw new ArgumentNullException("state");
+            if (trees == null)
+                throw new ArgumentNullException("trees");
+
+            FooChangeSet changeset = new FooChangeSet();
+
+            // TODO
+
+            return changeset;
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822: Mark members as static")]
         public FooChangeSet Inspect(RepositoryStateCollection state, FooTree repo, FooTree source, Progress callback = null)
         {
             if (repo == null)
@@ -81,6 +96,7 @@ namespace Codewise.FooSync
             var changeset = new FooChangeSet();
             var repoMissingFiles = new HashSet<string>(source.Files.Keys);
 
+            /*
             int n = 0;
             foreach (var file in repo.Files)
             {
@@ -136,6 +152,7 @@ namespace Codewise.FooSync
 
                 changeset.Add(filename, status);
             }
+             */
 
             return changeset;
         }
@@ -154,6 +171,7 @@ namespace Codewise.FooSync
 
             foreach (var filename in changeset)
             {
+                /*
                 switch (changeset[filename].ChangeStatus)
                 {
                     case ChangeStatus.Undetermined:
@@ -214,6 +232,8 @@ namespace Codewise.FooSync
                 {
                     changeset[filename].ConflictStatus = ConflictStatus.NoConflict;
                 }
+                
+                 */
             }
         }
 
@@ -230,6 +250,7 @@ namespace Codewise.FooSync
 
             foreach (var filename in changeset.Where(e => e.FileOperation != FileOperation.NoOp))
             {
+                /*
                 ChangeStatus cstatus = changeset[filename].ChangeStatus;
                 FileOperation operation = changeset[filename].FileOperation;
 
@@ -264,6 +285,7 @@ namespace Codewise.FooSync
                 {
                     state.Repository.MTimes.Remove(filename);
                 }
+                 */
             }
         }
 
@@ -291,30 +313,26 @@ namespace Codewise.FooSync
         Undetermined = -2,
         Newer = -1,
         Identical = 0,
-        Older = 1,
-        RepoMissing = 2,
-        SourceMissing = 3,
-        RepoDeleted = 4,
-        SourceDeleted = 5,
+        Missing = 1,
+        Deleted = 2,
+        New = 3,
     }
 
     public enum ConflictStatus
     {
         Undetermined,
         NoConflict,
-        ChangedInRepoDeletedInSource,
-        ChangedInSourceDeletedInRepo,
-        RepoChanged,
-        SourceChanged,
+        ChangedAndDeleted,
+        MultipleChanges,
     }
 
     public enum FileOperation
     {
         NoOp,
-        UseRepo,
-        UseSource,
-        DeleteRepo,
-        DeleteSource,
+        Give,
+        Take,
+        Delete,
+        DeleteOthers,
         MaxFileOperation
     }
 

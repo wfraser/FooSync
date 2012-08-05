@@ -28,6 +28,10 @@
         <CommandBinding Command="Delete" CanExecute="CanDelete" Executed="OnDelete"/>
     </Window.CommandBindings>
     
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo />
+    </Window.TaskbarItemInfo>
+    
     <DockPanel>
         
         <ToolBar x:Name="ToolBar" DockPanel.Dock="Top">
@@ -272,7 +276,7 @@
 
                     <WrapPanel VerticalAlignment="Bottom">
                         <Button IsDefault="True"
-                                Click="Synchronize_Click">Synchronize</Button>
+                                Click="Analyze_Click">Prepare to Sync</Button>
                     </WrapPanel>
 
                 </DockPanel>
