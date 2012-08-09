@@ -44,8 +44,8 @@ namespace Codewise.FooSync
                 {
                     exceptions.Add((pattern.CaseInsensitive ? pre
                                                             : string.Empty)
-                                   + (pattern.IsRegex ? "^" + (Regex.Escape(pattern.Pattern).Replace(@"\*", ".*").Replace("?", ".")) + "$"
-                                                      : pattern.Pattern)
+                                   + (pattern.IsRegex ? pattern.Pattern
+                                                      : "^" + (Regex.Escape(pattern.Pattern).Replace(@"\*", ".*").Replace("?", ".")) + "$")
                                    + (pattern.CaseInsensitive ? post
                                                               : string.Empty) );
                 }
