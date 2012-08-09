@@ -254,29 +254,57 @@
                 
                     <WrapPanel DockPanel.Dock="Top">
                         <Button Margin="10,0,0,0"
+                                Padding="2"
+                                Content="Show"
                                 Click="SyncGroupLocationShow_Click">
                             <Button.IsEnabled>
                                 <Binding ElementName="SyncGroupLocation"
                                          Path="SelectedItem"
                                          Converter="{StaticResource ValueIsNotNullConverter}"/>
                             </Button.IsEnabled>
-                            Show
                         </Button>
                         <Button Margin="10,0,0,0"
+                                Padding="2"
+                                Content="Remove"
                                 Click="SyncGroupLocationRemove_Click">
                             <Button.IsEnabled>
                                 <Binding ElementName="SyncGroupLocation"
                                          Path="SelectedItem"
                                          Converter="{StaticResource ValueIsNotNullConverter}"/>
                             </Button.IsEnabled>
-                            Remove
                         </Button>
-                        
+                        <Button Margin="10,0,0,0"
+                                Padding="2"
+                                Content="Add Folder"
+                                Click="SyncGroup_AddFolder_Click">
+                        </Button>
                     </WrapPanel>
 
-                    <WrapPanel VerticalAlignment="Bottom">
+                    <TextBlock DockPanel.Dock="Top"
+                               Padding="0,20,0,0">Ignored Filename Patterns:</TextBlock>
+
+                    <WrapPanel DockPanel.Dock="Top">
+                        <DataGrid x:Name="SyncGroupIgnores"
+                                  Margin="10"
+                                  Padding="5"
+                                  ItemsSource="{Binding IgnorePatterns}"
+                                  AutoGenerateColumns="False" BorderThickness="0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Pattern"
+                                                    Binding="{Binding Pattern}"/>
+                                <DataGridCheckBoxColumn Header="Case Insensitive?"
+                                                        Binding="{Binding CaseInsensitive}"/>
+                                <DataGridCheckBoxColumn Header="Regular Expression?"
+                                                        Binding="{Binding IsRegex}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </WrapPanel>
+
+                    <WrapPanel DockPanel.Dock="Bottom" VerticalAlignment="Bottom">
                         <Button IsDefault="True"
-                                Click="Analyze_Click">Prepare to Sync</Button>
+                                Padding="2"
+                                Content="Prepare to Sync"
+                                Click="Analyze_Click"/>
                     </WrapPanel>
 
                 </DockPanel>

@@ -284,8 +284,7 @@ namespace Codewise.FooSync.ConsoleApp
             SyncGroupConfig config = new SyncGroupConfig();
             config.Version = 1;
             config.Name = name;
-            config.IgnoreGlob = new IgnorePatterns();
-            config.IgnorePatterns = new IgnorePatterns();
+            config.IgnorePatterns = new IgnorePattern[] { };
 
             XmlConfigLoader.Write(config, filename);
         }
@@ -376,7 +375,7 @@ namespace Codewise.FooSync.ConsoleApp
         private Dictionary<SyncGroupConfigMember, FooTree> GetTrees(SyncGroupConfig syncGroup)
         {
             Dictionary<SyncGroupConfigMember, FooTree> trees = new Dictionary<SyncGroupConfigMember, FooTree>();
-            ICollection<string> exceptions = FooSyncEngine.PrepareExceptions(syncGroup.IgnorePatterns, syncGroup.IgnoreGlob);
+            ICollection<string> exceptions = FooSyncEngine.PrepareExceptions(syncGroup.IgnorePatterns);
             Progress enumCallback = new Progress((int current, int total, string name) =>
             {
                 Console.Write("\r{0} items...", current);

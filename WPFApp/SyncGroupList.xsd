@@ -26,15 +26,22 @@
   </xs:complexType>
 
   <xs:complexType name="SyncGroup">
-    <xs:sequence>
-      <xs:element name="URLs">
+    <xs:all>
+      <xs:element name="URLs" minOccurs="1" maxOccurs="1">
         <xs:complexType>
           <xs:sequence>
             <xs:element name="URL" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
           </xs:sequence>
         </xs:complexType>
       </xs:element>
-    </xs:sequence>
+      <xs:element name="Ignore" minOccurs="0" maxOccurs="1">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Pattern" type="IgnorePattern" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:all>
     <xs:attribute name="Name" type="xs:string" use="required"/>
   </xs:complexType>
 
@@ -66,6 +73,15 @@
       </xs:element>
     </xs:sequence>
     <xs:attribute name="Name" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="IgnorePattern">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="CaseInsensitive" type="xs:boolean" default="false" use="optional"/>
+        <xs:attribute name="IsRegex" type="xs:boolean" default="false" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
   </xs:complexType>
 
   <xs:element name="SyncGroupList" type="SyncGroupList"/>

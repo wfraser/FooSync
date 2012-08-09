@@ -151,7 +151,7 @@ namespace Codewise.FooSync.WPFApp
 
     [Serializable]
     [XmlType("SyncGroup", Namespace="http://www.codewise.org/schema/foosync/SyncGroupList.xsd")]
-    public class SyncGroup
+    public class SyncGroup : INotifyPropertyChanged
     {
         [XmlAttribute]
         public string Name { get; set; }
@@ -183,7 +183,7 @@ namespace Codewise.FooSync.WPFApp
         }
 
         [XmlIgnore]
-        public Collection<FooSyncUrl> URLs
+        public ObservableCollection<FooSyncUrl> URLs
         {
             get
             {
@@ -192,15 +192,20 @@ namespace Codewise.FooSync.WPFApp
             }
         }
 
+        [XmlArray("Ignore")]
+        [XmlArrayItem("Pattern")]
+        public ObservableCollection<IgnorePattern> IgnorePatterns { get; set; }
+
         public SyncGroup()
         {
             _rawStringURLs = new ObservableCollection<string>();
             _rawStringURLs.CollectionChanged += new NotifyCollectionChangedEventHandler(RawStringURLs_CollectionChanged);
-            _urls = new Collection<FooSyncUrl>();
+            _urls = new ObservableCollection<FooSyncUrl>();
+            _urls.CollectionChanged += new NotifyCollectionChangedEventHandler(URLs_CollectionChanged);
         }
 
         private ObservableCollection<string> _rawStringURLs;
-        private Collection<FooSyncUrl> _urls;
+        private ObservableCollection<FooSyncUrl> _urls;
 
         private void RawStringURLs_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
@@ -213,6 +218,16 @@ namespace Codewise.FooSync.WPFApp
                 URLs.Add(url);
             }
         }
+
+        void URLs_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs("URLs"));
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         #region equality overrides
         public override bool Equals(object obj)
@@ -301,5 +316,18 @@ namespace Codewise.FooSync.WPFApp
             return Server.GetHashCode() + Name.GetHashCode();
         }
         #endregion
+    }
+
+    [Serializable]
+    public class IgnorePattern : IIgnorePattern
+    {
+        [XmlText]
+        public string Pattern { get; set; }
+
+        [XmlAttribute]
+        public bool CaseInsensitive { get; set; }
+
+        [XmlAttribute]
+        public bool IsRegex { get; set; }
     }
 }

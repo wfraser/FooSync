@@ -23,6 +23,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
+using Ookii.Dialogs.Wpf;
 
 namespace Codewise.FooSync.WPFApp
 {
@@ -532,6 +533,31 @@ namespace Codewise.FooSync.WPFApp
                 SyncGroupLocation.GetBindingExpression(ListBox.ItemsSourceProperty).UpdateTarget();
             }
             catch (ArgumentOutOfRangeException)
+            {
+            }
+        }
+
+        private void SyncGroup_AddFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var syncGroup = TreePane.SelectedItem as SyncGroup;
+
+            if (syncGroup == null)
+            {
+                return;
+            }
+
+            try
+            {
+                VistaFolderBrowserDialog folderDialog = new VistaFolderBrowserDialog();
+                folderDialog.Description = "Select a folder to add to the sync group.";
+                bool? result = folderDialog.ShowDialog();
+
+                if (result.HasValue && result.Value)
+                {
+                    syncGroup.URLs.Add(new FooSyncUrl(folderDialog.SelectedPath));
+                }
+            }
+            catch (Exception)
             {
             }
         }

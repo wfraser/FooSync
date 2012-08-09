@@ -25,11 +25,9 @@ namespace Codewise.FooSync.ConsoleApp
         [XmlAttribute]
         public int Version { get; set; }
 
-        [XmlElement]
-        public IgnorePatterns IgnoreGlob { get; set; }
-
-        [XmlElement]
-        public IgnorePatterns IgnorePatterns { get; set; }
+        [XmlArray("Ignore")]
+        [XmlArrayItem("Pattern")]
+        public IgnorePattern[] IgnorePatterns { get; set; }
 
         [XmlArray]
         [XmlArrayItem("Member")]
@@ -103,12 +101,15 @@ namespace Codewise.FooSync.ConsoleApp
     }
 
     [Serializable]
-    public class IgnorePatterns : FooSync.IIgnorePatterns
+    public class IgnorePattern : FooSync.IIgnorePattern
     {
-        [XmlElement("Pattern")]
-        public string[] Patterns { get; set; }
+        [XmlText]
+        public string Pattern { get; set; }
 
         [XmlAttribute]
         public bool CaseInsensitive { get; set; }
+
+        [XmlAttribute]
+        public bool IsRegex { get; set; }
     }
 }

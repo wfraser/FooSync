@@ -15,8 +15,13 @@
 
   <xs:complexType name="SyncGroupConfig">
     <xs:all>
-      <xs:element name="IgnoreGlob" type="IgnorePatterns" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="IgnorePatterns" type="IgnorePatterns" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="Ignore" minOccurs="0" maxOccurs="1">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Pattern" type="IgnorePattern" minOccurs="0" maxOccurs="unbounded"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
       <xs:element name="Members" minOccurs="1" maxOccurs="1">
         <xs:complexType>
           <xs:sequence>
@@ -43,11 +48,12 @@
     <xs:attribute name="Password" type="xs:string" use="optional"/>
   </xs:complexType>
 
-  <xs:complexType name="IgnorePatterns">
-    <xs:sequence>
-      <xs:element name="Pattern" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
-    </xs:sequence>
-    <xs:attribute name="CaseInsensitive" type="xs:boolean" default="false"/>
+  <xs:complexType name="IgnorePattern">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="CaseInsensitive" type="xs:boolean" default="false" use="optional"/>
+      </xs:extension>
+    </xs:simpleContent>
   </xs:complexType>
 
   <xs:simpleType name="FooSyncUrl">

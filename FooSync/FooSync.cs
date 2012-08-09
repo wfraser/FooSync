@@ -31,37 +31,23 @@ namespace Codewise.FooSync
             this.Options = options;
         }
 
-        public static ICollection<string> PrepareExceptions(IIgnorePatterns ignoreRegex, IIgnorePatterns ignoreGlob)
+        public static ICollection<string> PrepareExceptions(ICollection<IIgnorePattern> ignorePatterns)
         {
             var exceptions = new List<string>();
 
-            if (ignoreRegex != null && ignoreRegex.Patterns != null && ignoreRegex.Patterns.Length > 0)
+            string pre = "(?i:";
+            string post = ")";
+
+            if (ignorePatterns != null && ignorePatterns.Count > 0)
             {
-                string pre = string.Empty, post = string.Empty;
-                if (ignoreRegex.CaseInsensitive)
+                foreach (var pattern in ignorePatterns)
                 {
-                    pre = "(?i:";
-                    post = ")";
-                }
-
-                foreach (var regex in ignoreRegex.Patterns)
-                {
-                    exceptions.Add(pre + regex + post);
-                }
-            }
-
-            if (ignoreGlob != null && ignoreGlob.Patterns != null && ignoreGlob.Patterns.Length > 0)
-            {
-                string pre = string.Empty, post = string.Empty;
-                if (ignoreGlob.CaseInsensitive)
-                {
-                    pre = "(?i:";
-                    post = ")";
-                }
-
-                foreach (var glob in ignoreGlob.Patterns)
-                {
-                    exceptions.Add(pre + "^" + (Regex.Escape(glob).Replace(@"\*", ".*").Replace("?", ".")) + "$" + post);
+                    exceptions.Add((pattern.CaseInsensitive ? pre
+                                                            : string.Empty)
+                                   + (pattern.IsRegex ? "^" + (Regex.Escape(pattern.Pattern).Replace(@"\*", ".*").Replace("?", ".")) + "$"
+                                                      : pattern.Pattern)
+                                   + (pattern.CaseInsensitive ? post
+                                                              : string.Empty) );
                 }
             }
 
@@ -300,10 +286,11 @@ namespace Codewise.FooSync
         public Options Options { get; private set; }
     }
 
-    public interface IIgnorePatterns
+    public interface IIgnorePattern
     {
-        string[] Patterns { get; set; }
+        string Pattern { get; set; }
         bool CaseInsensitive { get; set; }
+        bool IsRegex { get; set; }
     }
 
     public delegate void Progress(int completed, int total, string item);

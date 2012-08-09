@@ -108,11 +108,9 @@ namespace Codewise.FooSync.Daemon
         [XmlAttribute]
         public string Path { get; set; }
 
-        [XmlElement]
-        public IgnorePatterns IgnoreGlob { get; set; }
-
-        [XmlElement]
-        public IgnorePatterns IgnoreRegex { get; set; }
+        [XmlArray("Ignore")]
+        [XmlArrayItem("Pattern")]
+        public IgnorePattern[] IgnorePatterns { get; set; }
 
         [XmlArray]
         public List<UserRef> Users { get; private set; }
@@ -130,17 +128,20 @@ namespace Codewise.FooSync.Daemon
 
     [Serializable]
     [XmlType(Namespace = "http://www.codewise.org/schema/foosync/ServerRepositoryConfig.xsd")]
-    public class IgnorePatterns : FooSync.IIgnorePatterns
+    public class IgnorePattern : FooSync.IIgnorePattern
     {
         /*
          * Inherited (just changing the XmlType Namespace):
          */
         
-        [XmlElement("Pattern")]
-        public string[] Patterns { get; set; }
+        [XmlText]
+        public string Pattern { get; set; }
 
         [XmlAttribute]
         public bool CaseInsensitive { get; set; }
+
+        [XmlAttribute]
+        public bool IsRegex { get; set; }
     }
     
 }

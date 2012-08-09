@@ -146,7 +146,7 @@ namespace Codewise.FooSync.Daemon
 
             foreach (var repo in _config.Repositories)
             {
-                _exceptions.Add(repo.Key, FooSyncEngine.PrepareExceptions(repo.Value.IgnoreRegex, repo.Value.IgnoreGlob));
+                _exceptions.Add(repo.Key, FooSyncEngine.PrepareExceptions(repo.Value.IgnorePatterns));
             }
 
             _foo = new FooSyncEngine(fooOptions);
