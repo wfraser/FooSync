@@ -11,18 +11,19 @@ SOURCES=\
     FooChangeSet.cs \
     FooFileInfo.cs \
     FooSync.cs \
+    FooSyncUrl.cs \
     FooTree.cs \
     NativeMethods.cs \
+    NetClient.cs \
     NetUtil.cs \
     Options.cs \
-    RepositoryConfig.cs \
-    RepositoryConfigLoader.cs \
     RepositoryState.cs \
+    XmlConfigLoader.cs \
     Properties/AssemblyInfo.cs
 
 REFERENCES=
 
-BINPLACE=\
+#BINPLACE=\
     RepositoryConfig.xsd
 
 LIBDIR=../lib
@@ -38,7 +39,7 @@ all: $(TARGET)
 $(TARGET): $(SOURCES)
 	[ ! -x $(TARGETDEST) ] && mkdir $(TARGETDEST) || true
 	$(MCS) -target:$(TARGETTYPE) -out:$(TARGET) -sdk:$(SDK) $(REFSFLAG) $(DEFINES) $(SOURCES)
-	cp -v $(BINPLACE) $(TARGETDEST)
+#	cp -v $(BINPLACE) $(TARGETDEST)
 
 clean:
 	rm -f $(TARGET)
