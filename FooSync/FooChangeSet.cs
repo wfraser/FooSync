@@ -23,7 +23,7 @@ namespace Codewise.FooSync
             this.Elems = new Dictionary<string, Dictionary<Guid, FooChangeSetElem>>();
         }
 
-        public void SetDefaultActions()
+        public void SetDefaultActions(Dictionary<Guid, FooTree> trees)
         {
             foreach (string filename in Elems.Keys)
             {
@@ -33,7 +33,52 @@ namespace Codewise.FooSync
                     {
                         switch (Elems[filename][repoId].ChangeStatus)
                         {
-                            case ChangeStatus.Newer:
+                            case ChangeStatus.Changed:
+                                {
+                                    if (Elems[filename][repoId].FileOperation != FileOperation.NoOp)
+                                    {
+                                        //
+                                        // action already set
+                                        //
+
+                                        continue;
+                                    }
+
+                                    //
+                                    // Figure out the mtime of the newest copy of this file in all the repos
+                                    //
+
+                                    DateTime newestMTime = DateTime.MinValue;
+                                    foreach (Guid id in (from pair in trees
+                                                         where pair.Value.Files.ContainsKey(filename)
+                                                         select pair.Key))
+                                    {
+                                        DateTime mtime = trees[id].Files[filename].MTime;
+                                        if (mtime > newestMTime)
+                                        {
+                                            newestMTime = mtime;
+                                        }
+                                    }
+
+                                    foreach (Guid id in trees.Keys)
+                                    {
+                                        //
+                                        // If it's the most recent, give, otherwise, take.
+                                        //
+
+                                        if (trees[id].Files.ContainsKey(filename)
+                                            && trees[id].Files[filename].MTime == newestMTime)
+                                        {
+                                            Elems[filename][repoId].FileOperation = FileOperation.Give;
+                                        }
+                                        else
+                                        {
+                                            Elems[filename][repoId].FileOperation = FileOperation.Take;
+                                        }
+                                    }
+                                }
+                                break;
+
                             case ChangeStatus.New:
                                 Elems[filename][repoId].FileOperation = FileOperation.Give;
                                 break;
@@ -68,18 +113,21 @@ namespace Codewise.FooSync
                     Elems.Add(filename, new Dictionary<Guid, FooChangeSetElem>());
                 }
 
-                Elems[filename].Add(where, new FooChangeSetElem
+                if (!Elems[filename].ContainsKey(where))
                 {
-                    Filename = filename,
-                    ChangeStatus = changeStatus,
-                    RepositoryId = where,
-                    ConflictStatus = ConflictStatus.Undetermined,
-                    FileOperation = FileOperation.NoOp,
-                });
+                    Elems[filename].Add(where, new FooChangeSetElem
+                    {
+                        Filename = filename,
+                        ChangeStatus = changeStatus,
+                        RepositoryId = where,
+                        ConflictStatus = ConflictStatus.Undetermined,
+                        FileOperation = FileOperation.NoOp,
+                    });
 
-                if (CollectionChanged != null)
-                {
-                    CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, filename));
+                    if (CollectionChanged != null)
+                    {
+                        CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, filename));
+                    }
                 }
             }
         }

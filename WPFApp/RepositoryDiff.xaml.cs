@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Threading;
 using System.Windows;
@@ -23,47 +24,33 @@ namespace Codewise.FooSync.WPFApp
     /// </summary>
     public partial class RepositoryDiff : UserControl
     {
-        private SyncGroup _syncGroup;
+        private MainWindow    _mainWindow;
+        private FooSyncEngine _foo;
+        private SyncGroup     _syncGroup;
+        private Thread        _inspectWorkingThread;
         private bool _cancel;
+
+        private static readonly int ProgressUpdateRateMsecs = 100;
 
         public event EventHandler Cancelled;
 
-        public RepositoryDiff(SyncGroup syncGroup)
+        public RepositoryDiff(MainWindow mainWindow, FooSyncEngine foo, SyncGroup syncGroup)
         {
             InitializeComponent();
 
+            _mainWindow = mainWindow;
+            _foo = foo;
             _syncGroup = syncGroup;
-        }
-
-        private MainWindow _mainWindow = null;
-        public MainWindow GetMainWindow()
-        {
-            DependencyObject obj = Parent;
-            while (!(obj is MainWindow))
-            {
-                FrameworkElement fw = obj as FrameworkElement;
-                if (fw == null)
-                {
-                    return null;
-                }
-                else
-                {
-                    obj = fw.Parent;
-                }
-            }
-
-            return (MainWindow)obj;
         }
 
         public void Start()
         {
-            _mainWindow = GetMainWindow();
-
-            Thread workingThread = new Thread(
+            _inspectWorkingThread = new Thread(
                 delegate ()
                 {
-                    Dictionary<Guid, RepositoryStateCollection> repoStates = new Dictionary<Guid, RepositoryStateCollection>();
+                    RepositoryStateCollection repoState;
                     Dictionary<Guid, FooTree> trees = new Dictionary<Guid, FooTree>();
+                    List<RepositoryStateCollection> repoStates = new List<RepositoryStateCollection>();
                     
                     Progress.ValueChanged += new RoutedPropertyChangedEventHandler<double>((object sender, RoutedPropertyChangedEventArgs<double> args) =>
                         {
@@ -78,7 +65,6 @@ namespace Codewise.FooSync.WPFApp
                     foreach (FooSyncUrl url in _syncGroup.URLs)
                     {
                         NetClient client;
-                        RepositoryStateCollection repoState;
                         FooTree tree;
 
                         if (url.IsLocal)
@@ -100,12 +86,13 @@ namespace Codewise.FooSync.WPFApp
                             catch (FileNotFoundException)
                             {
                                 repoState = new RepositoryStateCollection();
+                                repoState.Modified = DateTime.Now;
                             }
 
                             DateTime last = DateTime.Now;
-                            tree = new FooTree(MainWindow.Foo, url.LocalPath, (IEnumerable<string>)null, new Progress((int current, int total, string path) =>
+                            tree = new FooTree(MainWindow.Foo, url.LocalPath, FooSyncEngine.PrepareExceptions(_syncGroup.IgnorePatterns.OfType<IIgnorePattern>().ToList()), new Progress((current, total, path) =>
                                 {
-                                    if ((DateTime.Now - last).Milliseconds > 50)
+                                    if ((DateTime.Now - last).Milliseconds > ProgressUpdateRateMsecs)
                                     {
                                         last = DateTime.Now;
                                         Dispatcher.Invoke(new Action(() =>
@@ -145,9 +132,9 @@ namespace Codewise.FooSync.WPFApp
                                 repoState = client.GetState();
 
                                 DateTime last = DateTime.Now;
-                                tree = client.GetTree(new Progress((int current, int total, string path) =>
+                                tree = client.GetTree(new Progress((current, total, path) =>
                                     {
-                                        if ((DateTime.Now - last).Milliseconds > 50)
+                                        if ((DateTime.Now - last).Milliseconds > ProgressUpdateRateMsecs)
                                         {
                                             last = DateTime.Now;
                                             Dispatcher.Invoke(new Action(() =>
@@ -179,15 +166,64 @@ namespace Codewise.FooSync.WPFApp
 
                         if (repoState != null && tree != null)
                         {
-                            repoStates.Add(repoState.RepositoryID, repoState);
+                            foreach (RepositoryStateCollection otherState in repoStates)
+                            {
+                                if (otherState.Repositories.Count(pair => pair.Key == repoState.RepositoryID) < 1)
+                                {
+                                    otherState.AddRepository(tree, repoState.RepositoryID);
+
+                                    if (trees[otherState.RepositoryID].Base.IsLocal)
+                                    {
+                                        otherState.Write(Path.Combine(trees[otherState.RepositoryID].Base.LocalPath, FooSyncEngine.RepoStateFileName));
+                                    }
+                                    else
+                                    {
+                                        // client.UpdateState(otherState)
+                                        throw new NotImplementedException();
+                                    }
+                                }
+                            }
+
+                            repoStates.Add(repoState);
                             trees.Add(repoState.RepositoryID, tree);
                         }
                     }
+
+                    repoState = (from state in repoStates
+                                 orderby state.Modified descending
+                                 select state).First();
                     
                     //
-                    // TODO: Diff!
+                    // Diff!
                     //
 
+                    Dispatcher.Invoke(new Action(() => 
+                        {
+                            _mainWindow.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
+                            Progress.IsIndeterminate = false;
+                            ProgressText.Text = "Inspecting Files...";
+                        }
+                    ));
+
+                    DateTime lastUpdate = DateTime.Now;
+                    FooChangeSet changeSet = _foo.Inspect(repoState, trees, new Progress((current, total, name) =>
+                        {
+                            if ((DateTime.Now - lastUpdate).Milliseconds > ProgressUpdateRateMsecs)
+                            {
+                                lastUpdate = DateTime.Now;
+                                Dispatcher.Invoke(new Action(() =>
+                                    {
+                                        Progress.Maximum = total;
+                                        Progress.Value = current;
+                                        DetailText1.Text = string.Format("{0:##0.00}%", (double)current / total * 100);
+                                        DetailText2.Text = name;
+                                    }
+                                ));
+                            }
+                        }
+                    ));
+
+                    /*
                     for (int i = 0; i <= 100; i++)
                     {
                         System.Threading.Thread.Sleep(10);
@@ -221,7 +257,7 @@ namespace Codewise.FooSync.WPFApp
                     //
 
                     FooChangeSet fakeChangeSet = new FooChangeSet();
-                    fakeChangeSet.Add("file1", ChangeStatus.Newer, fakeRepo1);
+                    fakeChangeSet.Add("file1", ChangeStatus.Changed, fakeRepo1);
                     fakeChangeSet.Add("file1", ChangeStatus.Identical, fakeRepo2);
                     fakeChangeSet.Add("file1", ChangeStatus.Identical, fakeRepo3);
                     fakeChangeSet.Add("heyo/file2", ChangeStatus.New, fakeRepo1);
@@ -236,9 +272,10 @@ namespace Codewise.FooSync.WPFApp
                     }
 
                     fakeChangeSet.SetDefaultActions();
+                     */
 
                     RepositoryDiffData diffData = new RepositoryDiffData();
-                    foreach (string filename in fakeChangeSet)
+                    foreach (string filename in changeSet)
                     {
                         diffData.Add(new RepositoryDiffDataItem()
                         {
@@ -257,9 +294,9 @@ namespace Codewise.FooSync.WPFApp
                 }
             );
 
-            workingThread.Name = "worker thread for sync group " + _syncGroup.Name;
+            _inspectWorkingThread.Name = "worker thread for sync group " + _syncGroup.Name;
             
-            workingThread.Start();
+            _inspectWorkingThread.Start();
         }
 
         private void Grid_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -270,6 +307,8 @@ namespace Codewise.FooSync.WPFApp
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
             _cancel = true;
+
+            _inspectWorkingThread.Abort();
 
             if (Cancelled != null)
             {

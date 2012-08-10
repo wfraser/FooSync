@@ -81,6 +81,8 @@ namespace Codewise.FooSync
             string guidString = ReadString(r);
             RepositoryID = new Guid(guidString);
 
+            Modified = new DateTime(long.Parse(ReadString(r)));
+
             while (!r.EndOfStream)
             {
                 otherRepoId = new Guid(ReadString(r));
@@ -135,6 +137,10 @@ namespace Codewise.FooSync
         public void Write(StreamWriter w)
         {
             w.Write(RepositoryID.ToString());
+            w.Write('\0');
+
+            Modified = DateTime.Now;
+            w.Write(Modified.ToBinary().ToString());
             w.Write('\0');
 
             foreach (var repo in Repositories.Values)
@@ -195,6 +201,7 @@ namespace Codewise.FooSync
         #region public properties
 
         public Guid RepositoryID { get; set; }
+        public DateTime Modified { get; set; }
 
         /// <summary>
         /// Gets the RepositoryState for the repository itself.

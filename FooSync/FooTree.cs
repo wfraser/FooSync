@@ -21,7 +21,8 @@ namespace Codewise.FooSync
 {
     public class FooTree
     {
-        public string Path { get; private set; }
+        //public string Path { get; private set; }
+        public FooSyncUrl Base { get; private set; }
         public Dictionary<string, FooFileInfoBase> Files { get; private set; }
 
         private FooSyncEngine Foo { get; set; }
@@ -40,7 +41,7 @@ namespace Codewise.FooSync
         public FooTree(FooSyncEngine foo, string path, IEnumerable<string> exceptions = null, Progress callback = null)
         {
             this.Foo   = foo;
-            this.Path  = path;
+            this.Base  = new FooSyncUrl(path);
             this.Files = new Dictionary<string, FooFileInfoBase>();
 
             Walk(Foo, path, path, exceptions,
@@ -71,7 +72,7 @@ namespace Codewise.FooSync
         public FooTree(FooSyncEngine foo, string url, Stream input, Progress callback = null)
         {
             this.Foo   = foo;
-            this.Path  = url;
+            this.Base  = new FooSyncUrl(url);
             this.Files = new Dictionary<string, FooFileInfoBase>();
 
             string path = string.Empty;
@@ -159,7 +160,7 @@ namespace Codewise.FooSync
                     string regex = ex;
                     string searchAgainst = IOPath.GetFileName(entry);
 
-                    if (ex.EndsWith("/$"))
+                    if (ex.EndsWith("/$") || ex.EndsWith("/$)"))
                     {
                         if (!isDirectory)
                         {

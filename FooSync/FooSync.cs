@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -55,7 +56,7 @@ namespace Codewise.FooSync
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822: Mark members as static")]
-        public FooChangeSet InspectMany(RepositoryStateCollection state, IDictionary<Guid, FooTree> trees, Progress callback = null)
+        public FooChangeSet Inspect(RepositoryStateCollection state, Dictionary<Guid, FooTree> trees, Progress callback = null)
         {
             if (state == null)
                 throw new ArgumentNullException("state");
@@ -64,81 +65,61 @@ namespace Codewise.FooSync
 
             FooChangeSet changeset = new FooChangeSet();
 
-            // TODO
+            long total = (from tree in trees.Values
+                          select tree.Files.Count)
+                            .Aggregate((a, b) => (a + b));
+            long current = 0;
 
-            return changeset;
-        }
-
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1822: Mark members as static")]
-        public FooChangeSet Inspect(RepositoryStateCollection state, FooTree repo, FooTree source, Progress callback = null)
-        {
-            if (repo == null)
-                throw new ArgumentNullException("repo");
-            if (source == null)
-                throw new ArgumentNullException("source");
-            if (state == null)
-                throw new ArgumentNullException("state");
-
-            var changeset = new FooChangeSet();
-            var repoMissingFiles = new HashSet<string>(source.Files.Keys);
-
-            /*
-            int n = 0;
-            foreach (var file in repo.Files)
+            foreach (Guid repoId in trees.Keys)
             {
-                var filename = file.Key;
-                ChangeStatus status = ChangeStatus.Identical;
-
-                if (callback != null)
+                foreach (string filename in trees[repoId].Files.Keys)
                 {
-                    callback(n++, repo.Files.Count + repoMissingFiles.Count, Path.GetDirectoryName(filename));
-                }
-
-                if (source.Files.ContainsKey(filename))
-                {
-                    repoMissingFiles.Remove(filename);
-                    int comp = file.Value.CompareTo(source.Files[filename]);
-                    status = (ChangeStatus)comp;
-                }
-                else
-                {
-                    if (state.Source.MTimes.ContainsKey(filename))
+                    if (callback != null)
                     {
-                        status = ChangeStatus.SourceDeleted;
+                        callback(current++, total, trees[repoId].Base.IsLocal ? Path.Combine(trees[repoId].Base.LocalPath, filename)
+                                                                              : trees[repoId].Base.ToString() + filename);
+                    }
+
+                    if (state.Repositories[repoId].MTimes.ContainsKey(filename))
+                    {
+                        foreach (Guid otherId in trees.Keys)
+                        {
+                            if (repoId == otherId)
+                            {
+                                continue;
+                            }
+                            if (trees[otherId].Files.ContainsKey(filename))
+                            {
+                                DateTime repoTime = trees[repoId].Files[filename].MTime;
+                                DateTime otherTime = trees[otherId].Files[filename].MTime;
+
+                                if (state.Repositories[repoId].MTimes[filename] != repoTime)
+                                {
+                                    changeset.Add(filename, ChangeStatus.Changed, repoId);
+                                }
+
+                                if (state.Repositories[otherId].MTimes[filename] != otherTime)
+                                {
+                                    changeset.Add(filename, ChangeStatus.Changed, otherId);
+                                }
+                            }
+                            else
+                            {
+                                //
+                                // Don't check if the file exists in the state for the other repo; 
+                                // just display it as missing.
+                                // 
+
+                                changeset.Add(filename, ChangeStatus.Missing, otherId);
+                            }
+                        }
                     }
                     else
                     {
-                        status = ChangeStatus.SourceMissing;
+                        changeset.Add(filename, ChangeStatus.New, repoId);
                     }
                 }
-
-                if (status != ChangeStatus.Identical)
-                {
-                    changeset.Add(filename, status);
-                }
             }
-            
-            foreach (var filename in repoMissingFiles)
-            {
-                ChangeStatus status = ChangeStatus.Undetermined;
-
-                if (callback != null)
-                {
-                    callback(n++, repo.Files.Count + repoMissingFiles.Count, Path.GetDirectoryName(filename));
-                }
-
-                if (state.Repository.MTimes.ContainsKey(filename))
-                {
-                    status = ChangeStatus.RepoDeleted;
-                }
-                else
-                {
-                    status = ChangeStatus.RepoMissing;
-                }
-
-                changeset.Add(filename, status);
-            }
-             */
 
             return changeset;
         }
@@ -293,16 +274,16 @@ namespace Codewise.FooSync
         bool IsRegex { get; set; }
     }
 
-    public delegate void Progress(int completed, int total, string item);
+    public delegate void Progress(long completed, long total, string item);
 
     public enum ChangeStatus
     {
-        Undetermined = -2,
-        Newer = -1,
-        Identical = 0,
-        Missing = 1,
-        Deleted = 2,
-        New = 3,
+        Undetermined,
+        Identical,
+        Changed,
+        Missing,
+        Deleted,
+        New,
     }
 
     public enum ConflictStatus

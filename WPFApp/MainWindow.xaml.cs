@@ -442,7 +442,7 @@ namespace Codewise.FooSync.WPFApp
 
             if (!_repositoryDiffControls.ContainsKey(syncGroup))
             {
-                _repositoryDiffControls.Add(syncGroup, new RepositoryDiff(syncGroup));
+                _repositoryDiffControls.Add(syncGroup, new RepositoryDiff(this, Foo, syncGroup));
             }
 
             RepositoryDiff diffPanel = _repositoryDiffControls[syncGroup];

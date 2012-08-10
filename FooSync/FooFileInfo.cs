@@ -24,6 +24,7 @@ namespace Codewise.FooSync
             this.Foo = foo;
             this.Path = path;
             this.Source = string.Empty;
+            this.Info.Refresh();
         }
 
         #region public properties
@@ -32,7 +33,6 @@ namespace Codewise.FooSync
         {
             get
             {
-                Info.Refresh();
                 return Info.LastWriteTimeUtc;
             }
         }
@@ -41,7 +41,6 @@ namespace Codewise.FooSync
         {
             get
             {
-                Info.Refresh();
                 return Info.Length;
             }
         }

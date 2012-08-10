@@ -376,7 +376,7 @@ namespace Codewise.FooSync.ConsoleApp
         {
             Dictionary<SyncGroupConfigMember, FooTree> trees = new Dictionary<SyncGroupConfigMember, FooTree>();
             ICollection<string> exceptions = FooSyncEngine.PrepareExceptions(syncGroup.IgnorePatterns);
-            Progress enumCallback = new Progress((int current, int total, string name) =>
+            Progress enumCallback = new Progress((current, total, name) =>
             {
                 Console.Write("\r{0} items...", current);
             });
