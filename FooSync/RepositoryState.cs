@@ -80,8 +80,8 @@ namespace Codewise.FooSync
 
             string guidString = ReadString(r);
             RepositoryID = new Guid(guidString);
-
-            Modified = new DateTime(long.Parse(ReadString(r)));
+            
+            Modified = new DateTime(long.Parse(ReadString(r)), DateTimeKind.Utc);
 
             while (!r.EndOfStream)
             {
@@ -140,7 +140,7 @@ namespace Codewise.FooSync
             w.Write('\0');
 
             Modified = DateTime.Now;
-            w.Write(Modified.ToBinary().ToString());
+            w.Write(Modified.ToUniversalTime().Ticks);
             w.Write('\0');
 
             foreach (var repo in Repositories.Values)
