@@ -23,10 +23,96 @@ namespace Codewise.FooSync
             this.Elems = new Dictionary<string, Dictionary<Guid, FooChangeSetElem>>();
         }
 
+        private void SetConflictStatus(string filename, ConflictStatus status)
+        {
+            foreach (FooChangeSetElem elem in Elems[filename].Values)
+            {
+                elem.ConflictStatus = status;
+            }
+        }
+
         public void SetDefaultActions(Dictionary<Guid, FooTree> trees)
         {
-            //TODO: this needs to also detect conflicts, before setting actions.
+            //
+            // Detect Conflicts
+            //
+            foreach (string filename in Elems.Keys)
+            {
+                ChangeStatus change = ChangeStatus.Undetermined;
+                DateTime? mTime = null;
 
+                foreach (Guid repoId in Elems[filename].Keys)
+                {
+                    switch (Elems[filename][repoId].ChangeStatus)
+                    {
+                        case ChangeStatus.Changed:
+                            {
+                                DateTime thisMTime = trees[repoId].Files[filename].MTime;
+                                if (mTime != null && mTime != thisMTime)
+                                {
+                                    SetConflictStatus(filename, ConflictStatus.MultipleChanges);
+                                    goto nextFile;
+                                }
+                                mTime = thisMTime;
+                            }
+                            break;
+
+                        case ChangeStatus.Deleted:
+                            if (change == ChangeStatus.Undetermined)
+                            {
+                                change = ChangeStatus.Deleted;
+                            }
+                            else if (change != ChangeStatus.Deleted)
+                            {
+                                SetConflictStatus(filename, ConflictStatus.ChangedAndDeleted);
+                                goto nextFile;
+                            }
+                            break;
+
+                        case ChangeStatus.New:
+                            {
+                                if (change == ChangeStatus.Undetermined)
+                                {
+                                    change = ChangeStatus.New;
+                                }
+                                else if (change != ChangeStatus.New)
+                                {
+                                    SetConflictStatus(filename, ConflictStatus.ChangedAndDeleted);
+                                    goto nextFile;
+                                }
+
+                                DateTime thisMTime = trees[repoId].Files[filename].MTime;
+                                if (mTime != null && mTime != thisMTime)
+                                {
+                                    SetConflictStatus(filename, ConflictStatus.MultipleChanges);
+                                    goto nextFile;
+                                }
+                                mTime = thisMTime;
+                            }
+                            break;
+
+                        case ChangeStatus.Identical:
+                            {
+                                DateTime thisMTime = trees[repoId].Files[filename].MTime;
+                                if (mTime != null && mTime != thisMTime)
+                                {
+                                    SetConflictStatus(filename, ConflictStatus.MultipleChanges);
+                                    goto nextFile;
+                                }
+                                mTime = thisMTime;
+                            }
+                            break;
+                    }
+                }
+
+                SetConflictStatus(filename, ConflictStatus.NoConflict);
+
+            nextFile: ;
+            }
+
+            //
+            // Set actions
+            //
             foreach (string filename in Elems.Keys)
             {
                 foreach (Guid repoId in Elems[filename].Keys)

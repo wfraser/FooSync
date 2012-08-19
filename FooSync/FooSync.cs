@@ -135,17 +135,21 @@ namespace Codewise.FooSync
                             break;
 
                         case ChangeStatus.New:
-                            var treesWithThisFile = trees.Where(pair => pair.Value.Files.ContainsKey(filename) && pair.Key != change.RepositoryId);
-                            if (treesWithThisFile.Count() == 0)
+                            foreach (Guid repoId in trees.Keys.Where(id => id != change.RepositoryId))
                             {
-                                foreach (Guid repoId in trees.Keys.Where(id => id != change.RepositoryId))
+                                if (!changeset[filename].ContainsKey(repoId)
+                                        && !(newChanges.Filenames.Contains(filename) && newChanges[filename].ContainsKey(repoId)))
                                 {
-                                    newChanges.Add(filename, ChangeStatus.Missing, repoId);
+                                    if (trees[repoId].Files.ContainsKey(filename))
+                                    {
+                                        newChanges.Add(filename, ChangeStatus.Identical, repoId);
+                                    }
+                                    else
+                                    {
+                                        newChanges.Add(filename, ChangeStatus.Missing, repoId);
+                                    }
                                 }
-                            }
-                            else
-                            {
-                                //todo
+                                // else: change item already exists for this file/repo
                             }
                             break;
                     }

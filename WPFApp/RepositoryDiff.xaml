@@ -97,13 +97,13 @@
                       ContextMenuOpening="Grid_ContextMenuOpening">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn DisplayMemberBinding="{Binding State}" Header="State" />
-                        <GridViewColumn DisplayMemberBinding="{Binding Filename}" Header="Filename" />
+                        <GridViewColumn DisplayMemberBinding="{Binding State}" Header="  State  " />
+                        <GridViewColumn DisplayMemberBinding="{Binding Filename}" Header="  Filename  " />
                     </GridView>
                 </ListView.View>
                 <ListView.ContextMenu>
                     <ContextMenu DataContext="{Binding Path=PlacementTarget, RelativeSource={RelativeSource Self}}">
-                    
+                        
                     </ContextMenu>
                 </ListView.ContextMenu>
             </ListView>

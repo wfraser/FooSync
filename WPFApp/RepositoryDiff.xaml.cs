@@ -226,6 +226,8 @@ namespace Codewise.FooSync.WPFApp
 
                     changeSet.SetDefaultActions(trees);
 
+                    DictionaryItemPickerConverter converter = new DictionaryItemPickerConverter();
+
                     foreach (KeyValuePair<Guid, FooTree> pair in trees)
                     {
                         FooSyncUrl url = pair.Value.Base;
@@ -235,12 +237,13 @@ namespace Codewise.FooSync.WPFApp
                             {
                                 ((GridView)Grid.View).Columns.Add(new GridViewColumn()
                                     {
-                                        Header = url.IsLocal ? url.LocalPath : url.ToString(),
+                                        Header = string.Format("  {0}  ", url.IsLocal ? url.LocalPath : url.ToString()),
                                         DisplayMemberBinding = new Binding()
                                             {
-                                                Converter = null, //TODO: write a converter to get change status for given repo
-                                                ConverterParameter = repoId, 
-                                            }
+                                                Converter = converter,
+                                                ConverterParameter = repoId,
+                                                Path = new PropertyPath("ChangeStatus"),
+                                            },
                                     });
                             }
                         ));
@@ -275,6 +278,12 @@ namespace Codewise.FooSync.WPFApp
                                     break;
                                 }
                             }
+                        }
+
+                        foreach (Guid repoId in changeSet[filename].Keys)
+                        {
+                            item.ChangeStatus.Add(repoId, changeSet[filename][repoId].ChangeStatus);
+                            item.FileOperation.Add(repoId, changeSet[filename][repoId].FileOperation);
                         }
 
                         diffData.Add(item);
