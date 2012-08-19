@@ -99,8 +99,6 @@
                     <GridView>
                         <GridViewColumn DisplayMemberBinding="{Binding State}" Header="State" />
                         <GridViewColumn DisplayMemberBinding="{Binding Filename}" Header="Filename" />
-                        <GridViewColumn DisplayMemberBinding="{Binding }" Header="Origin Repository"/>
-                        <GridViewColumn DisplayMemberBinding="{Binding }" Header="Destinatination Repository"/>
                     </GridView>
                 </ListView.View>
                 <ListView.ContextMenu>

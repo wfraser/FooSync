@@ -21,7 +21,15 @@ namespace Codewise.FooSync.WPFApp
 
     public class RepositoryDiffDataItem
     {
+        public RepositoryDiffDataItem()
+        {
+            ChangeStatus = new Dictionary<Guid, ChangeStatus>();
+            FileOperation = new Dictionary<Guid, FileOperation>();
+        }
+
         public string Filename { get; set; }
         public string State { get; set; }
+        public Dictionary<Guid, ChangeStatus> ChangeStatus { get; private set; }
+        public Dictionary<Guid, FileOperation> FileOperation { get; private set; }
     }
 }

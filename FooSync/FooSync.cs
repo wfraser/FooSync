@@ -121,6 +121,39 @@ namespace Codewise.FooSync
                 }
             }
 
+            FooChangeSet newChanges = new FooChangeSet();
+            foreach (string filename in changeset.Filenames)
+            {
+                foreach (FooChangeSetElem change in changeset[filename].Values)
+                {
+                    switch (change.ChangeStatus)
+                    {
+                        case ChangeStatus.Changed:
+                        case ChangeStatus.Deleted:
+                        case ChangeStatus.Missing:
+                            //TODO
+                            break;
+
+                        case ChangeStatus.New:
+                            var treesWithThisFile = trees.Where(pair => pair.Value.Files.ContainsKey(filename) && pair.Key != change.RepositoryId);
+                            if (treesWithThisFile.Count() == 0)
+                            {
+                                foreach (Guid repoId in trees.Keys.Where(id => id != change.RepositoryId))
+                                {
+                                    newChanges.Add(filename, ChangeStatus.Missing, repoId);
+                                }
+                            }
+                            else
+                            {
+                                //todo
+                            }
+                            break;
+                    }
+                }
+            }
+
+            changeset.UnionWith(newChanges);
+
             return changeset;
         }
 

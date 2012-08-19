@@ -25,6 +25,8 @@ namespace Codewise.FooSync
 
         public void SetDefaultActions(Dictionary<Guid, FooTree> trees)
         {
+            //TODO: this needs to also detect conflicts, before setting actions.
+
             foreach (string filename in Elems.Keys)
             {
                 foreach (Guid repoId in Elems[filename].Keys)
@@ -129,6 +131,16 @@ namespace Codewise.FooSync
                         CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, filename));
                     }
                 }
+            }
+        }
+
+        public void UnionWith(FooChangeSet other)
+        {
+            IEnumerable<FooChangeSetElem> otherChanges = other.Elems.Values.SelectMany(x => x.Values);
+
+            foreach (FooChangeSetElem change in otherChanges)
+            {
+                Add(change.Filename, change.ChangeStatus, change.RepositoryId);
             }
         }
 

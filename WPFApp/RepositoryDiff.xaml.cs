@@ -10,11 +10,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Shell;
 
 namespace Codewise.FooSync.WPFApp
@@ -223,64 +224,60 @@ namespace Codewise.FooSync.WPFApp
                         }
                     ));
 
-                    /*
-                    for (int i = 0; i <= 100; i++)
+                    changeSet.SetDefaultActions(trees);
+
+                    foreach (KeyValuePair<Guid, FooTree> pair in trees)
                     {
-                        System.Threading.Thread.Sleep(10);
-                        Dispatcher.Invoke(new Action(() => 
+                        FooSyncUrl url = pair.Value.Base;
+                        Guid repoId = pair.Key;
+
+                        Dispatcher.Invoke(new Action(() =>
                             {
-                                _mainWindow.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.Normal;
-                                Progress.IsIndeterminate = false;
-                                Progress.Value = i;
-                                ProgressText.Text = "Not Doing Anything...";
-                                DetailText1.Text = string.Format("{0}%", i);
-                                DetailText2.Text = string.Empty;
+                                ((GridView)Grid.View).Columns.Add(new GridViewColumn()
+                                    {
+                                        Header = url.IsLocal ? url.LocalPath : url.ToString(),
+                                        DisplayMemberBinding = new Binding()
+                                            {
+                                                Converter = null, //TODO: write a converter to get change status for given repo
+                                                ConverterParameter = repoId, 
+                                            }
+                                    });
                             }
                         ));
-
-                        if (MainWindow.Instance.IsClosed || _cancel)
-                        {
-                            break;
-                        }
                     }
-
-                    Guid fakeRepo1 = Guid.NewGuid();
-                    Guid fakeRepo2 = Guid.NewGuid();
-                    Guid fakeRepo3 = Guid.NewGuid();
-
-                    //
-                    // Fake files, for UI demo purposes.
-                    //
-                    // file1 is new in Repo 1, and needs to be pushed to Repo 2 and 3.
-                    //
-                    // heyo/file2 is new in fakeRepo1.
-                    //
-
-                    FooChangeSet fakeChangeSet = new FooChangeSet();
-                    fakeChangeSet.Add("file1", ChangeStatus.Changed, fakeRepo1);
-                    fakeChangeSet.Add("file1", ChangeStatus.Identical, fakeRepo2);
-                    fakeChangeSet.Add("file1", ChangeStatus.Identical, fakeRepo3);
-                    fakeChangeSet.Add("heyo/file2", ChangeStatus.New, fakeRepo1);
-
-                    // just set all to no conflict; this would normally be done in the diff stage
-                    foreach (string filename in fakeChangeSet)
-                    {
-                        foreach (var x in fakeChangeSet[filename])
-                        {
-                            x.Value.ConflictStatus = ConflictStatus.NoConflict;
-                        }
-                    }
-
-                    fakeChangeSet.SetDefaultActions();
-                     */
 
                     RepositoryDiffData diffData = new RepositoryDiffData();
                     foreach (string filename in changeSet)
                     {
-                        diffData.Add(new RepositoryDiffDataItem()
+                        RepositoryDiffDataItem item = new RepositoryDiffDataItem();
+                        item.Filename = filename;
+                        if (changeSet[filename].Values.Any(x => x.ConflictStatus != ConflictStatus.NoConflict))
                         {
-                            Filename = filename,
-                        });
+                            item.State = "Conflict";
+                        }
+                        else
+                        {
+                            foreach (FooChangeSetElem changeElem in changeSet[filename].Values)
+                            {
+                                if (changeElem.ChangeStatus == ChangeStatus.New)
+                                {
+                                    item.State = "Added";
+                                    break;
+                                }
+                                else if (changeElem.ChangeStatus == ChangeStatus.Deleted)
+                                {
+                                    item.State = "Deleted";
+                                    break;
+                                }
+                                else if (changeElem.ChangeStatus == ChangeStatus.Changed)
+                                {
+                                    item.State = "Changed";
+                                    break;
+                                }
+                            }
+                        }
+
+                        diffData.Add(item);
                     }
 
                     Dispatcher.Invoke(new Action(() =>
