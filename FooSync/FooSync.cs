@@ -111,6 +111,12 @@ namespace Codewise.FooSync
                                 // 
 
                                 changeset.Add(filename, ChangeStatus.Missing, otherId);
+
+                                //
+                                // Also add an 'Identical' entry for the existing one.
+                                //
+
+                                changeset.Add(filename, ChangeStatus.Identical, repoId);
                             }
                         }
                     }

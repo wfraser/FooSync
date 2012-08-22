@@ -153,8 +153,22 @@ namespace Codewise.FooSync.WPFApp
     [XmlType("SyncGroup", Namespace="http://www.codewise.org/schema/foosync/SyncGroupList.xsd")]
     public class SyncGroup : INotifyPropertyChanged
     {
+        private string _name;
+
         [XmlAttribute]
-        public string Name { get; set; }
+        public string Name
+        {
+            get { return _name; }
+            set
+            {
+                _name = value;
+
+                if (PropertyChanged != null)
+                {
+                    PropertyChanged(this, new PropertyChangedEventArgs("Name"));
+                }
+            }
+        }
 
         /// <summary>
         /// The System.Uri class isn't XML serializable, so this hack has to be used.

@@ -226,6 +226,10 @@ namespace Codewise.FooSync.WPFApp
 
                     changeSet.SetDefaultActions(trees);
 
+                    //
+                    // Convert the changeset into data structures for display.
+                    //
+
                     DictionaryItemPickerConverter converter = new DictionaryItemPickerConverter();
 
                     foreach (KeyValuePair<Guid, FooTree> pair in trees)
@@ -288,6 +292,10 @@ namespace Codewise.FooSync.WPFApp
 
                         diffData.Add(item);
                     }
+
+                    //
+                    // Display
+                    //
 
                     Dispatcher.Invoke(new Action(() =>
                         {

@@ -152,11 +152,10 @@
                                       DataContext="{Binding DataContext.SyncGroups, Source={x:Reference TreePane}}">
                             <TreeViewItem.ItemsSource>
                                 <CompositeCollection>
-                                    <TreeViewItem Header="No Sync Groups are Configured" IsEnabled="False">
-                                        <TreeViewItem.Visibility>
-                                            <Binding Converter="{StaticResource VisibleWhenEmptyConverter}"/>
-                                        </TreeViewItem.Visibility>
-                                    </TreeViewItem>
+                                    <TreeViewItem x:Name="NoSyncGroups"
+                                                  Header="No Sync Groups are Configured"
+                                                  IsEnabled="False"
+                                                  Visibility="Visible" />
                                     <CollectionContainer Collection="{Binding DataContext.SyncGroups, Source={x:Reference TreePane}}"/>
                                 </CompositeCollection>
                             </TreeViewItem.ItemsSource>
@@ -174,11 +173,10 @@
                                       DataContext="{Binding DataContext.Servers, Source={x:Reference TreePane}}">
                             <TreeViewItem.ItemsSource>
                                 <CompositeCollection>
-                                    <TreeViewItem Header="No Servers have been Saved" IsEnabled="False">
-                                        <TreeViewItem.Visibility>
-                                            <Binding Converter="{StaticResource VisibleWhenEmptyConverter}"/>
-                                        </TreeViewItem.Visibility>
-                                    </TreeViewItem>
+                                    <TreeViewItem x:Name="NoServers"
+                                                  Header="No Servers have been Saved"
+                                                  IsEnabled="False"
+                                                  Visibility="Visible"/>
                                     <CollectionContainer Collection="{Binding DataContext.Servers, Source={x:Reference TreePane}}"/>
                                 </CompositeCollection>
                             </TreeViewItem.ItemsSource>
@@ -220,17 +218,18 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 
-                <DockPanel x:Name="SyncGroupOverView">
+                <DockPanel x:Name="SyncGroupOverView" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Visible">
                     <TextBlock DockPanel.Dock="Top"
                                FontSize="11">SYNC GROUP</TextBlock>
                 
-                    <TextBlock DockPanel.Dock="Top"
+                    <foo:EditableTextBlock DockPanel.Dock="Top"
                                FontSize="32">
-                        <TextBlock.Text>
+                        <foo:EditableTextBlock.Text>
                             <Binding Path="Name"
-                                     FallbackValue="[No Value]"/>
-                        </TextBlock.Text>
-                    </TextBlock>
+                                     FallbackValue="[No Value]"
+                                     Mode="TwoWay"/>
+                        </foo:EditableTextBlock.Text>
+                    </foo:EditableTextBlock>
                 
                     <TextBlock DockPanel.Dock="Top"
                                Padding="0,10,0,0">Locations:</TextBlock>
@@ -254,7 +253,7 @@
                 
                     <WrapPanel DockPanel.Dock="Top">
                         <Button Margin="10,0,0,0"
-                                Padding="2"
+                                Padding="4"
                                 Content="Show"
                                 Click="SyncGroupLocationShow_Click">
                             <Button.IsEnabled>
@@ -264,7 +263,7 @@
                             </Button.IsEnabled>
                         </Button>
                         <Button Margin="10,0,0,0"
-                                Padding="2"
+                                Padding="4"
                                 Content="Remove"
                                 Click="SyncGroupLocationRemove_Click">
                             <Button.IsEnabled>
@@ -274,7 +273,7 @@
                             </Button.IsEnabled>
                         </Button>
                         <Button Margin="10,0,0,0"
-                                Padding="2"
+                                Padding="4"
                                 Content="Add Folder"
                                 Click="SyncGroup_AddFolder_Click">
                         </Button>
@@ -282,6 +281,13 @@
 
                     <TextBlock DockPanel.Dock="Top"
                                Padding="0,20,0,0">Ignored Filename Patterns:</TextBlock>
+
+                    <WrapPanel DockPanel.Dock="Bottom" VerticalAlignment="Bottom">
+                        <Button IsDefault="True"
+                                Padding="4"
+                                Content="Prepare to Sync"
+                                Click="Analyze_Click"/>
+                    </WrapPanel>
 
                     <WrapPanel DockPanel.Dock="Top">
                         <DataGrid x:Name="SyncGroupIgnores"
@@ -298,13 +304,6 @@
                                                         Binding="{Binding IsRegex}"/>
                             </DataGrid.Columns>
                         </DataGrid>
-                    </WrapPanel>
-
-                    <WrapPanel DockPanel.Dock="Bottom" VerticalAlignment="Bottom">
-                        <Button IsDefault="True"
-                                Padding="2"
-                                Content="Prepare to Sync"
-                                Click="Analyze_Click"/>
                     </WrapPanel>
 
                 </DockPanel>

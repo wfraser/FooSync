@@ -42,6 +42,8 @@ namespace Codewise.FooSync.WPFApp
         private string        _settingsPath;
         private SyncGroupList _syncGroupList;
         private Dictionary<SyncGroup, RepositoryDiff> _repositoryDiffControls;
+        private TreeViewItem  _noSyncGroups;
+        private TreeViewItem  _noServers;
 
         internal MainWindow()
         {
@@ -77,6 +79,40 @@ namespace Codewise.FooSync.WPFApp
                 Application.Current.Shutdown();
 
             _repositoryDiffControls = new Dictionary<SyncGroup, RepositoryDiff>();
+
+            TreeViewWalk(item =>
+                {
+                    if (item.Name == "NoSyncGroups")
+                    {
+                        _noSyncGroups = item;
+                    }
+                    else if (item.Name == "NoServers")
+                    {
+                        _noServers = item;
+                    }
+                }
+            );
+            
+            _noSyncGroups.Visibility = _syncGroupList.SyncGroups.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+            _noServers.Visibility    = _syncGroupList.Servers.Count > 0    ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void TreeViewWalk(Action<TreeViewItem> action)
+        {
+            TreeViewWalk(TreePane.Items.OfType<TreeViewItem>(), action);
+        }
+
+        private void TreeViewWalk(IEnumerable<TreeViewItem> items, Action<TreeViewItem> action)
+        {
+            foreach (TreeViewItem item in items)
+            {
+                action(item);
+
+                if (item.Items.Count > 0)
+                {
+                    TreeViewWalk(item.Items.OfType<TreeViewItem>(), action);
+                }
+            }
         }
 
         public static MainWindow Instance
@@ -182,6 +218,11 @@ namespace Codewise.FooSync.WPFApp
                 }
 
                 _syncGroupList.Servers.Remove(paramFooServer);
+
+                if (_syncGroupList.Servers.Count == 0)
+                {
+                    _noServers.Visibility = System.Windows.Visibility.Visible;
+                }
             }
             else if ((paramSyncGroup = param as SyncGroup) != null)
             {
@@ -194,6 +235,11 @@ namespace Codewise.FooSync.WPFApp
                 }
 
                 _syncGroupList.SyncGroups.Remove(paramSyncGroup);
+
+                if (_syncGroupList.SyncGroups.Count == 0)
+                {
+                    _noSyncGroups.Visibility = Visibility.Visible;
+                }
             }
         }
 
@@ -330,6 +376,8 @@ namespace Codewise.FooSync.WPFApp
 
                 _syncGroupList.Servers.Add(newServer);
 
+                _noServers.Visibility = Visibility.Collapsed;
+
                 TreePane.SelectPath(new Predicate<object>[] {
                     (object o) => (o is TreeViewItem && string.Equals(((TreeViewItem)o).Header, "Saved Servers")),
                     (object o) => (o == newServer)
@@ -369,11 +417,14 @@ namespace Codewise.FooSync.WPFApp
 
                 var newSyncGroup = new SyncGroup()
                 {
-                    Name = syncGroupEntryWindow.SyncGroupNameEntry.Text
+                    Name = syncGroupEntryWindow.SyncGroupNameEntry.Text,
+                    IgnorePatterns = new System.Collections.ObjectModel.ObservableCollection<IgnorePattern>()
                 };
                 newSyncGroup.URLs.Add(new FooSyncUrl("file:///" + syncGroupEntryWindow.LocationEntry.Text));
 
                 _syncGroupList.SyncGroups.Add(newSyncGroup);
+
+                _noSyncGroups.Visibility = Visibility.Collapsed;
             }
         }
 
