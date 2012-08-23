@@ -30,6 +30,6 @@ namespace Codewise.FooSync.WPFApp
         public string Filename { get; set; }
         public string State { get; set; }
         public Dictionary<Guid, ChangeStatus> ChangeStatus { get; private set; }
-        public Dictionary<Guid, FileOperation> FileOperation { get; private set; }
+        public Dictionary<Guid, FileOperation> FileOperation { get; set; }
     }
 }

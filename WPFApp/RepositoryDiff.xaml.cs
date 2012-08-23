@@ -249,6 +249,25 @@ namespace Codewise.FooSync.WPFApp
                                                 Path = new PropertyPath("ChangeStatus"),
                                             },
                                     });
+
+                                FrameworkElementFactory comboBoxFactory = new FrameworkElementFactory(typeof(ComboBox));
+                                comboBoxFactory.Name = "actions combobox";
+                                comboBoxFactory.SetValue(ComboBox.ItemsSourceProperty, Enum.GetValues(typeof(FileOperation)));
+                                comboBoxFactory.SetBinding(ComboBox.SelectedItemProperty, new Binding()
+                                    {
+                                        Converter = converter,
+                                        ConverterParameter = repoId,
+                                        Path = new PropertyPath("FileOperation"),
+                                    });
+
+                                ((GridView)Actions.View).Columns.Add(new GridViewColumn()
+                                    {
+                                        Header = string.Format("  {0}  ", url.IsLocal ? url.LocalPath : url.ToString()),
+                                        CellTemplate = new DataTemplate()
+                                            {
+                                                VisualTree = comboBoxFactory
+                                            },
+                                    });
                             }
                         ));
                     }
@@ -303,6 +322,8 @@ namespace Codewise.FooSync.WPFApp
                             ProgressView.Visibility = Visibility.Collapsed;
                             Grid.ItemsSource = diffData;
                             Grid.Visibility = Visibility.Visible;
+                            ActionsPanel.Visibility = Visibility.Visible;
+                            Actions.ItemsSource = diffData;
                         }
                     ));
                 }
