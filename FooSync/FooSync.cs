@@ -10,6 +10,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -339,12 +340,12 @@ namespace Codewise.FooSync
 
     public enum FileOperation
     {
-        NoOp,
-        Give,
-        Take,
-        Delete,
-        DeleteOthers,
-        MaxFileOperation
+        [Description("Ignore")]         NoOp,
+        [Description("Copy From")]      Give,
+        [Description("Copy To")]        Take,
+        [Description("Delete")]         Delete,
+        [Description("Delete Others")]  DeleteOthers,
+                                        MaxFileOperation
     }
 
     public enum OpCode : int

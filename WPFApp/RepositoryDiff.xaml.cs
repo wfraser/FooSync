@@ -232,14 +232,18 @@ namespace Codewise.FooSync.WPFApp
 
                     DictionaryItemPickerConverter converter = new DictionaryItemPickerConverter();
 
-                    foreach (KeyValuePair<Guid, FooTree> pair in trees)
+                    IEnumerable<string> fileOperations = EnumMethods.GetEnumDescriptions(typeof(FileOperation));
+
+                    //foreach (KeyValuePair<Guid, FooTree> pair in trees)
+                    IEnumerator<KeyValuePair<Guid, FooTree>> treeEnum = trees.GetEnumerator();
+                    for (int i = 0; treeEnum.MoveNext(); i++)
                     {
-                        FooSyncUrl url = pair.Value.Base;
-                        Guid repoId = pair.Key;
+                        FooSyncUrl url = treeEnum.Current.Value.Base;
+                        Guid repoId = treeEnum.Current.Key;
 
                         Dispatcher.Invoke(new Action(() =>
                             {
-                                ((GridView)Grid.View).Columns.Add(new GridViewColumn()
+                                ((GridView)DiffGrid.View).Columns.Add(new GridViewColumn()
                                     {
                                         Header = string.Format("  {0}  ", url.IsLocal ? url.LocalPath : url.ToString()),
                                         DisplayMemberBinding = new Binding()
@@ -250,24 +254,59 @@ namespace Codewise.FooSync.WPFApp
                                             },
                                     });
 
-                                FrameworkElementFactory comboBoxFactory = new FrameworkElementFactory(typeof(ComboBox));
-                                comboBoxFactory.Name = "actions combobox";
-                                comboBoxFactory.SetValue(ComboBox.ItemsSourceProperty, Enum.GetValues(typeof(FileOperation)));
-                                comboBoxFactory.SetBinding(ComboBox.SelectedItemProperty, new Binding()
-                                    {
-                                        Converter = converter,
-                                        ConverterParameter = repoId,
-                                        Path = new PropertyPath("FileOperation"),
-                                    });
+                                ActionsPanel.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
 
-                                ((GridView)Actions.View).Columns.Add(new GridViewColumn()
+                                Label header = new Label();
+                                header.Content = string.Format("  {0}  ", url.IsLocal ? url.LocalPath : url.ToString());
+                                ActionsPanel.Children.Add(header);
+                                Grid.SetRow(header, 0);
+                                Grid.SetColumn(header, i + 1);
+
+                                ComboBox actionBox = new ComboBox();
+                                actionBox.ItemsSource = fileOperations;
+                                actionBox.SelectionChanged += new SelectionChangedEventHandler((sender, args) =>
                                     {
-                                        Header = string.Format("  {0}  ", url.IsLocal ? url.LocalPath : url.ToString()),
-                                        CellTemplate = new DataTemplate()
+                                        FileOperation newOp = (FileOperation)EnumMethods.GetEnumFromDescription(typeof(FileOperation), (string)args.AddedItems[0]);
+
+                                        if (newOp == FileOperation.DeleteOthers)
+                                        {
+                                            //TODO
+                                            return;
+                                        }
+
+                                        foreach (object item in DiffGrid.SelectedItems)
+                                        {
+                                            RepositoryDiffDataItem dataItem = item as RepositoryDiffDataItem;
+
+                                            if (dataItem == null)
                                             {
-                                                VisualTree = comboBoxFactory
-                                            },
+                                                continue;
+                                            }
+
+                                            // todo
+                                            foreach (Guid id in dataItem.FileOperation.Keys)
+                                            {
+                                                switch (newOp)
+                                                {
+                                                    case FileOperation.Delete:
+                                                    case FileOperation.Give:
+                                                    case FileOperation.Take:
+                                                    case FileOperation.NoOp:
+                                                        dataItem.FileOperation[id] = newOp;
+                                                        break;
+
+                                                    case FileOperation.DeleteOthers:
+                                                        dataItem.FileOperation[id] = (id == repoId) ? FileOperation.NoOp : FileOperation.Delete;
+                                                        break;
+                                                }
+                                            }
+
+                                            DiffGrid.GetBindingExpression(ListView.ItemsSourceProperty).UpdateTarget();
+                                        }
                                     });
+                                ActionsPanel.Children.Add(actionBox);
+                                Grid.SetRow(actionBox, 1);
+                                Grid.SetColumn(actionBox, i + 1);
                             }
                         ));
                     }
@@ -320,10 +359,10 @@ namespace Codewise.FooSync.WPFApp
                         {
                             _mainWindow.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.None;
                             ProgressView.Visibility = Visibility.Collapsed;
-                            Grid.ItemsSource = diffData;
-                            Grid.Visibility = Visibility.Visible;
+                            DiffGrid.ItemsSource = diffData;
+                            DiffGrid.Visibility = Visibility.Visible;
                             ActionsPanel.Visibility = Visibility.Visible;
-                            Actions.ItemsSource = diffData;
+                            //Actions.ItemsSource = diffData;
                         }
                     ));
                 }
