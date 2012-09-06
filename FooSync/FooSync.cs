@@ -64,7 +64,7 @@ namespace Codewise.FooSync
             if (trees == null)
                 throw new ArgumentNullException("trees");
 
-            FooChangeSet changeset = new FooChangeSet();
+            FooChangeSet changeset = new FooChangeSet(trees.Keys);
 
             long total = (from tree in trees.Values
                           select tree.Files.Count)
@@ -128,42 +128,21 @@ namespace Codewise.FooSync
                 }
             }
 
-            FooChangeSet newChanges = new FooChangeSet();
             foreach (string filename in changeset.Filenames)
             {
-                foreach (FooChangeSetElem change in changeset[filename].Values)
-                {
-                    switch (change.ChangeStatus)
-                    {
-                        case ChangeStatus.Changed:
-                        case ChangeStatus.Deleted:
-                        case ChangeStatus.Missing:
-                            //TODO
-                            break;
+                FooChangeSetElem change = changeset[filename];
 
-                        case ChangeStatus.New:
-                            foreach (Guid repoId in trees.Keys.Where(id => id != change.RepositoryId))
-                            {
-                                if (!changeset[filename].ContainsKey(repoId)
-                                        && !(newChanges.Filenames.Contains(filename) && newChanges[filename].ContainsKey(repoId)))
-                                {
-                                    if (trees[repoId].Files.ContainsKey(filename))
-                                    {
-                                        newChanges.Add(filename, ChangeStatus.Identical, repoId);
-                                    }
-                                    else
-                                    {
-                                        newChanges.Add(filename, ChangeStatus.Missing, repoId);
-                                    }
-                                }
-                                // else: change item already exists for this file/repo
-                            }
-                            break;
+                foreach (Guid repoId in trees.Keys)
+                {
+                    if (change.ChangeStatus[repoId] == ChangeStatus.Undetermined)
+                    {
+                        changeset[filename].ChangeStatus[repoId] =
+                            (state.Repositories.ContainsKey(repoId) && state.Repositories[repoId].MTimes.ContainsKey(filename))
+                                ? ChangeStatus.Deleted
+                                : ChangeStatus.Missing;
                     }
                 }
             }
-
-            changeset.UnionWith(newChanges);
 
             return changeset;
         }
@@ -259,9 +238,9 @@ namespace Codewise.FooSync
             if (source == null)
                 throw new ArgumentNullException("source");
 
+            /*
             foreach (var filename in changeset.Where(e => e.FileOperation != FileOperation.NoOp))
             {
-                /*
                 ChangeStatus cstatus = changeset[filename].ChangeStatus;
                 FileOperation operation = changeset[filename].FileOperation;
 
@@ -296,8 +275,8 @@ namespace Codewise.FooSync
                 {
                     state.Repository.MTimes.Remove(filename);
                 }
-                 */
             }
+            */
         }
 
         private static bool DateTimesWithinPrecision(DateTime a, DateTime b, TimeSpan precision)

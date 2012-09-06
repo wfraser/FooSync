@@ -29,7 +29,8 @@ namespace Codewise.FooSync.WPFApp
         private FooSyncEngine _foo;
         private SyncGroup     _syncGroup;
         private Thread        _inspectWorkingThread;
-        private bool _cancel;
+        private bool          _cancel;
+        private Dictionary<Guid, ComboBox> _actionBoxes;
 
         private static readonly int ProgressUpdateRateMsecs = 100;
 
@@ -39,6 +40,7 @@ namespace Codewise.FooSync.WPFApp
         {
             InitializeComponent();
 
+            _actionBoxes = new Dictionary<Guid, ComboBox>();
             _mainWindow = mainWindow;
             _foo = foo;
             _syncGroup = syncGroup;
@@ -316,36 +318,32 @@ namespace Codewise.FooSync.WPFApp
                     {
                         RepositoryDiffDataItem item = new RepositoryDiffDataItem();
                         item.Filename = filename;
-                        if (changeSet[filename].Values.Any(x => x.ConflictStatus != ConflictStatus.NoConflict))
+                        if (changeSet[filename].ConflictStatus != ConflictStatus.NoConflict)
                         {
                             item.State = "Conflict";
                         }
                         else
                         {
-                            foreach (FooChangeSetElem changeElem in changeSet[filename].Values)
+                            FooChangeSetElem changeElem = changeSet[filename];
+
+                            if (changeElem.ChangeStatus.Any(e => e.Value == ChangeStatus.New))
                             {
-                                if (changeElem.ChangeStatus == ChangeStatus.New)
-                                {
-                                    item.State = "Added";
-                                    break;
-                                }
-                                else if (changeElem.ChangeStatus == ChangeStatus.Deleted)
-                                {
-                                    item.State = "Deleted";
-                                    break;
-                                }
-                                else if (changeElem.ChangeStatus == ChangeStatus.Changed)
-                                {
-                                    item.State = "Changed";
-                                    break;
-                                }
+                                item.State = "Added";
+                            }
+                            else if (changeElem.ChangeStatus.Any(e => e.Value == ChangeStatus.Deleted))
+                            {
+                                item.State = "Deleted";
+                            }
+                            else if (changeElem.ChangeStatus.Any(e => e.Value == ChangeStatus.Changed))
+                            {
+                                item.State = "Changed";
                             }
                         }
 
-                        foreach (Guid repoId in changeSet[filename].Keys)
+                        foreach (Guid repoId in changeSet.RepositoryIDs)
                         {
-                            item.ChangeStatus.Add(repoId, changeSet[filename][repoId].ChangeStatus);
-                            item.FileOperation.Add(repoId, changeSet[filename][repoId].FileOperation);
+                            item.ChangeStatus.Add(repoId, changeSet[filename].ChangeStatus[repoId]);
+                            item.FileOperation.Add(repoId, changeSet[filename].FileOperation[repoId]);
                         }
 
                         diffData.Add(item);
@@ -393,6 +391,14 @@ namespace Codewise.FooSync.WPFApp
         private void Synchronize_Click(object sender, RoutedEventArgs e)
         {
             // TODO
+        }
+
+        private void DiffGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            foreach (var item in e.AddedItems.OfType<RepositoryDiffDataItem>())
+            {
+                 
+            }
         }
     }
 }

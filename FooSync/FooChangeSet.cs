@@ -18,17 +18,15 @@ namespace Codewise.FooSync
 {
     public class FooChangeSet : INotifyCollectionChanged
     {
-        public FooChangeSet()
+        public FooChangeSet(IEnumerable<Guid> repositoryIds)
         {
-            this.Elems = new Dictionary<string, Dictionary<Guid, FooChangeSetElem>>();
+            this.Elems = new Dictionary<string, FooChangeSetElem>();
+            this.RepositoryIDs = repositoryIds;
         }
 
         private void SetConflictStatus(string filename, ConflictStatus status)
         {
-            foreach (FooChangeSetElem elem in Elems[filename].Values)
-            {
-                elem.ConflictStatus = status;
-            }
+            Elems[filename].ConflictStatus = status;
         }
 
         public void SetDefaultActions(Dictionary<Guid, FooTree> trees)
@@ -41,9 +39,9 @@ namespace Codewise.FooSync
                 ChangeStatus change = ChangeStatus.Undetermined;
                 DateTime? mTime = null;
 
-                foreach (Guid repoId in Elems[filename].Keys)
+                foreach (Guid repoId in RepositoryIDs)
                 {
-                    switch (Elems[filename][repoId].ChangeStatus)
+                    switch (Elems[filename].ChangeStatus[repoId])
                     {
                         case ChangeStatus.Changed:
                             {
@@ -115,80 +113,82 @@ namespace Codewise.FooSync
             //
             foreach (string filename in Elems.Keys)
             {
-                foreach (Guid repoId in Elems[filename].Keys)
+                if (Elems[filename].ConflictStatus != ConflictStatus.NoConflict)
                 {
-                    if (Elems[filename][repoId].ConflictStatus == ConflictStatus.NoConflict)
+                    continue;
+                }
+                    
+                foreach (Guid repoId in RepositoryIDs)
+                {
+                    switch (Elems[filename].ChangeStatus[repoId])
                     {
-                        switch (Elems[filename][repoId].ChangeStatus)
-                        {
-                            case ChangeStatus.Changed:
+                        case ChangeStatus.Changed:
+                            {
+                                if (Elems[filename].FileOperation[repoId] != FileOperation.NoOp)
                                 {
-                                    if (Elems[filename][repoId].FileOperation != FileOperation.NoOp)
-                                    {
-                                        //
-                                        // action already set
-                                        //
-
-                                        continue;
-                                    }
-
                                     //
-                                    // Figure out the mtime of the newest copy of this file in all the repos
+                                    // action already set
                                     //
 
-                                    DateTime newestMTime = DateTime.MinValue;
-                                    foreach (Guid id in (from pair in trees
-                                                         where pair.Value.Files.ContainsKey(filename)
-                                                         select pair.Key))
-                                    {
-                                        DateTime mtime = trees[id].Files[filename].MTime;
-                                        if (mtime > newestMTime)
-                                        {
-                                            newestMTime = mtime;
-                                        }
-                                    }
+                                    continue;
+                                }
 
-                                    foreach (Guid id in trees.Keys)
-                                    {
-                                        //
-                                        // If it's the most recent, give, otherwise, take.
-                                        //
+                                //
+                                // Figure out the mtime of the newest copy of this file in all the repos
+                                //
 
-                                        if (trees[id].Files.ContainsKey(filename)
-                                            && trees[id].Files[filename].MTime == newestMTime)
-                                        {
-                                            Elems[filename][repoId].FileOperation = FileOperation.Give;
-                                        }
-                                        else
-                                        {
-                                            Elems[filename][repoId].FileOperation = FileOperation.Take;
-                                        }
+                                DateTime newestMTime = DateTime.MinValue;
+                                foreach (Guid id in (from pair in trees
+                                                        where pair.Value.Files.ContainsKey(filename)
+                                                        select pair.Key))
+                                {
+                                    DateTime mtime = trees[id].Files[filename].MTime;
+                                    if (mtime > newestMTime)
+                                    {
+                                        newestMTime = mtime;
                                     }
                                 }
-                                break;
 
-                            case ChangeStatus.New:
-                                Elems[filename][repoId].FileOperation = FileOperation.Give;
-                                break;
+                                foreach (Guid id in trees.Keys)
+                                {
+                                    //
+                                    // If it's the most recent, give, otherwise, take.
+                                    //
 
-                            case ChangeStatus.Missing:
-                                Elems[filename][repoId].FileOperation = FileOperation.Take;
-                                break;
+                                    if (trees[id].Files.ContainsKey(filename)
+                                        && trees[id].Files[filename].MTime == newestMTime)
+                                    {
+                                        Elems[filename].FileOperation[repoId] = FileOperation.Give;
+                                    }
+                                    else
+                                    {
+                                        Elems[filename].FileOperation[repoId] = FileOperation.Take;
+                                    }
+                                }
+                            }
+                            break;
 
-                            case ChangeStatus.Deleted:
-                                Elems[filename][repoId].FileOperation = FileOperation.DeleteOthers;
-                                break;
+                        case ChangeStatus.New:
+                            Elems[filename].FileOperation[repoId] = FileOperation.Give;
+                            break;
 
-                            case ChangeStatus.Identical:
-                                Elems[filename][repoId].FileOperation = FileOperation.NoOp;
-                                break;
+                        case ChangeStatus.Missing:
+                            Elems[filename].FileOperation[repoId] = FileOperation.Take;
+                            break;
 
-                            default:
-                                System.Diagnostics.Debug.Assert(false, "Invalid change status!");
-                                break;
-                        }
+                        case ChangeStatus.Deleted:
+                            Elems[filename].FileOperation[repoId] = FileOperation.DeleteOthers;
+                            break;
+
+                        case ChangeStatus.Identical:
+                            Elems[filename].FileOperation[repoId] = FileOperation.NoOp;
+                            break;
+
+                        default:
+                            System.Diagnostics.Debug.Assert(false, "Invalid change status!");
+                            break;
                     }
-                }
+                } //foreach repoId
             }
         }
 
@@ -198,35 +198,18 @@ namespace Codewise.FooSync
             {
                 if (!Elems.ContainsKey(filename))
                 {
-                    Elems.Add(filename, new Dictionary<Guid, FooChangeSetElem>());
+                    Elems.Add(filename, new FooChangeSetElem(filename, RepositoryIDs));
                 }
 
-                if (!Elems[filename].ContainsKey(where))
+                if (Elems[filename].ChangeStatus[where] != changeStatus)
                 {
-                    Elems[filename].Add(where, new FooChangeSetElem
-                    {
-                        Filename = filename,
-                        ChangeStatus = changeStatus,
-                        RepositoryId = where,
-                        ConflictStatus = ConflictStatus.Undetermined,
-                        FileOperation = FileOperation.NoOp,
-                    });
+                    Elems[filename].ChangeStatus[where] = changeStatus;
 
                     if (CollectionChanged != null)
                     {
                         CollectionChanged(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, filename));
                     }
                 }
-            }
-        }
-
-        public void UnionWith(FooChangeSet other)
-        {
-            IEnumerable<FooChangeSetElem> otherChanges = other.Elems.Values.SelectMany(x => x.Values);
-
-            foreach (FooChangeSetElem change in otherChanges)
-            {
-                Add(change.Filename, change.ChangeStatus, change.RepositoryId);
             }
         }
 
@@ -239,7 +222,7 @@ namespace Codewise.FooSync
         public IEnumerable<string> Where(Func<FooChangeSetElem, bool> predicate)
         {
             return from e in Elems
-                   where e.Value.Count(x => predicate(x.Value)) > 0
+                   where predicate(e.Value)
                    select e.Key;
         }
 
@@ -253,7 +236,7 @@ namespace Codewise.FooSync
             get
             {
                 return from e in Elems
-                       where e.Value.Values.Count(elem => elem.ConflictStatus != ConflictStatus.NoConflict) > 0
+                       where e.Value.ConflictStatus != ConflictStatus.NoConflict
                        select e.Key;
             }
         }
@@ -263,31 +246,15 @@ namespace Codewise.FooSync
             return Elems.Keys.GetEnumerator();
         }
 
-        public Dictionary<Guid, FooChangeSetElem> this[string filename]
+        public FooChangeSetElem this[string filename]
         {
             get { return Elems[filename]; }
             set { Elems[filename] = value; }
         }
 
-        public FooChangeSetElem this[string filename, Guid repoId]
-        {
-            get { return Elems[filename][repoId]; }
-            set { Elems[filename][repoId] = value; }
-        }
-
         public IEnumerable<string> Filenames
         {
             get { return Elems.Keys; }
-        }
-
-        public IEnumerable<Guid> RepoIDs
-        {
-            get
-            {
-                return Elems.Values
-                       .SelectMany(elem => elem.Keys)
-                       .Distinct();
-            }
         }
 
         public void AdviseChanged()
@@ -298,17 +265,32 @@ namespace Codewise.FooSync
             }
         }
 
+        public IEnumerable<Guid> RepositoryIDs { get; private set; }
+
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
-        private Dictionary<string, Dictionary<Guid, FooChangeSetElem>> Elems;
+        private Dictionary<string, FooChangeSetElem> Elems;
     }
 
     public class FooChangeSetElem
     {
-        public string         Filename       { get; set; }
-        public Guid           RepositoryId   { get; set; }
-        public ChangeStatus   ChangeStatus   { get; set; }
-        public ConflictStatus ConflictStatus { get; set; }
-        public FileOperation  FileOperation  { get; set; }
+        internal FooChangeSetElem(string filename, IEnumerable<Guid> repositoryIds)
+        {
+            Filename = filename;
+            ConflictStatus = FooSync.ConflictStatus.Undetermined;
+            ChangeStatus = new Dictionary<Guid, ChangeStatus>();
+            FileOperation = new Dictionary<Guid, FileOperation>();
+
+            foreach (Guid repoId in repositoryIds)
+            {
+                ChangeStatus.Add(repoId, FooSync.ChangeStatus.Undetermined);
+                FileOperation.Add(repoId, FooSync.FileOperation.NoOp);
+            }
+        }
+
+        public string                          Filename       { get; set; }
+        public ConflictStatus                  ConflictStatus { get; set; }
+        public Dictionary<Guid, ChangeStatus>  ChangeStatus   { get; private set; }
+        public Dictionary<Guid, FileOperation> FileOperation  { get; private set; }
     }
 }

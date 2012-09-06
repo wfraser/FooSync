@@ -38,7 +38,11 @@ namespace Codewise.FooSync.WPFApp
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            throw new NotImplementedException();
+            IDictionary dict = (IDictionary)targetType.GetConstructor(new Type[] { }).Invoke(null);
+
+            dict.Add(parameter, value);
+
+            return value;
         }
     }
 }
