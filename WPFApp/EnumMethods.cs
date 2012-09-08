@@ -23,13 +23,14 @@ namespace Codewise.FooSync.WPFApp
             return null;
         }
 
-        public static Enum GetEnumFromDescription(Type enumType, string description)
+        public static TEnum? GetEnumFromDescription<TEnum>(string description) where TEnum : struct // really should be Enum, but C# won't let me.
         {
-            foreach (Enum value in Enum.GetValues(enumType).OfType<Enum>())
+            foreach (Enum value in Enum.GetValues(typeof(TEnum)).OfType<Enum>())
             {
                 if (value.GetDescription() == description)
                 {
-                    return value;
+                    // come on C# this is really silly
+                    return (TEnum)(object)value;
                 }
             }
 

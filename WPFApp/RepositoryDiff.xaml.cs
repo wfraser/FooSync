@@ -30,7 +30,9 @@ namespace Codewise.FooSync.WPFApp
         private SyncGroup     _syncGroup;
         private Thread        _inspectWorkingThread;
         private bool          _cancel;
+
         private Dictionary<Guid, ComboBox> _actionBoxes;
+        private Dictionary<Guid, bool> _updatingActionBox;
 
         private static readonly int ProgressUpdateRateMsecs = 100;
 
@@ -44,6 +46,8 @@ namespace Codewise.FooSync.WPFApp
             _mainWindow = mainWindow;
             _foo = foo;
             _syncGroup = syncGroup;
+
+            _updatingActionBox = new Dictionary<Guid, bool>();
         }
 
         public void Start()
@@ -266,49 +270,13 @@ namespace Codewise.FooSync.WPFApp
 
                                 ComboBox actionBox = new ComboBox();
                                 actionBox.ItemsSource = fileOperations;
-                                actionBox.SelectionChanged += new SelectionChangedEventHandler((sender, args) =>
-                                    {
-                                        FileOperation newOp = (FileOperation)EnumMethods.GetEnumFromDescription(typeof(FileOperation), (string)args.AddedItems[0]);
-
-                                        if (newOp == FileOperation.DeleteOthers)
-                                        {
-                                            //TODO
-                                            return;
-                                        }
-
-                                        foreach (object item in DiffGrid.SelectedItems)
-                                        {
-                                            RepositoryDiffDataItem dataItem = item as RepositoryDiffDataItem;
-
-                                            if (dataItem == null)
-                                            {
-                                                continue;
-                                            }
-
-                                            // todo
-                                            foreach (Guid id in dataItem.FileOperation.Keys)
-                                            {
-                                                switch (newOp)
-                                                {
-                                                    case FileOperation.Delete:
-                                                    case FileOperation.Give:
-                                                    case FileOperation.Take:
-                                                    case FileOperation.NoOp:
-                                                        dataItem.FileOperation[id] = newOp;
-                                                        break;
-
-                                                    case FileOperation.DeleteOthers:
-                                                        dataItem.FileOperation[id] = (id == repoId) ? FileOperation.NoOp : FileOperation.Delete;
-                                                        break;
-                                                }
-                                            }
-
-                                            DiffGrid.GetBindingExpression(ListView.ItemsSourceProperty).UpdateTarget();
-                                        }
-                                    });
+                                actionBox.SelectionChanged += new SelectionChangedEventHandler(actionBox_SelectionChanged);
+                                _updatingActionBox.Add(repoId, false);
+                                actionBox.Tag = repoId;
                                 ActionsPanel.Children.Add(actionBox);
                                 Grid.SetRow(actionBox, 1);
                                 Grid.SetColumn(actionBox, i + 1);
+                                _actionBoxes.Add(repoId, actionBox);
                             }
                         ));
                     }
@@ -395,9 +363,123 @@ namespace Codewise.FooSync.WPFApp
 
         private void DiffGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            foreach (var item in e.AddedItems.OfType<RepositoryDiffDataItem>())
+            Dictionary<Guid, FileOperation?> selectedOperation = new Dictionary<Guid, FileOperation?>();
+
+            if (DiffGrid.SelectedItems.Count == 0)
             {
-                 
+                foreach (Guid id in _actionBoxes.Keys)
+                {
+                    _updatingActionBox[id] = true;
+                    _actionBoxes[id].SelectedIndex = -1;
+                }
+
+                return;
+            }
+
+            foreach (object item in DiffGrid.SelectedItems)
+            {
+                RepositoryDiffDataItem dataItem = item as RepositoryDiffDataItem;
+
+                if (dataItem == null)
+                {
+                    System.Diagnostics.Debug.Assert(false, "this shouldn't happen");
+                    continue;
+                }
+
+                foreach (Guid id in dataItem.FileOperation.Keys)
+                {
+                    if (!selectedOperation.ContainsKey(id))
+                    {
+                        selectedOperation.Add(id, dataItem.FileOperation[id]);
+                    }
+                    else if (selectedOperation[id] != dataItem.FileOperation[id])
+                    {
+                        selectedOperation[id] = null;
+                    }
+                }
+
+                foreach (Guid id in selectedOperation.Keys)
+                {
+                    if (!_actionBoxes.ContainsKey(id))
+                    {
+                        System.Diagnostics.Debug.Assert(false, "missing actionbox for a repoId!");
+                        continue;
+                    }
+
+                    FileOperation? currentOp;
+                    if (_actionBoxes[id].SelectedIndex == -1)
+                    {
+                        currentOp = null;
+                    }
+                    else
+                    {
+                        currentOp = EnumMethods.GetEnumFromDescription<FileOperation>((string)_actionBoxes[id].SelectedItem);
+                    }
+
+                    if (currentOp != selectedOperation[id])
+                    {
+                        _updatingActionBox[id] = true;
+                        if (selectedOperation[id] == null)
+                        {
+                            _actionBoxes[id].SelectedIndex = -1;
+                        }
+                        else
+                        {
+                            _actionBoxes[id].SelectedItem = selectedOperation[id].GetDescription();
+                        }
+                    }
+                }
+            }
+        }
+
+        private void actionBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Guid repoId = (Guid)((ComboBox)sender).Tag;
+
+            if (_updatingActionBox[repoId])
+            {
+                _updatingActionBox[repoId] = false;
+                return;
+            }
+
+            FileOperation? newOp = EnumMethods.GetEnumFromDescription<FileOperation>((string)((ComboBox)sender).SelectedItem);
+
+            if (!newOp.HasValue)
+            {
+                return;
+            }
+
+            foreach (object item in DiffGrid.SelectedItems)
+            {
+                RepositoryDiffDataItem dataItem = item as RepositoryDiffDataItem;
+
+                if (dataItem == null)
+                {
+                    continue;
+                }
+
+                switch (newOp)
+                {
+                    case FileOperation.Delete:
+                    case FileOperation.Give:
+                    case FileOperation.Take:
+                    case FileOperation.NoOp:
+                        dataItem.FileOperation[repoId] = newOp.Value;
+                        break;
+
+                    case FileOperation.DeleteOthers:
+                        foreach (Guid id in dataItem.FileOperation.Keys.ToList())
+                        {
+                            dataItem.FileOperation[id] = (id == repoId) ? FileOperation.NoOp : FileOperation.Delete;
+                        }
+                        break;
+                }
+
+                BindingExpression itemsSource = DiffGrid.GetBindingExpression(ListView.ItemsSourceProperty);
+                if (itemsSource != null)
+                {
+                    itemsSource.UpdateTarget();
+                }
             }
         }
     }
