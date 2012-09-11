@@ -557,11 +557,7 @@ namespace Codewise.FooSync.ConsoleApp
                 {
                     Console.Write("(3) Delete | ");
                 }
-                if (source != null)
-                {
-                    Console.Write("(4) Delete Others | ");
-                }
-                Console.Write("(5) Do Nothing : ");
+                Console.Write("(4) Do Nothing : ");
 
                 var key = Console.ReadKey(false);
                 Console.WriteLine();
@@ -581,10 +577,6 @@ namespace Codewise.FooSync.ConsoleApp
 
                     case ConsoleKey.D4:
                     case ConsoleKey.NumPad4:
-                        return FileOperation.DeleteOthers;
-
-                    case ConsoleKey.D5:
-                    case ConsoleKey.NumPad5:
                         return FileOperation.NoOp;
 
                     default:

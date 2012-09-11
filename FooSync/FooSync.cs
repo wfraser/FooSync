@@ -323,7 +323,6 @@ namespace Codewise.FooSync
         [Description("Copy From")]      Give,
         [Description("Copy To")]        Take,
         [Description("Delete")]         Delete,
-        [Description("Delete Others")]  DeleteOthers,
                                         MaxFileOperation
     }
 

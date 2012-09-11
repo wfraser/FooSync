@@ -177,7 +177,17 @@ namespace Codewise.FooSync
                             break;
 
                         case ChangeStatus.Deleted:
-                            Elems[filename].FileOperation[repoId] = FileOperation.DeleteOthers;
+                            foreach (Guid id in Elems[filename].FileOperation.Keys)
+                            {
+                                if (id == repoId)
+                                {
+                                    Elems[filename].FileOperation[id] = FileOperation.NoOp;
+                                }
+                                else
+                                {
+                                    Elems[filename].FileOperation[id] = FileOperation.Delete;
+                                }
+                            }
                             break;
 
                         case ChangeStatus.Identical:

@@ -458,28 +458,7 @@ namespace Codewise.FooSync.WPFApp
                     continue;
                 }
 
-                switch (newOp)
-                {
-                    case FileOperation.Delete:
-                    case FileOperation.Give:
-                    case FileOperation.Take:
-                    case FileOperation.NoOp:
-                        dataItem.FileOperation[repoId] = newOp.Value;
-                        break;
-
-                    case FileOperation.DeleteOthers:
-                        foreach (Guid id in dataItem.FileOperation.Keys.ToList())
-                        {
-                            dataItem.FileOperation[id] = (id == repoId) ? FileOperation.NoOp : FileOperation.Delete;
-                        }
-                        break;
-                }
-
-                BindingExpression itemsSource = DiffGrid.GetBindingExpression(ListView.ItemsSourceProperty);
-                if (itemsSource != null)
-                {
-                    itemsSource.UpdateTarget();
-                }
+                dataItem.FileOperation[repoId] = newOp.Value;
             }
         }
     }
