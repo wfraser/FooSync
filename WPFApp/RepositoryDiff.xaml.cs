@@ -397,36 +397,36 @@ namespace Codewise.FooSync.WPFApp
                         selectedOperation[id] = null;
                     }
                 }
+            }
 
-                foreach (Guid id in selectedOperation.Keys)
+            foreach (Guid id in selectedOperation.Keys)
+            {
+                if (!_actionBoxes.ContainsKey(id))
                 {
-                    if (!_actionBoxes.ContainsKey(id))
-                    {
-                        System.Diagnostics.Debug.Assert(false, "missing actionbox for a repoId!");
-                        continue;
-                    }
+                    System.Diagnostics.Debug.Assert(false, "missing actionbox for a repoId!");
+                    continue;
+                }
 
-                    FileOperation? currentOp;
-                    if (_actionBoxes[id].SelectedIndex == -1)
+                FileOperation? currentOp;
+                if (_actionBoxes[id].SelectedIndex == -1)
+                {
+                    currentOp = null;
+                }
+                else
+                {
+                    currentOp = EnumMethods.GetEnumFromDescription<FileOperation>((string)_actionBoxes[id].SelectedItem);
+                }
+
+                if (currentOp != selectedOperation[id])
+                {
+                    _updatingActionBox[id] = true;
+                    if (selectedOperation[id] == null)
                     {
-                        currentOp = null;
+                        _actionBoxes[id].SelectedIndex = -1;
                     }
                     else
                     {
-                        currentOp = EnumMethods.GetEnumFromDescription<FileOperation>((string)_actionBoxes[id].SelectedItem);
-                    }
-
-                    if (currentOp != selectedOperation[id])
-                    {
-                        _updatingActionBox[id] = true;
-                        if (selectedOperation[id] == null)
-                        {
-                            _actionBoxes[id].SelectedIndex = -1;
-                        }
-                        else
-                        {
-                            _actionBoxes[id].SelectedItem = selectedOperation[id].GetDescription();
-                        }
+                        _actionBoxes[id].SelectedItem = selectedOperation[id].GetDescription();
                     }
                 }
             }
