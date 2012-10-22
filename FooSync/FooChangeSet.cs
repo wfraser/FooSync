@@ -158,22 +158,22 @@ namespace Codewise.FooSync
                                     if (trees[id].Files.ContainsKey(filename)
                                         && trees[id].Files[filename].MTime == newestMTime)
                                     {
-                                        Elems[filename].FileOperation[repoId] = FileOperation.Give;
+                                        Elems[filename].FileOperation[repoId] = FileOperation.Source;
                                     }
                                     else
                                     {
-                                        Elems[filename].FileOperation[repoId] = FileOperation.Take;
+                                        Elems[filename].FileOperation[repoId] = FileOperation.Destination;
                                     }
                                 }
                             }
                             break;
 
                         case ChangeStatus.New:
-                            Elems[filename].FileOperation[repoId] = FileOperation.Give;
+                            Elems[filename].FileOperation[repoId] = FileOperation.Source;
                             break;
 
                         case ChangeStatus.Missing:
-                            Elems[filename].FileOperation[repoId] = FileOperation.Take;
+                            Elems[filename].FileOperation[repoId] = FileOperation.Destination;
                             break;
 
                         case ChangeStatus.Deleted:

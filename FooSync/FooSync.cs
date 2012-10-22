@@ -301,27 +301,27 @@ namespace Codewise.FooSync
 
     public enum ChangeStatus
     {
-        Undetermined,
-        Identical,
-        Changed,
-        Missing,
-        Deleted,
-        New,
+        [Description("Undetermined")]   Undetermined,
+        [Description("Identical")]      Identical,
+        [Description("Changed")]        Changed,
+        [Description("Missing")]        Missing,
+        [Description("Deleted")]        Deleted,
+        [Description("New")]            New,
     }
 
     public enum ConflictStatus
     {
-        Undetermined,
-        NoConflict,
-        ChangedAndDeleted,
-        MultipleChanges,
+        [Description("Undetermined")]           Undetermined,
+        [Description("No Conflict")]            NoConflict,
+        [Description("Changed and Deleted")]    ChangedAndDeleted,
+        [Description("Multiple Changes")]       MultipleChanges,
     }
 
     public enum FileOperation
     {
         [Description("Ignore")]         NoOp,
-        [Description("Copy From")]      Give,
-        [Description("Copy To")]        Take,
+        [Description("Source")]         Source,
+        [Description("Destination")]    Destination,
         [Description("Delete")]         Delete,
                                         MaxFileOperation
     }

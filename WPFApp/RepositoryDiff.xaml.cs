@@ -256,7 +256,7 @@ namespace Codewise.FooSync.WPFApp
                                             {
                                                 Converter = converter,
                                                 ConverterParameter = repoId,
-                                                Path = new PropertyPath("ChangeStatus"),
+                                                Path = new PropertyPath("CombinedStatus"),
                                             },
                                     });
 
@@ -288,7 +288,7 @@ namespace Codewise.FooSync.WPFApp
                         item.Filename = filename;
                         if (changeSet[filename].ConflictStatus != ConflictStatus.NoConflict)
                         {
-                            item.State = "Conflict";
+                            item.State = RepositoryDiffDataItem.ConflictState;
                         }
                         else
                         {
@@ -296,15 +296,15 @@ namespace Codewise.FooSync.WPFApp
 
                             if (changeElem.ChangeStatus.Any(e => e.Value == ChangeStatus.New))
                             {
-                                item.State = "Added";
+                                item.State = RepositoryDiffDataItem.AddedState;
                             }
                             else if (changeElem.ChangeStatus.Any(e => e.Value == ChangeStatus.Deleted))
                             {
-                                item.State = "Deleted";
+                                item.State = RepositoryDiffDataItem.DeletedState;
                             }
                             else if (changeElem.ChangeStatus.Any(e => e.Value == ChangeStatus.Changed))
                             {
-                                item.State = "Changed";
+                                item.State = RepositoryDiffDataItem.ChangedState;
                             }
                         }
 

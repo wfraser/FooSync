@@ -565,11 +565,11 @@ namespace Codewise.FooSync.ConsoleApp
                 {
                     case ConsoleKey.D1:
                     case ConsoleKey.NumPad1:
-                        return FileOperation.Take;
+                        return FileOperation.Destination;
 
                     case ConsoleKey.D2:
                     case ConsoleKey.NumPad2:
-                        return FileOperation.Give;
+                        return FileOperation.Source;
 
                     case ConsoleKey.D3:
                     case ConsoleKey.NumPad3:

@@ -79,6 +79,7 @@
       <DependentUpon>EditableTextBlock.xaml</DependentUpon>
     </Compile>
     <Compile Include="EnumMethods.cs" />
+    <Compile Include="ObservableDictionary.cs" />
     <Compile Include="RepositoryDiff.xaml.cs">
       <DependentUpon>RepositoryDiff.xaml</DependentUpon>
     </Compile>
