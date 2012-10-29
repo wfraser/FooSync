@@ -32,7 +32,6 @@
                     Padding="5">Cancel</Button>
             <Button Grid.Row="0" Grid.Column="2"
                     Click="Synchronize_Click"
-                    IsEnabled="False"
                     Margin="10"
                     Padding="5">Synchronize</Button>
         </Grid>
@@ -101,7 +100,8 @@
                 <ListView.View>
                     <GridView>
                         <GridViewColumn DisplayMemberBinding="{Binding State}"
-                                        Header="  State  " />
+                                        Header="  State  " 
+                                        Width="90" />
                         <GridViewColumn DisplayMemberBinding="{Binding Filename}"
                                         Header="  Filename  " />
                     </GridView>
@@ -110,13 +110,13 @@
                 <ListView.ItemContainerStyle>
                     <Style TargetType="{x:Type ListViewItem}">
                         <Style.Triggers>
-                            <!-- Set background for conflicts to red -->
+                            <!-- Set background for conflicts to blue -->
                             <DataTrigger Binding="{Binding State}" Value="{x:Static foo:RepositoryDiffDataItem.ConflictState}">
-                                <Setter Property="Background" Value="Tomato" />
-                            </DataTrigger>
-                            <!-- Set background for invalid actions to blue -->
-                            <DataTrigger Binding="{Binding State}" Value="{x:Static foo:RepositoryDiffDataItem.InvalidActionsState}">
                                 <Setter Property="Background" Value="SkyBlue" />
+                            </DataTrigger>
+                            <!-- Set background for invalid actions to red -->
+                            <DataTrigger Binding="{Binding State}" Value="{x:Static foo:RepositoryDiffDataItem.InvalidActionsState}">
+                                <Setter Property="Background" Value="Tomato" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
