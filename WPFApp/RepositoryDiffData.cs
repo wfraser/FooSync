@@ -142,7 +142,13 @@ namespace Codewise.FooSync.WPFApp
             }
         }
 
-        bool ActionsAreValid()
+        public bool ActionsAreValid()
+        {
+            string dummy;
+            return ActionsAreValid(out dummy);
+        }
+
+        public bool ActionsAreValid(out string reason)
         {
             bool hasSource = false;
             bool hasDest = false;
@@ -154,6 +160,7 @@ namespace Codewise.FooSync.WPFApp
                     if (hasSource)
                     {
                         // can only have one source
+                        reason = "More than one copy is selected as the source.";
                         return false;
                     }
                     hasSource = true;
@@ -164,7 +171,20 @@ namespace Codewise.FooSync.WPFApp
                 }
             }
 
-            return (!(hasSource ^ hasDest));
+            if (hasSource && !hasDest)
+            {
+                reason = "There is a source selected, but not a destination.";
+                return false;
+            }
+
+            if (hasDest && !hasSource)
+            {
+                reason = "There are destinations selected, but not a source.";
+                return false;
+            }
+
+            reason = string.Empty;
+            return true;
         }
     }
 }

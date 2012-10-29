@@ -174,6 +174,19 @@ namespace Codewise.FooSync
 
                         case ChangeStatus.Missing:
                             Elems[filename].FileOperation[repoId] = FileOperation.Destination;
+
+                            //
+                            // Pick the newest copy of the file as the source.
+                            //
+                            Guid sourceRepo = RepositoryIDs.Where(id => 
+                                id != repoId
+                                && trees[id].Files.ContainsKey(filename)
+                                && Elems[filename].ChangeStatus[id] == ChangeStatus.Identical
+                                ).OrderByDescending(id => trees[id].Files[filename].MTime).FirstOrDefault();
+                            if (sourceRepo != null)
+                            {
+                                Elems[filename].FileOperation[sourceRepo] = FileOperation.Source;
+                            }
                             break;
 
                         case ChangeStatus.Deleted:

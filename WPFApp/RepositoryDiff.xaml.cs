@@ -31,6 +31,10 @@ namespace Codewise.FooSync.WPFApp
         private Thread        _inspectWorkingThread;
         private bool          _cancel;
 
+        private Dictionary<Guid, FooTree> _trees;
+        private FooChangeSet  _changeSet;
+        private RepositoryDiffData _diffData;
+
         private Dictionary<Guid, ComboBox> _actionBoxes;
         private Dictionary<Guid, bool> _updatingActionBox;
 
@@ -46,6 +50,9 @@ namespace Codewise.FooSync.WPFApp
             _mainWindow = mainWindow;
             _foo = foo;
             _syncGroup = syncGroup;
+            _trees = null;
+            _changeSet = null;
+            _diffData = null;
 
             _updatingActionBox = new Dictionary<Guid, bool>();
         }
@@ -56,7 +63,7 @@ namespace Codewise.FooSync.WPFApp
                 delegate ()
                 {
                     RepositoryStateCollection repoState;
-                    Dictionary<Guid, FooTree> trees = new Dictionary<Guid, FooTree>();
+                    _trees = new Dictionary<Guid, FooTree>();
                     List<RepositoryStateCollection> repoStates = new List<RepositoryStateCollection>();
                     
                     Progress.ValueChanged += new RoutedPropertyChangedEventHandler<double>((object sender, RoutedPropertyChangedEventArgs<double> args) =>
@@ -97,7 +104,11 @@ namespace Codewise.FooSync.WPFApp
                             }
 
                             DateTime last = DateTime.Now;
-                            tree = new FooTree(MainWindow.Foo, url.LocalPath, FooSyncEngine.PrepareExceptions(_syncGroup.IgnorePatterns.OfType<IIgnorePattern>().ToList()), new Progress((current, total, path) =>
+                            tree = new FooTree(
+                                MainWindow.Foo,
+                                url.LocalPath,
+                                FooSyncEngine.PrepareExceptions(_syncGroup.IgnorePatterns.OfType<IIgnorePattern>().ToList()),
+                                new Progress((current, total, path) =>
                                 {
                                     if ((DateTime.Now - last).Milliseconds > ProgressUpdateRateMsecs)
                                     {
@@ -179,9 +190,9 @@ namespace Codewise.FooSync.WPFApp
                                 {
                                     otherState.AddRepository(tree, repoState.RepositoryID);
 
-                                    if (trees[otherState.RepositoryID].Base.IsLocal)
+                                    if (_trees[otherState.RepositoryID].Base.IsLocal)
                                     {
-                                        otherState.Write(Path.Combine(trees[otherState.RepositoryID].Base.LocalPath, FooSyncEngine.RepoStateFileName));
+                                        otherState.Write(Path.Combine(_trees[otherState.RepositoryID].Base.LocalPath, FooSyncEngine.RepoStateFileName));
                                     }
                                     else
                                     {
@@ -192,7 +203,7 @@ namespace Codewise.FooSync.WPFApp
                             }
 
                             repoStates.Add(repoState);
-                            trees.Add(repoState.RepositoryID, tree);
+                            _trees.Add(repoState.RepositoryID, tree);
                         }
                     }
 
@@ -213,7 +224,7 @@ namespace Codewise.FooSync.WPFApp
                     ));
 
                     DateTime lastUpdate = DateTime.Now;
-                    FooChangeSet changeSet = _foo.Inspect(repoState, trees, new Progress((current, total, name) =>
+                    _changeSet = _foo.Inspect(repoState, _trees, new Progress((current, total, name) =>
                         {
                             if ((DateTime.Now - lastUpdate).Milliseconds > ProgressUpdateRateMsecs)
                             {
@@ -230,7 +241,7 @@ namespace Codewise.FooSync.WPFApp
                         }
                     ));
 
-                    changeSet.SetDefaultActions(trees);
+                    _changeSet.SetDefaultActions(_trees);
 
                     //
                     // Convert the changeset into data structures for display.
@@ -241,7 +252,7 @@ namespace Codewise.FooSync.WPFApp
                     IEnumerable<string> fileOperations = EnumMethods.GetEnumDescriptions(typeof(FileOperation));
 
                     //foreach (KeyValuePair<Guid, FooTree> pair in trees)
-                    IEnumerator<KeyValuePair<Guid, FooTree>> treeEnum = trees.GetEnumerator();
+                    IEnumerator<KeyValuePair<Guid, FooTree>> treeEnum = _trees.GetEnumerator();
                     for (int i = 0; treeEnum.MoveNext(); i++)
                     {
                         FooSyncUrl url = treeEnum.Current.Value.Base;
@@ -281,18 +292,18 @@ namespace Codewise.FooSync.WPFApp
                         ));
                     }
 
-                    RepositoryDiffData diffData = new RepositoryDiffData();
-                    foreach (string filename in changeSet)
+                    _diffData = new RepositoryDiffData();
+                    foreach (string filename in _changeSet)
                     {
                         RepositoryDiffDataItem item = new RepositoryDiffDataItem();
                         item.Filename = filename;
-                        if (changeSet[filename].ConflictStatus != ConflictStatus.NoConflict)
+                        if (_changeSet[filename].ConflictStatus != ConflictStatus.NoConflict)
                         {
                             item.State = RepositoryDiffDataItem.ConflictState;
                         }
                         else
                         {
-                            FooChangeSetElem changeElem = changeSet[filename];
+                            FooChangeSetElem changeElem = _changeSet[filename];
 
                             if (changeElem.ChangeStatus.Any(e => e.Value == ChangeStatus.New))
                             {
@@ -308,13 +319,13 @@ namespace Codewise.FooSync.WPFApp
                             }
                         }
 
-                        foreach (Guid repoId in changeSet.RepositoryIDs)
+                        foreach (Guid repoId in _changeSet.RepositoryIDs)
                         {
-                            item.ChangeStatus.Add(repoId, changeSet[filename].ChangeStatus[repoId]);
-                            item.FileOperation.Add(repoId, changeSet[filename].FileOperation[repoId]);
+                            item.ChangeStatus.Add(repoId, _changeSet[filename].ChangeStatus[repoId]);
+                            item.FileOperation.Add(repoId, _changeSet[filename].FileOperation[repoId]);
                         }
 
-                        diffData.Add(item);
+                        _diffData.Add(item);
                     }
 
                     //
@@ -325,7 +336,7 @@ namespace Codewise.FooSync.WPFApp
                         {
                             _mainWindow.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.None;
                             ProgressView.Visibility = Visibility.Collapsed;
-                            DiffGrid.ItemsSource = diffData;
+                            DiffGrid.ItemsSource = _diffData;
                             DiffGrid.Visibility = Visibility.Visible;
                             ActionsPanel.Visibility = Visibility.Visible;
                             //Actions.ItemsSource = diffData;
@@ -358,7 +369,52 @@ namespace Codewise.FooSync.WPFApp
 
         private void Synchronize_Click(object sender, RoutedEventArgs e)
         {
-            // TODO
+            foreach (RepositoryDiffDataItem file in _diffData)
+            {
+                string reason;
+                if (!file.ActionsAreValid(out reason))
+                {
+                    MessageBox.Show(
+                        string.Format("The highlighted file ({0}) has invalid actions selected:\n\n    {1}", file.Filename, reason),
+                        "Invalid Actions",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Stop);
+                    
+                    DiffGrid.SelectedItem = file;
+                    return;
+                }
+            }
+
+            //
+            // Update the FooChangeSet with the selected actions.
+            //
+            foreach (RepositoryDiffDataItem file in _diffData)
+            {
+                foreach (Guid repoId in _changeSet.RepositoryIDs)
+                {
+                    _changeSet[file.Filename].FileOperation[repoId] = file.FileOperation[repoId];
+                }
+            }
+
+            Dictionary<Guid, FooSyncUrl> basePaths = new Dictionary<Guid, FooSyncUrl>();
+
+            foreach (Guid repoId in _trees.Keys)
+            {
+                if (_trees[repoId].Base.AbsoluteUri.EndsWith("/"))
+                {
+                    basePaths.Add(repoId, _trees[repoId].Base);
+                }
+                else
+                {
+                    basePaths.Add(repoId, new FooSyncUrl(_trees[repoId].Base.ToString() + "/"));
+                }
+            }
+
+            CopyEngine.PerformActions(_changeSet, basePaths, null, null);
+
+            //
+            // Need to update RepoState here
+            //
         }
 
         private void DiffGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
