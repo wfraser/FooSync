@@ -55,6 +55,34 @@ namespace Codewise.FooSync
             }
         }
 
+        /// <summary>
+        /// C'tor, using a base URL and a relative path.
+        /// </summary>
+        /// <param name="baseUrl">file:/// or fs:// URL</param>
+        /// <param name="relativePath">Relative path to add to baseUrl</param>
+        public FooSyncUrl(FooSyncUrl baseUrl, string relativePath) : base(baseUrl, relativePath)
+        {
+            _isLocal = (Scheme == Uri.UriSchemeFile);
+
+            if (!_isLocal && Scheme != UriSchemeFooSync)
+            {
+                throw new FormatException("Invalid URI schema; must be " + UriSchemeFooSync + " or " + Uri.UriSchemeFile + ", not " + Scheme);
+            }
+
+            if (UserInfo != string.Empty)
+            {
+                throw new FormatException("Don't use a username/password with a fs:// URL");
+            }
+
+            if (!_isLocal && string.IsNullOrEmpty(Host))
+            {
+                throw new FormatException("Hostname is required for fs:// URL");
+            }
+        }
+
+        /// <summary>
+        /// Gets whether the URL refers to a local (or windows UNC path) file, or a FooSync server file.
+        /// </summary>
         public bool IsLocal
         {
             get { return _isLocal; }
@@ -81,6 +109,25 @@ namespace Codewise.FooSync
             get
             {
                 return _isLocal || (Port == DefaultPort);
+            }
+        }
+
+        /// <summary>
+        /// If a local file, gives the URL as a local path as a string.
+        /// If a FooSync server file, gives the fs:// URL as a string.
+        /// </summary>
+        public string NaturalFormat
+        {
+            get
+            {
+                if (_isLocal)
+                {
+                    return this.LocalPath;
+                }
+                else
+                {
+                    return this.ToString();
+                }
             }
         }
 

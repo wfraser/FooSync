@@ -23,12 +23,71 @@ namespace Codewise.FooSync
     /// </summary>
     public static class CopyEngine
     {
-        public static bool Copy(ICollection<string> copyFrom, ICollection<string> copyTo)
+        public static bool PerformActions(FooChangeSet changeSet, Dictionary<Guid, FooSyncUrl> basePaths, Progress copyCallback = null, Progress deleteCallback = null)
+        {
+            List<FooSyncUrl> copyFrom = new List<FooSyncUrl>();
+            List<FooSyncUrl> copyTo = new List<FooSyncUrl>();
+            List<FooSyncUrl> delete = new List<FooSyncUrl>();
+
+            foreach (string filename in changeSet.Filenames)
+            {
+                FooSyncUrl copySourceUrl = null;
+                List<FooSyncUrl> copyDestUrls = new List<FooSyncUrl>();
+                List<FooSyncUrl> deleteUrls = new List<FooSyncUrl>();
+
+                foreach (Guid repoId in changeSet.RepositoryIDs)
+                {
+                    FooSyncUrl fullUrl = new FooSyncUrl(basePaths[repoId], filename);
+
+                    switch (changeSet[filename].FileOperation[repoId])
+                    {
+                        case FileOperation.Source:
+                            copySourceUrl = fullUrl;
+                            break;
+
+                        case FileOperation.Destination:
+                            copyDestUrls.Add(fullUrl);
+                            break;
+
+                        case FileOperation.Delete:
+                            deleteUrls.Add(fullUrl);
+                            break;
+                    }
+                }
+
+                if (copySourceUrl == null && copyDestUrls.Count > 0)
+                {
+                    throw new InvalidOperationException(
+                        string.Format("No copy source given for {0}", filename));
+                }
+
+                foreach (FooSyncUrl destUrl in copyDestUrls)
+                {
+                    copyFrom.Add(copySourceUrl);
+                    copyTo.Add(destUrl);
+                }
+
+                delete.AddRange(deleteUrls);
+            }
+
+            bool result = Copy(copyFrom, copyTo, copyCallback);
+
+            if (!result)
+            {
+                return result;
+            }
+
+            result = Delete(delete, deleteCallback);
+
+            return result;
+        }
+
+        public static bool Copy(ICollection<FooSyncUrl> copyFrom, ICollection<FooSyncUrl> copyTo)
         {
             return Copy(copyFrom, copyTo, null);
         }
 
-        public static bool Copy(ICollection<string> copyFrom, ICollection<string> copyTo, Progress callback)
+        public static bool Copy(ICollection<FooSyncUrl> copyFrom, ICollection<FooSyncUrl> copyTo, Progress callback)
         {
             if (copyFrom == null)
                 throw new ArgumentNullException("copyFrom");
@@ -39,20 +98,33 @@ namespace Codewise.FooSync
             if (copyFrom.Count == 0)
                 return true;
 
-            if (Type.GetType("Mono.Runtime") != null)
+            if (Type.GetType("Mono.Runtime") == null && copyFrom.All(f => f.IsLocal) && copyTo.All(f => f.IsLocal))
             {
-                int i = 0;
-                IEnumerator<string> enumFrom = copyFrom.GetEnumerator();
-                IEnumerator<string> enumTo = copyTo.GetEnumerator();
+                //
+                // Special case: on Windows, with all source and dest local, use the native copy operation.
+                //
 
-                while (enumFrom.MoveNext() && enumTo.MoveNext())
+                List<string> copyFromStr = new List<string>(copyFrom.Select(f => f.LocalPath));
+                List<string> copyToStr   = new List<string>(copyTo.Select(f => f.LocalPath));
+
+                return NativeMethods.CopyOperation(copyFromStr, copyToStr, IntPtr.Zero);
+            }
+
+            int i = 0;
+            IEnumerator<FooSyncUrl> enumFrom = copyFrom.GetEnumerator();
+            IEnumerator<FooSyncUrl> enumTo = copyTo.GetEnumerator();
+
+            while (enumFrom.MoveNext() && enumTo.MoveNext())
+            {
+                //
+                // check that all components of the path to the destination exists
+                // if any do not, create them.
+                //
+
+                if (enumTo.Current.IsLocal)
                 {
-                    //
-                    // check that all components of the path to the destination exists
-                    // if any do not, create them.
-                    //
                     var path = string.Empty;
-                    var parts = enumTo.Current.Split(Path.DirectorySeparatorChar);
+                    var parts = enumTo.Current.LocalPath.Split(Path.DirectorySeparatorChar);
                     for (var p = 0; p < parts.Length - 1; p++)
                     {
                         path += parts[p] + Path.DirectorySeparatorChar;
@@ -62,89 +134,32 @@ namespace Codewise.FooSync
                             Directory.CreateDirectory(path);
                         }
                     }
-
-                    if (callback != null)
-                    {
-                        callback(++i, copyFrom.Count, enumFrom.Current);
-                    }
-
-                    /*
-                    Stream source = null, dest = null;
-
-                    if (enumFrom.Current.StartsWith("fs://"))
-                    {
-                    }
-
-                    if (enumTo.Current.StartsWith("fs://"))
-                    {
-                    }
-
-                    if (source == null && dest == null)
-                    {
-                        //
-                        // Simple local file-to-file copy.
-                        //
-                        File.Copy(enumFrom.Current, enumTo.Current);
-                    }
-                    else
-                    {
-                        //
-                        // Either the source or destination (or both) are foreign streams.
-                        //
-
-                        if (source == null)
-                        {
-                            source = new FileStream(enumFrom.Current, FileMode.Open, FileAccess.Read, FileShare.Read);
-                        }
-
-                        if (dest == null)
-                        {
-                            dest = new FileStream(enumTo.Current, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
-                        }
-
-                        source.CopyTo(dest);
-                    }
-                     */
-
-                    File.Copy(enumFrom.Current, enumTo.Current);
                 }
 
-                callback(i, copyFrom.Count, string.Empty);
+                if (callback != null)
+                {
+                    callback(++i, copyFrom.Count, enumFrom.Current.NaturalFormat);
+                }
 
-                return true;
+                if (enumFrom.Current.IsLocal && enumTo.Current.IsLocal)
+                {
+                    File.Copy(enumFrom.Current.LocalPath, enumTo.Current.LocalPath);
+                }
+                else
+                {
+                    throw new NotImplementedException("Copying to/from fs:// URLs is not yet implemented. Sorry!");
+                }
             }
-            else
-            {
-                return NativeMethods.CopyOperation(copyFrom, copyTo, IntPtr.Zero);
-            }
+
+            return true;
         }
 
-        static Tuple<string, int, string> SplitUrl(string url)
-        {
-            if (!url.StartsWith("fs://"))
-                return null;
-
-            string hostname = null, port = null, path = null;
-
-            var trimmed = url.Substring("fs://".Length);
-            var parts = trimmed.Split(new char[] { ':' }, 2);
-
-            hostname = parts[0];
-
-            parts = parts[1].Split(new char[] { '/' }, 2);
-
-            port = parts[0];
-            path = parts[1];
-
-            return new Tuple<string, int, string>(hostname, int.Parse(port), path);
-        }
-
-        public static bool Delete(ICollection<string> files)
+        public static bool Delete(ICollection<FooSyncUrl> files)
         {
             return Delete(files, null);
         }
 
-        public static bool Delete(ICollection<string> files, Progress callback)
+        public static bool Delete(ICollection<FooSyncUrl> files, Progress callback)
         {
             if (files == null)
                 throw new ArgumentNullException("files");
@@ -152,26 +167,39 @@ namespace Codewise.FooSync
             if (files.Count == 0)
                 return true;
 
-            if (Type.GetType("Mono.Runtime") != null)
+            if (Type.GetType("Mono.Runtime") == null && files.All(x => x.IsLocal))
             {
-                int i = 0;
+                //
+                // Special case: on Windows, with all files local, use the native delete operation.
+                //
 
-                foreach (var file in files)
+                List<string> filesStr = new List<string>(files.Select(f => f.LocalPath));
+
+                return NativeMethods.DeleteOperation(filesStr, IntPtr.Zero);
+            }
+
+            int i = 0;
+
+            foreach (FooSyncUrl file in files)
+            {
+                if (file.IsLocal)
                 {
-                    File.Delete(file);
-
-                    if (callback != null)
-                    {
-                        callback(++i, files.Count, file);
-                    }
+                    File.Delete(file.LocalPath);
+                }
+                else
+                {
+                    throw new NotImplementedException("Deleting files with fs:// URLs is not yet implemented. Sorry!");
                 }
 
-                return true;
+                if (callback != null)
+                {
+                    callback(++i, files.Count, file.NaturalFormat);
+                }
             }
-            else
-            {
-                return NativeMethods.DeleteOperation(files, IntPtr.Zero);
-            }
+
+            RemoveEmptyDirectories(files.Where(f => f.IsLocal).Select(f => f.LocalPath), callback);
+
+            return true;
         }
 
         public static bool RemoveEmptyDirectories(ICollection<string> deletedFiles)
@@ -179,13 +207,10 @@ namespace Codewise.FooSync
             return RemoveEmptyDirectories(deletedFiles, null);
         }
 
-        public static bool RemoveEmptyDirectories(ICollection<string> deletedFiles, Progress callback)
+        public static bool RemoveEmptyDirectories(IEnumerable<string> deletedFiles, Progress callback)
         {
             if (deletedFiles == null)
                 throw new ArgumentNullException("deletedFiles");
-
-            if (deletedFiles.Count == 0)
-                return true;
 
             bool allSuccessful = true;
             var directories = new List<string>();
@@ -198,6 +223,11 @@ namespace Codewise.FooSync
                 {
                     directories.Add(dir);
                 }
+            }
+
+            if (directories.Count == 0)
+            {
+                return true;
             }
 
             directories.Sort();
