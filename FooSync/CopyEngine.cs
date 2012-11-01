@@ -23,6 +23,8 @@ namespace Codewise.FooSync
     /// </summary>
     public static class CopyEngine
     {
+        private static readonly OperatingSystem Windows8 = new OperatingSystem(PlatformID.Win32NT, Version.Parse("6.2"));
+
         public static bool PerformActions(FooChangeSet changeSet, Dictionary<Guid, FooSyncUrl> basePaths, Progress copyCallback = null, Progress deleteCallback = null)
         {
             List<FooSyncUrl> copyFrom = new List<FooSyncUrl>();
@@ -98,7 +100,11 @@ namespace Codewise.FooSync
             if (copyFrom.Count == 0)
                 return true;
 
-            if (Type.GetType("Mono.Runtime") == null && copyFrom.All(f => f.IsLocal) && copyTo.All(f => f.IsLocal))
+            if (Type.GetType("Mono.Runtime") == null
+                && Environment.OSVersion.Platform == PlatformID.Win32NT
+                && Environment.OSVersion.Version >= Version.Parse("6.2")    // Win8 has the nice copy dialog with graph
+                && copyFrom.All(f => f.IsLocal)
+                && copyTo.All(f => f.IsLocal))
             {
                 //
                 // Special case: on Windows, with all source and dest local, use the native copy operation.
@@ -167,7 +173,10 @@ namespace Codewise.FooSync
             if (files.Count == 0)
                 return true;
 
-            if (Type.GetType("Mono.Runtime") == null && files.All(x => x.IsLocal))
+            if (Type.GetType("Mono.Runtime") == null
+                && Environment.OSVersion.Platform == PlatformID.Win32NT
+                && Environment.OSVersion.Version >= Version.Parse("6.2")    // Win8 has the nice delete dialog with graph
+                && files.All(x => x.IsLocal))
             {
                 //
                 // Special case: on Windows, with all files local, use the native delete operation.

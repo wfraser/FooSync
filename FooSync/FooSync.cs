@@ -94,15 +94,19 @@ namespace Codewise.FooSync
                                 DateTime repoTime = trees[repoId].Files[filename].MTime;
                                 DateTime otherTime = trees[otherId].Files[filename].MTime;
 
-                                if (state.Repositories[repoId].MTimes[filename] != repoTime)
-                                {
-                                    changeset.Add(filename, ChangeStatus.Changed, repoId);
-                                }
+                                changeset.Add(
+                                    filename,
+                                    (state.Repositories[repoId].MTimes[filename] == repoTime)
+                                        ? ChangeStatus.Identical
+                                        : ChangeStatus.Changed,
+                                    repoId);
 
-                                if (state.Repositories[otherId].MTimes[filename] != otherTime)
-                                {
-                                    changeset.Add(filename, ChangeStatus.Changed, otherId);
-                                }
+                                changeset.Add(
+                                    filename,
+                                    (state.Repositories[otherId].MTimes[filename] == otherTime)
+                                        ? ChangeStatus.Identical
+                                        : ChangeStatus.Changed,
+                                    otherId);
                             }
                             else
                             {

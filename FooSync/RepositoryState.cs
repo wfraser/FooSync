@@ -18,9 +18,12 @@ namespace Codewise.FooSync
     {
         public RepositoryStateCollection()
         {
+            Modified = DateTime.Now;
+            Dirty = true;
             Repositories = new Dictionary<Guid, RepositoryState>();
             Origin  = new Dictionary<string, Guid>();
             RepositoryID = Guid.NewGuid();
+            SourcePath = "???";
         }
 
         public RepositoryStateCollection(string stateFilename)
@@ -32,6 +35,8 @@ namespace Codewise.FooSync
             {
                 Read(r);
             }
+
+            SourcePath = stateFilename;
         }
 
         public RepositoryStateCollection(Stream stream)
@@ -43,6 +48,8 @@ namespace Codewise.FooSync
             {
                 Read(r);
             }
+
+            SourcePath = "???";
         }
 
         #region public methods
@@ -51,6 +58,11 @@ namespace Codewise.FooSync
         {
             if (tree == null)
                 throw new ArgumentNullException("tree");
+            if (ID == null)
+                throw new ArgumentException("ID");
+
+            Dirty = true;
+            Modified = DateTime.Now;
 
             RepositoryState repository = new RepositoryState();
             repository.ID = ID;
@@ -91,11 +103,7 @@ namespace Codewise.FooSync
                     filename = ReadString(r);
 
                     //
-                    // Normalize the path to use forward slashes instead of whatever
-                    //  the system normally uses.
-                    // Rationale: Unix filenames can contain backslashes, but
-                    //  Windows filenames can't contain forward slashes, so
-                    //  forward slashes win.
+                    // Replace forward-slashes with the system directory separator character.
                     //
                     if (Path.DirectorySeparatorChar != '/')
                     {
@@ -124,6 +132,8 @@ namespace Codewise.FooSync
 
                 r.Read();
             }
+
+            Dirty = false;
         }
 
         public void Write(string filename)
@@ -139,7 +149,6 @@ namespace Codewise.FooSync
             w.Write(RepositoryID.ToString());
             w.Write('\0');
 
-            Modified = DateTime.Now;
             w.Write(Modified.ToUniversalTime().Ticks);
             w.Write('\0');
 
@@ -153,7 +162,11 @@ namespace Codewise.FooSync
                     string filename = mtime.Key;
 
                     //
-                    // Convert normalized path back to system directory separators.
+                    // Normalize the path to use forward slashes instead of whatever
+                    //  the system normally uses.
+                    // Rationale: Unix filenames can contain backslashes, but
+                    //  Windows filenames can't contain forward slashes, so
+                    //  forward slashes win.
                     //
                     if (Path.DirectorySeparatorChar != '/')
                     {
@@ -175,6 +188,8 @@ namespace Codewise.FooSync
 
                 w.Write('\0');
             }
+
+            Dirty = false;
         }
 
         private static string ReadString(StreamReader r)
@@ -202,6 +217,17 @@ namespace Codewise.FooSync
 
         public Guid RepositoryID { get; set; }
         public DateTime Modified { get; set; }
+
+        //
+        // These are not serialized into the state file.
+        //
+        public bool Dirty { get; set; }
+        public string SourcePath { get; set; }
+
+        public string ToString()
+        {
+            return string.Format("{0} from {1}", this.GetType().Name, SourcePath);
+        }
 
         /// <summary>
         /// Gets the RepositoryState for the repository itself.

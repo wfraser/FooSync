@@ -35,7 +35,7 @@ namespace Codewise.FooSync
 
             foreach (var f in sourceFiles)
             {
-                System.Diagnostics.Debug.Assert(System.IO.File.Exists(f), string.Format("Trying to copy nonexistant file {0}", f));
+                System.Diagnostics.Debug.Assert(System.IO.File.Exists(f), string.Format("Trying to copy nonexistent file {0}", f));
                 fromStr += f + '\0';
             }
             fromStr += '\0';
@@ -109,7 +109,7 @@ namespace Codewise.FooSync
 
             foreach (var f in delFiles)
             {
-                System.Diagnostics.Debug.Assert(System.IO.File.Exists(f), string.Format("Trying to delete nonexistant file {0}", f));
+                System.Diagnostics.Debug.Assert(System.IO.File.Exists(f), string.Format("Trying to delete nonexistent file {0}", f));
                 delStr += f + '\0';
             }
             delStr += '\0';

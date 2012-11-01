@@ -90,15 +90,6 @@ namespace Codewise.FooSync
                             break;
 
                         case ChangeStatus.Identical:
-                            {
-                                DateTime thisMTime = trees[repoId].Files[filename].MTime;
-                                if (mTime != null && mTime != thisMTime)
-                                {
-                                    SetConflictStatus(filename, ConflictStatus.MultipleChanges);
-                                    goto nextFile;
-                                }
-                                mTime = thisMTime;
-                            }
                             break;
                     }
                 }
@@ -120,6 +111,11 @@ namespace Codewise.FooSync
                     
                 foreach (Guid repoId in RepositoryIDs)
                 {
+                    if (Elems[filename].FileOperation[repoId] != FileOperation.NoOp)
+                    {
+                        continue;
+                    }
+
                     switch (Elems[filename].ChangeStatus[repoId])
                     {
                         case ChangeStatus.Changed:
@@ -158,11 +154,11 @@ namespace Codewise.FooSync
                                     if (trees[id].Files.ContainsKey(filename)
                                         && trees[id].Files[filename].MTime == newestMTime)
                                     {
-                                        Elems[filename].FileOperation[repoId] = FileOperation.Source;
+                                        Elems[filename].FileOperation[id] = FileOperation.Source;
                                     }
                                     else
                                     {
-                                        Elems[filename].FileOperation[repoId] = FileOperation.Destination;
+                                        Elems[filename].FileOperation[id] = FileOperation.Destination;
                                     }
                                 }
                             }
@@ -204,7 +200,9 @@ namespace Codewise.FooSync
                             break;
 
                         case ChangeStatus.Identical:
-                            Elems[filename].FileOperation[repoId] = FileOperation.NoOp;
+                            //
+                            // Leave it as the default of NoOp.
+                            //
                             break;
 
                         default:
@@ -221,6 +219,12 @@ namespace Codewise.FooSync
             {
                 if (!Elems.ContainsKey(filename))
                 {
+                    if (changeStatus == ChangeStatus.Identical)
+                    {
+                        // don't bother adding for Identical
+                        return;
+                    }
+
                     Elems.Add(filename, new FooChangeSetElem(filename, RepositoryIDs));
                 }
 
