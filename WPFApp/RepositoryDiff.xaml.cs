@@ -177,10 +177,10 @@ namespace Codewise.FooSync.WPFApp
             }
 
             //
-            // We want to operate on the most up-to-date repository state collection, so get that one now.
+            // We want to operate on the oldest repository state collection, so get that one now.
             //
 
-            RepositoryStateCollection newestStateColl = _repoStates.OrderByDescending(s => s.Modified).First();
+            RepositoryStateCollection bestStateColl = _repoStates.OrderBy(s => s.Modified).First();
 
             //
             // Now update all of them to have information on any trees they don't yet have.
@@ -211,7 +211,7 @@ namespace Codewise.FooSync.WPFApp
             ));
 
             DateTime lastUpdate = DateTime.Now;
-            _changeSet = _foo.Inspect(newestStateColl, _trees, new Progress((current, total, name) =>
+            _changeSet = _foo.Inspect(bestStateColl, _trees, new Progress((current, total, name) =>
                 {
                     if ((DateTime.Now - lastUpdate).Milliseconds > ProgressUpdateRateMsecs)
                     {
