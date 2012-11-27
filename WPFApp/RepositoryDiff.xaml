@@ -110,11 +110,11 @@
                 <ListView.ItemContainerStyle>
                     <Style TargetType="{x:Type ListViewItem}">
                         <Style.Triggers>
-                            <!-- Set background for conflicts to blue -->
+                            <!-- Set background for conflicts -->
                             <DataTrigger Binding="{Binding State}" Value="{x:Static foo:RepositoryDiffDataItem.ConflictState}">
-                                <Setter Property="Background" Value="SkyBlue" />
+                                <Setter Property="Background" Value="Yellow" />
                             </DataTrigger>
-                            <!-- Set background for invalid actions to red -->
+                            <!-- Set background for invalid actions -->
                             <DataTrigger Binding="{Binding State}" Value="{x:Static foo:RepositoryDiffDataItem.InvalidActionsState}">
                                 <Setter Property="Background" Value="Tomato" />
                             </DataTrigger>
