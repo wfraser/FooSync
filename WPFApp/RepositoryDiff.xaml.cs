@@ -29,7 +29,7 @@ namespace Codewise.FooSync.WPFApp
         private MainWindow    _mainWindow;
         private FooSyncEngine _foo;
         private SyncGroup     _syncGroup;
-        private Thread        _inspectWorkingThread;
+        private BackgroundWorker _inspectWorker;
 
         private List<RepositoryStateCollection> _repoStates;
         private Dictionary<Guid, FooTree>       _trees;
@@ -99,6 +99,11 @@ namespace Codewise.FooSync.WPFApp
                     catch (FileNotFoundException)
                     {
                         currentStateColl = new RepositoryStateCollection();
+                    }
+                    catch (DirectoryNotFoundException ex)
+                    {
+                        MessageBox.Show(string.Format("Something's wrong: {0}\nI can't continue!", ex.Message), "Directory Not Found", MessageBoxButton.OK, MessageBoxImage.Error);
+                        throw;
                     }
 
                     DateTime last = DateTime.Now;
@@ -222,6 +227,7 @@ namespace Codewise.FooSync.WPFApp
                                 Progress.Value = current;
                                 DetailText1.Text = string.Format("{0:##0.00}%", (double)current / total * 100);
                                 DetailText2.Text = name;
+                                _mainWindow.TaskbarItemInfo.ProgressValue = (double)current / total;
                             }
                         ));
                     }
@@ -332,11 +338,19 @@ namespace Codewise.FooSync.WPFApp
 
         public void Start()
         {
-            _inspectWorkingThread = new Thread(InspectWorkingThread);
+            _inspectWorker = new BackgroundWorker();
+            _inspectWorker.WorkerSupportsCancellation = true;
+            _inspectWorker.DoWork += new DoWorkEventHandler((sender, args) => InspectWorkingThread());
+            _inspectWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler((sender, args) =>
+                {
+                    if (args.Cancelled || args.Error != null)
+                    {
+                        Cancelled(this, new EventArgs());
+                    }
+                }
+            );
 
-            _inspectWorkingThread.Name = "worker thread for sync group " + _syncGroup.Name;
-            
-            _inspectWorkingThread.Start();
+            _inspectWorker.RunWorkerAsync();
         }
 
         private void Grid_ContextMenuOpening(object sender, ContextMenuEventArgs e)
@@ -346,7 +360,7 @@ namespace Codewise.FooSync.WPFApp
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
-            _inspectWorkingThread.Abort();
+            _inspectWorker.CancelAsync();
 
             if (Cancelled != null)
             {
@@ -477,6 +491,14 @@ namespace Codewise.FooSync.WPFApp
                                         break;
 
                                     case ChangeStatus.Identical:
+                                        break;
+
+                                    case ChangeStatus.Missing:
+                                        if (actions[repoId] != FileOperation.NoOp)
+                                        {
+                                            System.Diagnostics.Debug.Assert(false, "unhandled change status");
+                                        }
+                                        // else: do nothing
                                         break;
 
                                     default:
