@@ -92,6 +92,21 @@ namespace Codewise.FooSync.WPFApp
             var settings = new XmlWriterSettings();
             settings.Indent = true;
 
+            foreach (SyncGroup sg in SyncGroups)
+            {
+                //
+                // Clean out empty ignore patterns
+                //
+                for (int i = 0; i < sg.IgnorePatterns.Count; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(sg.IgnorePatterns[i].Pattern))
+                    {
+                        sg.IgnorePatterns.RemoveAt(i);
+                        i--;
+                    }
+                }
+            }
+
             using (var writer = XmlWriter.Create(stream, settings))
             {
                 var serializer = new XmlSerializer(typeof(SyncGroupList), "http://www.codewise.org/schema/foosync/SyncGroupList.xsd");
