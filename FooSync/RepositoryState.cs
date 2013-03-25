@@ -224,7 +224,7 @@ namespace Codewise.FooSync
         public bool Dirty { get; set; }
         public string SourcePath { get; set; }
 
-        public string ToString()
+        public override string ToString()
         {
             return string.Format("{0} from {1}", this.GetType().Name, SourcePath);
         }
